@@ -1,0 +1,176 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+
+export type Cliente = {
+  id: string;
+  created_at: string;
+  nome: string;
+  tipo: string;
+  cpf_cnpj: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  endereco: string | null;
+  cidade: string | null;
+  tipo_telhado: string | null;
+  tipo_sistema: string;
+  qtd_pessoas: number | null;
+  tamanho_piscina_m2: number | null;
+  qtd_banheiros: number | null;
+  marca_equipamento: string | null;
+  qtd_coletores: number | null;
+  modelo_reservatorio: string | null;
+  data_instalacao: string | null;
+  tecnico_id: string | null;
+  valor_orcamento: number | null;
+  valor_pago: number | null;
+  status: string;
+  origem_lead: string | null;
+  ultimo_contato: string | null;
+  observacoes: string | null;
+};
+
+export type Tecnico = {
+  id: string;
+  created_at: string;
+  nome: string;
+  telefone: string | null;
+  especialidade: string;
+  status: string;
+  custo_mensal: number | null;
+};
+
+export type Manutencao = {
+  id: string;
+  created_at: string;
+  cliente_id: string;
+  data_manutencao: string;
+  tipo: string;
+  descricao: string | null;
+  tecnico_id: string | null;
+  status: string;
+  proxima_manutencao: string | null;
+  custo: number | null;
+  observacoes: string | null;
+};
+
+export type Gasto = {
+  id: string;
+  created_at: string;
+  cliente_id: string | null;
+  tecnico_id: string | null;
+  categoria: string;
+  descricao: string;
+  valor: number | null;
+  data: string;
+  tipo: string;
+  observacoes: string | null;
+};
+
+export type Interacao = {
+  id: string;
+  created_at: string;
+  cliente_id: string;
+  data_interacao: string;
+  tipo: string;
+  descricao: string;
+  proximo_passo: string | null;
+  data_proximo_contato: string | null;
+  usuario: string | null;
+};
+
+type TableName = "clientes" | "tecnicos" | "manutencoes" | "gastos" | "interacoes";
+
+function useList<T>(table: TableName, order: string, ascending = false) {
+  return useQuery({
+    queryKey: [table],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from(table)
+        .select("*")
+        .order(order, { ascending });
+      if (error) throw error;
+      return (data ?? []) as unknown as T[];
+    },
+  });
+}
+
+export const useClientes = () => useList<Cliente>("clientes", "created_at");
+export const useTecnicos = () => useList<Tecnico>("tecnicos", "nome", true);
+export const useManutencoes = () =>
+  useList<Manutencao>("manutencoes", "data_manutencao");
+export const useGastos = () => useList<Gasto>("gastos", "data");
+export const useInteracoes = () =>
+  useList<Interacao>("interacoes", "data_interacao");
+
+const labels: Record<TableName, string> = {
+  clientes: "Cliente",
+  tecnicos: "Técnico",
+  manutencoes: "Manutenção",
+  gastos: "Gasto",
+  interacoes: "Interação",
+};
+
+export function useUpsert(table: TableName) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (values: Record<string, unknown>) => {
+      const { id, ...rest } = values as { id?: string };
+      if (id) {
+        const { error } = await supabase
+          .from(table)
+          .update(rest as never)
+          .eq("id", id);
+        if (error) throw error;
+        return { id };
+      }
+      const { data, error } = await supabase
+        .from(table)
+        .insert(rest as never)
+        .select("id")
+        .single();
+      if (error) throw error;
+      return data as { id: string };
+    },
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries();
+      toast.success(
+        `${labels[table]} ${(vars as { id?: string }).id ? "atualizado(a)" : "cadastrado(a)"} com sucesso`,
+      );
+    },
+    onError: (e: Error) => toast.error(`Erro ao salvar: ${e.message}`),
+  });
+}
+
+export function useRemove(table: TableName) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from(table).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries();
+      toast.success(`${labels[table]} excluído(a) com sucesso`);
+    },
+    onError: (e: Error) => toast.error(`Erro ao excluir: ${e.message}`),
+  });
+}
+
+export function useUpdateStatusCliente() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase
+        .from("clientes")
+        .update({ status } as never)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["clientes"] });
+      toast.success("Status atualizado");
+    },
+    onError: (e: Error) => toast.error(`Erro: ${e.message}`),
+  });
+}
