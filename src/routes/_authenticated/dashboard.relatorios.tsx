@@ -110,7 +110,6 @@ function RelatoriosPage() {
   const receitaTotal = receitaInstalacoes + receitaManutencoes;
   const custoTotal =
     gastosPeriodo.reduce((s, g) => s + num(g.valor), 0) +
-    clientesPeriodo.reduce((s, c) => s + num(c.custo_material), 0);
   const lucro = receitaTotal - custoTotal;
   const margem = receitaTotal > 0 ? (lucro / receitaTotal) * 100 : 0;
   const ticket =
@@ -163,7 +162,7 @@ function RelatoriosPage() {
   const porOrigem = useMemo(() => {
     const map = new Map<string, number>();
     clientes.forEach((c) => {
-      const k = c.origem ?? "Não informado";
+      const k = c.origem_lead ?? "Não informado";
       map.set(k, (map.get(k) ?? 0) + 1);
     });
     return [...map.entries()].map(([name, value]) => ({ name, value }));
@@ -192,7 +191,7 @@ function RelatoriosPage() {
 
   const porMarca = MARCAS.map((m) => ({
     marca: m,
-    qtd: clientes.filter((c) => c.marca === m).length,
+    qtd: clientes.filter((c) => c.marca_equipamento === m).length,
   })).filter((m) => m.qtd > 0);
 
   const produtividade = tecnicos.map((t) => {
@@ -261,8 +260,8 @@ function RelatoriosPage() {
           <KpiCard label="Receita Total" value={formatCurrency(receitaTotal)} tone="success" />
           <KpiCard label="Custo Total" value={formatCurrency(custoTotal)} tone="danger" />
           <KpiCard label="Lucro Líquido" value={formatCurrency(lucro)} tone={lucro >= 0 ? "success" : "danger"} />
-          <KpiCard label="Margem Média" value={`${margem.toFixed(1)}%`} tone="gold" />
-          <KpiCard label="Ticket Médio" value={formatCurrency(ticket)} tone="gold" />
+          <KpiCard label="Margem Média" value={`${margem.toFixed(1)}%`} tone="default" />
+          <KpiCard label="Ticket Médio" value={formatCurrency(ticket)} tone="default" />
           <KpiCard label="Receita de Manutenções" value={formatCurrency(receitaManutencoes)} />
         </div>
         <Card>
