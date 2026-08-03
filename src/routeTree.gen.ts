@@ -14,8 +14,11 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
 import { Route as AuthenticatedDashboardKanbanRouteImport } from './routes/_authenticated/dashboard.kanban'
+import { Route as AuthenticatedDashboardManutencoesRouteImport } from './routes/_authenticated/dashboard.manutencoes'
 import { Route as AuthenticatedDashboardClientesIndexRouteImport } from './routes/_authenticated/dashboard.clientes.index'
 import { Route as AuthenticatedDashboardClientesIdRouteImport } from './routes/_authenticated/dashboard.clientes.$id'
+import { Route as AuthenticatedDashboardTecnicosIndexRouteImport } from './routes/_authenticated/dashboard.tecnicos.index'
+import { Route as AuthenticatedDashboardTecnicosIdRouteImport } from './routes/_authenticated/dashboard.tecnicos.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -43,6 +46,12 @@ const AuthenticatedDashboardKanbanRoute =
     path: '/kanban',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedDashboardManutencoesRoute =
+  AuthenticatedDashboardManutencoesRouteImport.update({
+    id: '/manutencoes',
+    path: '/manutencoes',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 const AuthenticatedDashboardClientesIndexRoute =
   AuthenticatedDashboardClientesIndexRouteImport.update({
     id: '/clientes/',
@@ -55,21 +64,39 @@ const AuthenticatedDashboardClientesIdRoute =
     path: '/clientes/$id',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedDashboardTecnicosIndexRoute =
+  AuthenticatedDashboardTecnicosIndexRouteImport.update({
+    id: '/tecnicos/',
+    path: '/tecnicos/',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardTecnicosIdRoute =
+  AuthenticatedDashboardTecnicosIdRouteImport.update({
+    id: '/tecnicos/$id',
+    path: '/tecnicos/$id',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/dashboard/kanban': typeof AuthenticatedDashboardKanbanRoute
+  '/dashboard/manutencoes': typeof AuthenticatedDashboardManutencoesRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/dashboard/clientes/$id': typeof AuthenticatedDashboardClientesIdRoute
+  '/dashboard/tecnicos/$id': typeof AuthenticatedDashboardTecnicosIdRoute
   '/dashboard/clientes/': typeof AuthenticatedDashboardClientesIndexRoute
+  '/dashboard/tecnicos/': typeof AuthenticatedDashboardTecnicosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard/kanban': typeof AuthenticatedDashboardKanbanRoute
+  '/dashboard/manutencoes': typeof AuthenticatedDashboardManutencoesRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
   '/dashboard/clientes/$id': typeof AuthenticatedDashboardClientesIdRoute
+  '/dashboard/tecnicos/$id': typeof AuthenticatedDashboardTecnicosIdRoute
   '/dashboard/clientes': typeof AuthenticatedDashboardClientesIndexRoute
+  '/dashboard/tecnicos': typeof AuthenticatedDashboardTecnicosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -77,9 +104,12 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/_authenticated/dashboard/kanban': typeof AuthenticatedDashboardKanbanRoute
+  '/_authenticated/dashboard/manutencoes': typeof AuthenticatedDashboardManutencoesRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/_authenticated/dashboard/clientes/$id': typeof AuthenticatedDashboardClientesIdRoute
+  '/_authenticated/dashboard/tecnicos/$id': typeof AuthenticatedDashboardTecnicosIdRoute
   '/_authenticated/dashboard/clientes/': typeof AuthenticatedDashboardClientesIndexRoute
+  '/_authenticated/dashboard/tecnicos/': typeof AuthenticatedDashboardTecnicosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -87,25 +117,34 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/dashboard/kanban'
+    | '/dashboard/manutencoes'
     | '/dashboard/'
     | '/dashboard/clientes/$id'
+    | '/dashboard/tecnicos/$id'
     | '/dashboard/clientes/'
+    | '/dashboard/tecnicos/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/dashboard/kanban'
+    | '/dashboard/manutencoes'
     | '/dashboard'
     | '/dashboard/clientes/$id'
+    | '/dashboard/tecnicos/$id'
     | '/dashboard/clientes'
+    | '/dashboard/tecnicos'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/_authenticated/dashboard'
     | '/_authenticated/dashboard/kanban'
+    | '/_authenticated/dashboard/manutencoes'
     | '/_authenticated/dashboard/'
     | '/_authenticated/dashboard/clientes/$id'
+    | '/_authenticated/dashboard/tecnicos/$id'
     | '/_authenticated/dashboard/clientes/'
+    | '/_authenticated/dashboard/tecnicos/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -150,6 +189,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardKanbanRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/dashboard/manutencoes': {
+      id: '/_authenticated/dashboard/manutencoes'
+      path: '/manutencoes'
+      fullPath: '/dashboard/manutencoes'
+      preLoaderRoute: typeof AuthenticatedDashboardManutencoesRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
     '/_authenticated/dashboard/clientes/': {
       id: '/_authenticated/dashboard/clientes/'
       path: '/clientes'
@@ -164,24 +210,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardClientesIdRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/dashboard/tecnicos/': {
+      id: '/_authenticated/dashboard/tecnicos/'
+      path: '/tecnicos'
+      fullPath: '/dashboard/tecnicos/'
+      preLoaderRoute: typeof AuthenticatedDashboardTecnicosIndexRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/tecnicos/$id': {
+      id: '/_authenticated/dashboard/tecnicos/$id'
+      path: '/tecnicos/$id'
+      fullPath: '/dashboard/tecnicos/$id'
+      preLoaderRoute: typeof AuthenticatedDashboardTecnicosIdRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
   }
 }
 
 interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardKanbanRoute: typeof AuthenticatedDashboardKanbanRoute
+  AuthenticatedDashboardManutencoesRoute: typeof AuthenticatedDashboardManutencoesRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
   AuthenticatedDashboardClientesIdRoute: typeof AuthenticatedDashboardClientesIdRoute
+  AuthenticatedDashboardTecnicosIdRoute: typeof AuthenticatedDashboardTecnicosIdRoute
   AuthenticatedDashboardClientesIndexRoute: typeof AuthenticatedDashboardClientesIndexRoute
+  AuthenticatedDashboardTecnicosIndexRoute: typeof AuthenticatedDashboardTecnicosIndexRoute
 }
 
 const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
   {
     AuthenticatedDashboardKanbanRoute: AuthenticatedDashboardKanbanRoute,
+    AuthenticatedDashboardManutencoesRoute:
+      AuthenticatedDashboardManutencoesRoute,
     AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
     AuthenticatedDashboardClientesIdRoute:
       AuthenticatedDashboardClientesIdRoute,
+    AuthenticatedDashboardTecnicosIdRoute:
+      AuthenticatedDashboardTecnicosIdRoute,
     AuthenticatedDashboardClientesIndexRoute:
       AuthenticatedDashboardClientesIndexRoute,
+    AuthenticatedDashboardTecnicosIndexRoute:
+      AuthenticatedDashboardTecnicosIndexRoute,
   }
 
 const AuthenticatedDashboardRouteWithChildren =
