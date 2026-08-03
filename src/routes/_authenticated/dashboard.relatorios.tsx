@@ -108,9 +108,9 @@ function RelatoriosPage() {
     .filter((m) => m.status === "Concluída")
     .reduce((s, m) => s + num(m.custo), 0);
   const receitaTotal = receitaInstalacoes + receitaManutencoes;
-  const custoTotal =
-    gastosPeriodo.reduce((s, g) => s + num(g.valor), 0) +
+  const custoTotal = gastosPeriodo.reduce((s, g) => s + num(g.valor), 0);
   const lucro = receitaTotal - custoTotal;
+
   const margem = receitaTotal > 0 ? (lucro / receitaTotal) * 100 : 0;
   const ticket =
     clientesPeriodo.length > 0 ? receitaInstalacoes / clientesPeriodo.length : 0;
@@ -127,7 +127,7 @@ function RelatoriosPage() {
     };
     clientes.forEach((c) => {
       put(c.data_instalacao, "receita", num(c.valor_pago));
-      put(c.data_instalacao, "custo", num(c.custo_material));
+
     });
     manutencoes
       .filter((m) => m.status === "Concluída")
