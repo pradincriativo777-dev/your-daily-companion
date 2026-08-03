@@ -40,9 +40,9 @@ export function GastoDialog({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  gasto?: Gasto | null;
-  clienteId?: string;
-  tecnicoId?: string;
+  gasto?: Gasto | null | undefined;
+  clienteId?: string | undefined;
+  tecnicoId?: string | undefined;
 }) {
   const [form, setForm] = useState<Partial<Gasto>>({});
   const { data: clientes = [] } = useClientes();
@@ -159,9 +159,9 @@ export function InteracaoDialog({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  interacao?: Interacao | null;
-  clienteId?: string;
-  userEmail?: string;
+  interacao?: Interacao | null | undefined;
+  clienteId?: string | undefined;
+  userEmail?: string | undefined;
 }) {
   const [form, setForm] = useState<Partial<Interacao>>({});
   const { data: clientes = [] } = useClientes();

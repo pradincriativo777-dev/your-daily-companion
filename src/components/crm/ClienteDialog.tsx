@@ -44,8 +44,8 @@ export function ClienteDialog({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  cliente?: Cliente | null;
-  defaultStatus?: string;
+  cliente?: Cliente | null | undefined;
+  defaultStatus?: string | undefined;
 }) {
   const [form, setForm] = useState<Form>(empty);
   const { data: tecnicos = [] } = useTecnicos();

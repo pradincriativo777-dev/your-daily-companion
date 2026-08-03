@@ -14,6 +14,8 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
 import { Route as AuthenticatedDashboardKanbanRouteImport } from './routes/_authenticated/dashboard.kanban'
+import { Route as AuthenticatedDashboardClientesIndexRouteImport } from './routes/_authenticated/dashboard.clientes.index'
+import { Route as AuthenticatedDashboardClientesIdRouteImport } from './routes/_authenticated/dashboard.clientes.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -41,17 +43,33 @@ const AuthenticatedDashboardKanbanRoute =
     path: '/kanban',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedDashboardClientesIndexRoute =
+  AuthenticatedDashboardClientesIndexRouteImport.update({
+    id: '/clientes/',
+    path: '/clientes/',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardClientesIdRoute =
+  AuthenticatedDashboardClientesIdRouteImport.update({
+    id: '/clientes/$id',
+    path: '/clientes/$id',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/dashboard/kanban': typeof AuthenticatedDashboardKanbanRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
+  '/dashboard/clientes/$id': typeof AuthenticatedDashboardClientesIdRoute
+  '/dashboard/clientes/': typeof AuthenticatedDashboardClientesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard/kanban': typeof AuthenticatedDashboardKanbanRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
+  '/dashboard/clientes/$id': typeof AuthenticatedDashboardClientesIdRoute
+  '/dashboard/clientes': typeof AuthenticatedDashboardClientesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -60,12 +78,25 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/_authenticated/dashboard/kanban': typeof AuthenticatedDashboardKanbanRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
+  '/_authenticated/dashboard/clientes/$id': typeof AuthenticatedDashboardClientesIdRoute
+  '/_authenticated/dashboard/clientes/': typeof AuthenticatedDashboardClientesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/dashboard/kanban' | '/dashboard/'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/dashboard/kanban'
+    | '/dashboard/'
+    | '/dashboard/clientes/$id'
+    | '/dashboard/clientes/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard/kanban' | '/dashboard'
+  to:
+    | '/'
+    | '/dashboard/kanban'
+    | '/dashboard'
+    | '/dashboard/clientes/$id'
+    | '/dashboard/clientes'
   id:
     | '__root__'
     | '/'
@@ -73,6 +104,8 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/dashboard/kanban'
     | '/_authenticated/dashboard/'
+    | '/_authenticated/dashboard/clientes/$id'
+    | '/_authenticated/dashboard/clientes/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -117,18 +150,38 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardKanbanRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/dashboard/clientes/': {
+      id: '/_authenticated/dashboard/clientes/'
+      path: '/clientes'
+      fullPath: '/dashboard/clientes/'
+      preLoaderRoute: typeof AuthenticatedDashboardClientesIndexRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/clientes/$id': {
+      id: '/_authenticated/dashboard/clientes/$id'
+      path: '/clientes/$id'
+      fullPath: '/dashboard/clientes/$id'
+      preLoaderRoute: typeof AuthenticatedDashboardClientesIdRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
   }
 }
 
 interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardKanbanRoute: typeof AuthenticatedDashboardKanbanRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
+  AuthenticatedDashboardClientesIdRoute: typeof AuthenticatedDashboardClientesIdRoute
+  AuthenticatedDashboardClientesIndexRoute: typeof AuthenticatedDashboardClientesIndexRoute
 }
 
 const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
   {
     AuthenticatedDashboardKanbanRoute: AuthenticatedDashboardKanbanRoute,
     AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
+    AuthenticatedDashboardClientesIdRoute:
+      AuthenticatedDashboardClientesIdRoute,
+    AuthenticatedDashboardClientesIndexRoute:
+      AuthenticatedDashboardClientesIndexRoute,
   }
 
 const AuthenticatedDashboardRouteWithChildren =

@@ -37,7 +37,7 @@ export function TecnicoDialog({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  tecnico?: Tecnico | null;
+  tecnico?: Tecnico | null | undefined;
 }) {
   const [form, setForm] = useState<Partial<Tecnico>>({});
   const upsert = useUpsert("tecnicos");
@@ -125,8 +125,8 @@ export function ManutencaoDialog({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  manutencao?: Manutencao | null;
-  clienteId?: string;
+  manutencao?: Manutencao | null | undefined;
+  clienteId?: string | undefined;
 }) {
   const [form, setForm] = useState<Partial<Manutencao>>({});
   const { data: clientes = [] } = useClientes();
