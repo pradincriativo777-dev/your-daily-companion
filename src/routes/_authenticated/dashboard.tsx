@@ -17,6 +17,7 @@ import {
   MessageSquare,
   Receipt,
   Search,
+  Upload,
   Users,
   Wrench,
 } from "lucide-react";
