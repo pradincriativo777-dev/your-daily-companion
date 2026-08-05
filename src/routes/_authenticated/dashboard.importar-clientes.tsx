@@ -241,10 +241,9 @@ function ImportarClientesPage() {
       const CHUNK = 100;
       let inseridos = 0;
       for (let i = 0; i < aInserir.length; i += CHUNK) {
-        const lote = aInserir.slice(i, i + CHUNK).map((l) => ({
-          ...l,
-          created_at: l.created_at ? `${l.created_at}T12:00:00Z` : undefined,
-        }));
+        const lote = aInserir.slice(i, i + CHUNK).map(({ created_at, ...l }) =>
+          created_at ? { ...l, created_at: `${created_at}T12:00:00Z` } : l,
+        );
         const { error } = await supabase.from("clientes").insert(lote);
         if (error) throw error;
         inseridos += lote.length;

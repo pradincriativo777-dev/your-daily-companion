@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
 import { Route as AuthenticatedDashboardGastosRouteImport } from './routes/_authenticated/dashboard.gastos'
+import { Route as AuthenticatedDashboardImportarClientesRouteImport } from './routes/_authenticated/dashboard.importar-clientes'
 import { Route as AuthenticatedDashboardInteracoesRouteImport } from './routes/_authenticated/dashboard.interacoes'
 import { Route as AuthenticatedDashboardKanbanRouteImport } from './routes/_authenticated/dashboard.kanban'
 import { Route as AuthenticatedDashboardManutencoesRouteImport } from './routes/_authenticated/dashboard.manutencoes'
@@ -47,6 +48,12 @@ const AuthenticatedDashboardGastosRoute =
   AuthenticatedDashboardGastosRouteImport.update({
     id: '/gastos',
     path: '/gastos',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardImportarClientesRoute =
+  AuthenticatedDashboardImportarClientesRouteImport.update({
+    id: '/importar-clientes',
+    path: '/importar-clientes',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
 const AuthenticatedDashboardInteracoesRoute =
@@ -102,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/dashboard/gastos': typeof AuthenticatedDashboardGastosRoute
+  '/dashboard/importar-clientes': typeof AuthenticatedDashboardImportarClientesRoute
   '/dashboard/interacoes': typeof AuthenticatedDashboardInteracoesRoute
   '/dashboard/kanban': typeof AuthenticatedDashboardKanbanRoute
   '/dashboard/manutencoes': typeof AuthenticatedDashboardManutencoesRoute
@@ -115,6 +123,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard/gastos': typeof AuthenticatedDashboardGastosRoute
+  '/dashboard/importar-clientes': typeof AuthenticatedDashboardImportarClientesRoute
   '/dashboard/interacoes': typeof AuthenticatedDashboardInteracoesRoute
   '/dashboard/kanban': typeof AuthenticatedDashboardKanbanRoute
   '/dashboard/manutencoes': typeof AuthenticatedDashboardManutencoesRoute
@@ -131,6 +140,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/_authenticated/dashboard/gastos': typeof AuthenticatedDashboardGastosRoute
+  '/_authenticated/dashboard/importar-clientes': typeof AuthenticatedDashboardImportarClientesRoute
   '/_authenticated/dashboard/interacoes': typeof AuthenticatedDashboardInteracoesRoute
   '/_authenticated/dashboard/kanban': typeof AuthenticatedDashboardKanbanRoute
   '/_authenticated/dashboard/manutencoes': typeof AuthenticatedDashboardManutencoesRoute
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/dashboard/gastos'
+    | '/dashboard/importar-clientes'
     | '/dashboard/interacoes'
     | '/dashboard/kanban'
     | '/dashboard/manutencoes'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/dashboard/gastos'
+    | '/dashboard/importar-clientes'
     | '/dashboard/interacoes'
     | '/dashboard/kanban'
     | '/dashboard/manutencoes'
@@ -175,6 +187,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/_authenticated/dashboard'
     | '/_authenticated/dashboard/gastos'
+    | '/_authenticated/dashboard/importar-clientes'
     | '/_authenticated/dashboard/interacoes'
     | '/_authenticated/dashboard/kanban'
     | '/_authenticated/dashboard/manutencoes'
@@ -226,6 +239,13 @@ declare module '@tanstack/react-router' {
       path: '/gastos'
       fullPath: '/dashboard/gastos'
       preLoaderRoute: typeof AuthenticatedDashboardGastosRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/importar-clientes': {
+      id: '/_authenticated/dashboard/importar-clientes'
+      path: '/importar-clientes'
+      fullPath: '/dashboard/importar-clientes'
+      preLoaderRoute: typeof AuthenticatedDashboardImportarClientesRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
     '/_authenticated/dashboard/interacoes': {
@@ -289,6 +309,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardGastosRoute: typeof AuthenticatedDashboardGastosRoute
+  AuthenticatedDashboardImportarClientesRoute: typeof AuthenticatedDashboardImportarClientesRoute
   AuthenticatedDashboardInteracoesRoute: typeof AuthenticatedDashboardInteracoesRoute
   AuthenticatedDashboardKanbanRoute: typeof AuthenticatedDashboardKanbanRoute
   AuthenticatedDashboardManutencoesRoute: typeof AuthenticatedDashboardManutencoesRoute
@@ -303,6 +324,8 @@ interface AuthenticatedDashboardRouteChildren {
 const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
   {
     AuthenticatedDashboardGastosRoute: AuthenticatedDashboardGastosRoute,
+    AuthenticatedDashboardImportarClientesRoute:
+      AuthenticatedDashboardImportarClientesRoute,
     AuthenticatedDashboardInteracoesRoute:
       AuthenticatedDashboardInteracoesRoute,
     AuthenticatedDashboardKanbanRoute: AuthenticatedDashboardKanbanRoute,
@@ -344,13 +367,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
