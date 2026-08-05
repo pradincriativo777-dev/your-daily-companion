@@ -35,6 +35,11 @@ const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/dashboard/kanban", label: "Kanban", icon: KanbanSquare },
   { to: "/dashboard/clientes", label: "Clientes", icon: Users },
+  {
+    to: "/dashboard/importar-clientes",
+    label: "Importar Clientes",
+    icon: Upload,
+  },
   { to: "/dashboard/manutencoes", label: "Manutenções", icon: CalendarClock },
   { to: "/dashboard/tecnicos", label: "Técnicos", icon: Wrench },
   { to: "/dashboard/gastos", label: "Gastos", icon: Receipt },
