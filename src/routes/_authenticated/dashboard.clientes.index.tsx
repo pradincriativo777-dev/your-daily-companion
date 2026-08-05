@@ -157,6 +157,35 @@ function ClientesPage() {
           <Download className="mr-1.5 h-4 w-4" /> Exportar CSV
         </Button>
         <Button
+          variant="outline"
+          onClick={() =>
+            exportCSV(
+              "todos-clientes.csv",
+              clientes.map((c) => ({
+                Nome: c.nome,
+                Tipo: c.tipo,
+                "CPF/CNPJ": c.cpf_cnpj ?? "",
+                WhatsApp: c.whatsapp ?? "",
+                Email: c.email ?? "",
+                Endereco: c.endereco ?? "",
+                Cidade: c.cidade ?? "",
+                Sistema: c.tipo_sistema,
+                Marca: c.marca_equipamento ?? "",
+                "Data Instalacao": formatDate(c.data_instalacao),
+                Tecnico: nomeTecnico(c.tecnico_id),
+                "Valor Orcamento": c.valor_orcamento ?? 0,
+                "Valor Pago": c.valor_pago ?? 0,
+                Status: c.status,
+                Origem: c.origem_lead ?? "",
+                "Ultimo Contato": formatDate(c.ultimo_contato),
+                Observacoes: c.observacoes ?? "",
+              })),
+            )
+          }
+        >
+          <Download className="mr-1.5 h-4 w-4" /> Exportar Clientes
+        </Button>
+        <Button
           onClick={() => {
             setEditing(null);
             setDialog(true);
