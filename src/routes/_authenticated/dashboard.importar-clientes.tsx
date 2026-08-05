@@ -217,9 +217,17 @@ function ImportarClientesPage() {
     setImportando(true);
     setProgresso(0);
     try {
-      const { data: existentes } = await supabase
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        toast.error("Sessão expirada. Faça login novamente para importar.");
+        return;
+      }
+
+      const { data: existentes, error: erroExistentes } = await supabase
         .from("clientes")
-        .select("cpf_cnpj");
+        .select("cpf_cnpj")
+        .limit(10000);
+      if (erroExistentes) throw erroExistentes;
       const docs = new Set(
         (existentes ?? [])
           .map((c) => (c.cpf_cnpj ?? "").replace(/\D/g, ""))
@@ -238,22 +246,62 @@ function ImportarClientesPage() {
         aInserir.push(l);
       }
 
-      const CHUNK = 100;
-      let inseridos = 0;
-      for (let i = 0; i < aInserir.length; i += CHUNK) {
-        const lote = aInserir.slice(i, i + CHUNK).map(({ created_at, ...l }) =>
-          created_at ? { ...l, created_at: `${created_at}T12:00:00Z` } : l,
-        );
-        const { error } = await supabase.from("clientes").insert(lote);
-        if (error) throw error;
-        inseridos += lote.length;
-        setProgresso(Math.round(((i + lote.length) / (aInserir.length || 1)) * 100));
+      if (aInserir.length === 0) {
+        setProgresso(100);
+        setResultado({ inseridos: 0, duplicados });
+        toast.info("Nenhum registro novo para importar.");
+        return;
       }
+
+      const CHUNK = 50;
+      let inseridos = 0;
+      let falhas = 0;
+      let ultimoErro = "";
+
+      for (let i = 0; i < aInserir.length; i += CHUNK) {
+        const lote = aInserir
+          .slice(i, i + CHUNK)
+          .map(({ created_at, ...l }) =>
+            created_at ? { ...l, created_at: `${created_at}T12:00:00Z` } : l,
+          );
+
+        const { error } = await supabase.from("clientes").insert(lote);
+
+        if (error) {
+          console.error("[importar-clientes] erro no lote", i, error);
+          ultimoErro = error.message;
+          // Fallback: tenta linha a linha para isolar registros problemáticos
+          for (const linha of lote) {
+            const { error: e1 } = await supabase.from("clientes").insert(linha);
+            if (e1) {
+              falhas++;
+              ultimoErro = e1.message;
+              console.error("[importar-clientes] linha falhou", linha, e1);
+            } else {
+              inseridos++;
+            }
+          }
+        } else {
+          inseridos += lote.length;
+        }
+
+        setProgresso(
+          Math.round(((i + lote.length) / aInserir.length) * 100),
+        );
+      }
+
       setProgresso(100);
       setResultado({ inseridos, duplicados });
       await qc.invalidateQueries({ queryKey: ["clientes"] });
-      toast.success(`${inseridos} clientes importados com sucesso`);
+
+      if (inseridos > 0) {
+        toast.success(`${inseridos} clientes importados com sucesso`);
+      }
+      if (falhas > 0) {
+        toast.error(`${falhas} registro(s) não puderam ser importados: ${ultimoErro}`);
+      }
     } catch (e) {
+      console.error("[importar-clientes] falha geral", e);
       toast.error(
         e instanceof Error ? e.message : "Falha ao importar os clientes.",
       );
@@ -261,6 +309,7 @@ function ImportarClientesPage() {
       setImportando(false);
     }
   };
+
 
   return (
     <div>
