@@ -110,7 +110,9 @@ export function checkLoginRateLimit(ip: string, email: string): RateLimitResult 
   // Check IP first
   const ipResult = checkAndIncrement(`ip:${ip}`, IP_MAX_ATTEMPTS, IP_WINDOW_MS, IP_BLOCK_MS);
   if (!ipResult.allowed) {
-    return { allowed: false, retryAfterSeconds: ipResult.retryAfterSeconds, reason: "ip" };
+    const res: RateLimitResult = { allowed: false, reason: "ip" };
+    if (ipResult.retryAfterSeconds !== undefined) res.retryAfterSeconds = ipResult.retryAfterSeconds;
+    return res;
   }
 
   // Check email
@@ -121,7 +123,9 @@ export function checkLoginRateLimit(ip: string, email: string): RateLimitResult 
     EMAIL_BLOCK_MS,
   );
   if (!emailResult.allowed) {
-    return { allowed: false, retryAfterSeconds: emailResult.retryAfterSeconds, reason: "email" };
+    const res: RateLimitResult = { allowed: false, reason: "email" };
+    if (emailResult.retryAfterSeconds !== undefined) res.retryAfterSeconds = emailResult.retryAfterSeconds;
+    return res;
   }
 
   return { allowed: true };

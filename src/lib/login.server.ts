@@ -58,13 +58,13 @@ export const serverLogin = createServerFn({ method: "POST" })
         data === null ||
         !("email" in data) ||
         !("password" in data) ||
-        typeof (data as Record<string, unknown>).email !== "string" ||
-        typeof (data as Record<string, unknown>).password !== "string"
+        typeof (data as Record<string, unknown>)["email"] !== "string" ||
+        typeof (data as Record<string, unknown>)["password"] !== "string"
       ) {
         throw new Error("Invalid login data");
       }
-      const email = ((data as Record<string, unknown>).email as string).trim();
-      const password = (data as Record<string, unknown>).password as string;
+      const email = ((data as Record<string, unknown>)["email"] as string).trim();
+      const password = (data as Record<string, unknown>)["password"] as string;
       if (!email || !password) throw new Error("Email and password are required");
       return { email, password };
     },
