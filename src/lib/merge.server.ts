@@ -1,34 +1,22 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
-import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logSecurityEvent } from "./security-logger";
 
-// Helper para instanciar o Supabase com as credenciais enviadas via Request/Headers
-function getSupabaseServerClient() {
-  const SUPABASE_URL = process.env["SUPABASE_URL"];
-  const SUPABASE_PUBLISHABLE_KEY = process.env["SUPABASE_PUBLISHABLE_KEY"];
-  
-  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-    throw new Error("Missing Supabase environment variables.");
+async function getAdminUserFromRequest() {
+  try {
+    const request = getRequest();
+    const token = request?.headers.get("Authorization")?.replace("Bearer ", "");
+    if (!token) return null;
+    
+    // Validar token e obter usuário usando a conexão segura já existente no projeto (Service Role)
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+    if (error || !user) return null;
+    
+    return user;
+  } catch (error) {
+    return null;
   }
-
-  const request = getRequest();
-  const token = request?.headers.get("Authorization")?.replace("Bearer ", "");
-  
-  if (!token) {
-    throw new Error("Não autorizado");
-  }
-
-  const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-    global: {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    }
-  });
-
-  return supabase;
 }
 
 export const serverExecuteMerge = createServerFn({ method: "POST" })
@@ -58,10 +46,9 @@ export const serverExecuteMerge = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     try {
-      const supabase = getSupabaseServerClient();
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      const user = await getAdminUserFromRequest();
 
-      if (authError || !user) {
+      if (!user) {
         logSecurityEvent({
           event: "MERGE_UNAUTHORIZED",
           reason: "Sem sessão válida",
@@ -69,7 +56,7 @@ export const serverExecuteMerge = createServerFn({ method: "POST" })
         return { success: false, error: "Acesso negado. Faça login como administrador." };
       }
       
-      const { data: auditId, error: mergeError } = await (supabase.rpc as any)("execute_merge_transaction", {
+      const { data: auditId, error: mergeError } = await (supabaseAdmin.rpc as any)("execute_merge_transaction", {
         p_principal_id: data.principalId,
         p_secondary_ids: data.secondaryIds,
         p_final_data: data.finalData,
@@ -84,7 +71,7 @@ export const serverExecuteMerge = createServerFn({ method: "POST" })
           reason: mergeError.message,
           meta: { principalId: data.principalId }
         });
-        return { success: false, error: "Falha ao executar mesclagem: " + mergeError.message };
+        return { success: false, error: "Não foi possível concluir a mesclagem. Nenhum dado foi alterado." };
       }
 
       logSecurityEvent({
@@ -99,7 +86,9 @@ export const serverExecuteMerge = createServerFn({ method: "POST" })
 
       return { success: true, auditId };
     } catch (err: any) {
-      return { success: false, error: err.message || "Erro desconhecido" };
+      console.error("Merge Exception:", err.message);
+      // Nunca expor detalhes internos ao usuário final, como "Missing Supabase env vars"
+      return { success: false, error: "Não foi possível concluir a mesclagem. Nenhum dado foi alterado." };
     }
   });
 
@@ -116,21 +105,20 @@ export const serverUndoMerge = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     try {
-      const supabase = getSupabaseServerClient();
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      const user = await getAdminUserFromRequest();
 
-      if (authError || !user) {
+      if (!user) {
         return { success: false, error: "Acesso negado." };
       }
       
-      const { data: result, error: undoError } = await (supabase.rpc as any)("undo_merge_transaction", {
+      const { data: result, error: undoError } = await (supabaseAdmin.rpc as any)("undo_merge_transaction", {
         p_audit_id: data.auditId,
         p_admin_id: user.id,
       });
 
       if (undoError) {
         console.error("Undo RPC Error:", undoError);
-        return { success: false, error: "Falha ao desfazer: " + undoError.message };
+        return { success: false, error: "Não foi possível desfazer a mesclagem. Nenhum dado foi alterado." };
       }
 
       logSecurityEvent({
@@ -141,21 +129,21 @@ export const serverUndoMerge = createServerFn({ method: "POST" })
 
       return { success: true, result };
     } catch (err: any) {
-      return { success: false, error: err.message || "Erro desconhecido" };
+      console.error("Undo Exception:", err.message);
+      return { success: false, error: "Não foi possível desfazer a mesclagem. Nenhum dado foi alterado." };
     }
   });
 
 export const serverGetMergeHistory = createServerFn({ method: "GET" })
   .handler(async () => {
     try {
-      const supabase = getSupabaseServerClient();
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      const user = await getAdminUserFromRequest();
 
-      if (authError || !user) {
+      if (!user) {
         throw new Error("Acesso negado.");
       }
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabaseAdmin as any)
         .from("merge_audits")
         .select("*")
         .order("created_at", { ascending: false })
@@ -167,7 +155,7 @@ export const serverGetMergeHistory = createServerFn({ method: "GET" })
 
       return data;
     } catch (err: any) {
-      console.error(err);
+      console.error("History Exception:", err.message);
       return [];
     }
   });
