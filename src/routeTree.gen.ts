@@ -18,6 +18,7 @@ import { Route as AuthenticatedDashboardImportarClientesRouteImport } from './ro
 import { Route as AuthenticatedDashboardInteracoesRouteImport } from './routes/_authenticated/dashboard.interacoes'
 import { Route as AuthenticatedDashboardKanbanRouteImport } from './routes/_authenticated/dashboard.kanban'
 import { Route as AuthenticatedDashboardManutencoesRouteImport } from './routes/_authenticated/dashboard.manutencoes'
+import { Route as AuthenticatedDashboardMigracaoRouteImport } from './routes/_authenticated/dashboard.migracao'
 import { Route as AuthenticatedDashboardRelatoriosRouteImport } from './routes/_authenticated/dashboard.relatorios'
 import { Route as AuthenticatedDashboardClientesIndexRouteImport } from './routes/_authenticated/dashboard.clientes.index'
 import { Route as AuthenticatedDashboardClientesIdRouteImport } from './routes/_authenticated/dashboard.clientes.$id'
@@ -75,6 +76,12 @@ const AuthenticatedDashboardManutencoesRoute =
     path: '/manutencoes',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedDashboardMigracaoRoute =
+  AuthenticatedDashboardMigracaoRouteImport.update({
+    id: '/migracao',
+    path: '/migracao',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 const AuthenticatedDashboardRelatoriosRoute =
   AuthenticatedDashboardRelatoriosRouteImport.update({
     id: '/relatorios',
@@ -120,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/interacoes': typeof AuthenticatedDashboardInteracoesRoute
   '/dashboard/kanban': typeof AuthenticatedDashboardKanbanRoute
   '/dashboard/manutencoes': typeof AuthenticatedDashboardManutencoesRoute
+  '/dashboard/migracao': typeof AuthenticatedDashboardMigracaoRoute
   '/dashboard/relatorios': typeof AuthenticatedDashboardRelatoriosRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/dashboard/clientes/$id': typeof AuthenticatedDashboardClientesIdRoute
@@ -135,6 +143,7 @@ export interface FileRoutesByTo {
   '/dashboard/interacoes': typeof AuthenticatedDashboardInteracoesRoute
   '/dashboard/kanban': typeof AuthenticatedDashboardKanbanRoute
   '/dashboard/manutencoes': typeof AuthenticatedDashboardManutencoesRoute
+  '/dashboard/migracao': typeof AuthenticatedDashboardMigracaoRoute
   '/dashboard/relatorios': typeof AuthenticatedDashboardRelatoriosRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
   '/dashboard/clientes/$id': typeof AuthenticatedDashboardClientesIdRoute
@@ -153,6 +162,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/interacoes': typeof AuthenticatedDashboardInteracoesRoute
   '/_authenticated/dashboard/kanban': typeof AuthenticatedDashboardKanbanRoute
   '/_authenticated/dashboard/manutencoes': typeof AuthenticatedDashboardManutencoesRoute
+  '/_authenticated/dashboard/migracao': typeof AuthenticatedDashboardMigracaoRoute
   '/_authenticated/dashboard/relatorios': typeof AuthenticatedDashboardRelatoriosRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/_authenticated/dashboard/clientes/$id': typeof AuthenticatedDashboardClientesIdRoute
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/dashboard/interacoes'
     | '/dashboard/kanban'
     | '/dashboard/manutencoes'
+    | '/dashboard/migracao'
     | '/dashboard/relatorios'
     | '/dashboard/'
     | '/dashboard/clientes/$id'
@@ -186,6 +197,7 @@ export interface FileRouteTypes {
     | '/dashboard/interacoes'
     | '/dashboard/kanban'
     | '/dashboard/manutencoes'
+    | '/dashboard/migracao'
     | '/dashboard/relatorios'
     | '/dashboard'
     | '/dashboard/clientes/$id'
@@ -203,6 +215,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/interacoes'
     | '/_authenticated/dashboard/kanban'
     | '/_authenticated/dashboard/manutencoes'
+    | '/_authenticated/dashboard/migracao'
     | '/_authenticated/dashboard/relatorios'
     | '/_authenticated/dashboard/'
     | '/_authenticated/dashboard/clientes/$id'
@@ -282,6 +295,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardManutencoesRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/dashboard/migracao': {
+      id: '/_authenticated/dashboard/migracao'
+      path: '/migracao'
+      fullPath: '/dashboard/migracao'
+      preLoaderRoute: typeof AuthenticatedDashboardMigracaoRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
     '/_authenticated/dashboard/relatorios': {
       id: '/_authenticated/dashboard/relatorios'
       path: '/relatorios'
@@ -333,6 +353,7 @@ interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardInteracoesRoute: typeof AuthenticatedDashboardInteracoesRoute
   AuthenticatedDashboardKanbanRoute: typeof AuthenticatedDashboardKanbanRoute
   AuthenticatedDashboardManutencoesRoute: typeof AuthenticatedDashboardManutencoesRoute
+  AuthenticatedDashboardMigracaoRoute: typeof AuthenticatedDashboardMigracaoRoute
   AuthenticatedDashboardRelatoriosRoute: typeof AuthenticatedDashboardRelatoriosRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
   AuthenticatedDashboardClientesIdRoute: typeof AuthenticatedDashboardClientesIdRoute
@@ -352,6 +373,7 @@ const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
     AuthenticatedDashboardKanbanRoute: AuthenticatedDashboardKanbanRoute,
     AuthenticatedDashboardManutencoesRoute:
       AuthenticatedDashboardManutencoesRoute,
+    AuthenticatedDashboardMigracaoRoute: AuthenticatedDashboardMigracaoRoute,
     AuthenticatedDashboardRelatoriosRoute:
       AuthenticatedDashboardRelatoriosRoute,
     AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
