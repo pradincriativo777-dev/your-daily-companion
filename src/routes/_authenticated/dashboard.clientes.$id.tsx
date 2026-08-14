@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,6 +26,7 @@ import {
   GastoDialog,
   InteracaoDialog,
 } from "@/components/crm/GastoInteracaoDialogs";
+import { AssistenteCorrecaoDialog } from "@/components/crm/AssistenteCorrecaoDialog";
 import { formatCurrency, formatDate, num } from "@/lib/crm";
 import {
   useClientes,
@@ -36,6 +38,11 @@ import {
 } from "@/hooks/use-crm";
 
 export const Route = createFileRoute("/_authenticated/dashboard/clientes/$id")({
+  validateSearch: (search: Record<string, unknown>): { revisao?: boolean } => {
+    return {
+      revisao: search['revisao'] === true || search['revisao'] === "true",
+    };
+  },
   head: () => ({
     meta: [
       { title: "Ficha do Cliente · JANSOL Admin" },
@@ -62,6 +69,7 @@ function Info({ label, value }: { label: string; value: React.ReactNode }) {
 
 function ClienteDetalhe() {
   const { id } = Route.useParams();
+  const search = Route.useSearch();
   const navigate = useNavigate();
   const { data: clientes = [], isLoading } = useClientes();
   const { data: tecnicos = [] } = useTecnicos();
@@ -74,6 +82,7 @@ function ClienteDetalhe() {
   const removeInteracao = useRemove("interacoes");
 
   const [editar, setEditar] = useState(false);
+  const [revisao, setRevisao] = useState(search.revisao === true);
   const [novaManut, setNovaManut] = useState(false);
   const [novoGasto, setNovoGasto] = useState(false);
   const [novaInter, setNovaInter] = useState(false);
@@ -119,7 +128,18 @@ function ClienteDetalhe() {
             </div>
           </div>
         </div>
+        <Badge variant={(cliente as any).revisao ? "destructive" : "secondary"}>
+          {(cliente as any).revisao ? "Pendente" : "Correto"}
+        </Badge>
         <div className="flex gap-2">
+          {(cliente as any).revisao && (
+            <Button
+              onClick={() => setRevisao(true)}
+              className="bg-info text-info-foreground hover:bg-info/90"
+            >
+              Revisar Cadastro (Inconsistência)
+            </Button>
+          )}
           <Button
             onClick={() => setEditar(true)}
             className="bg-accent text-accent-foreground hover:bg-accent/90"
@@ -459,6 +479,17 @@ function ClienteDetalhe() {
         open={novaInter}
         onOpenChange={setNovaInter}
         clienteId={cliente.id}
+      />
+      <AssistenteCorrecaoDialog
+        open={revisao}
+        onOpenChange={(val) => {
+          setRevisao(val);
+          if (!val && search.revisao) {
+            // Remove o parâmetro de query se fechar o dialog
+            navigate({ to: "/dashboard/clientes/$id", params: { id: cliente.id } });
+          }
+        }}
+        cliente={cliente}
       />
     </div>
   );

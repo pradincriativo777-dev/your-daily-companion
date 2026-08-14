@@ -11,7 +11,7 @@ const verificarIntegridadeMigracao = createServerFn({ method: "POST" })
   .handler(async (ctx) => {
     try {
       const opId = "MIGRACAO-INICIAL-817";
-      const { data: audit, error: auditError } = await ctx.context.supabase
+      const { data: audit, error: auditError } = await (ctx.context.supabase as any)
         .from('migration_audits')
         .select('*')
         .eq('operation_id', opId)
@@ -26,12 +26,12 @@ const verificarIntegridadeMigracao = createServerFn({ method: "POST" })
         .from('clientes')
         .select('*', { count: 'exact', head: true });
 
-      const { count: countComTag } = await ctx.context.supabase
+      const { count: countComTag } = await (ctx.context.supabase as any)
         .from('clientes')
         .select('*', { count: 'exact', head: true })
         .eq('origem_importacao', opId);
 
-      const { count: countBackup } = await ctx.context.supabase
+      const { count: countBackup } = await (ctx.context.supabase as any)
         .from('clientes_backup')
         .select('*', { count: 'exact', head: true })
         .eq('migration_id', audit.id);

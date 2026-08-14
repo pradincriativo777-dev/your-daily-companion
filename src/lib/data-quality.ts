@@ -482,6 +482,7 @@ export type DuplicateGroup = {
 export type IssueType =
   | "telefone_invalido"
   | "telefone_ausente"
+  | "email_invalido"
   | "cpf_cnpj_invalido"
   | "cpf_cnpj_data"
   | "nome_suspeito"
@@ -495,7 +496,7 @@ export type ClientQualityIssue = {
   clientId: string;
   client: Cliente;
   issueType: IssueType;
-  category: "Critico" | "Alerta" | "Informativo";
+  category: "Critica" | "Alta" | "Media" | "Baixa";
   title: string;
   description: string;
   affectedField: string;
@@ -518,6 +519,7 @@ export type DataQualityAnalysisResult = {
     muitosCamposVazios: number;
     semCidade: number;
     semOrigem: number;
+    uniqueClientsWithIssues: number;
   };
   duplicateGroups: DuplicateGroup[];
   clientIssues: ClientQualityIssue[];
@@ -568,7 +570,7 @@ export function analyzeClientDatabase(clientes: Cliente[]): DataQualityAnalysisR
             clientId: c.id,
             client: c,
             issueType: "cpf_cnpj_data",
-            category: "Critico",
+            category: "Alta",
             title: "Data no campo de CPF/CNPJ",
             description: cpfStatus.message,
             affectedField: "cpf_cnpj",
@@ -580,7 +582,7 @@ export function analyzeClientDatabase(clientes: Cliente[]): DataQualityAnalysisR
             clientId: c.id,
             client: c,
             issueType: "cpf_cnpj_invalido",
-            category: "Critico",
+            category: "Alta",
             title: "CPF/CNPJ inválido",
             description: cpfStatus.message,
             affectedField: "cpf_cnpj",
@@ -603,7 +605,7 @@ export function analyzeClientDatabase(clientes: Cliente[]): DataQualityAnalysisR
         clientId: c.id,
         client: c,
         issueType: "telefone_ausente",
-        category: "Alerta",
+        category: "Alta",
         title: "Telefone não informado",
         description: "O cliente não possui WhatsApp ou telefone de contato registrado.",
         affectedField: "whatsapp",
@@ -617,7 +619,7 @@ export function analyzeClientDatabase(clientes: Cliente[]): DataQualityAnalysisR
           clientId: c.id,
           client: c,
           issueType: "telefone_invalido",
-          category: "Alerta",
+          category: "Critica",
           title: "Telefone fora do padrão",
           description: phoneStatus.message,
           affectedField: "whatsapp",
@@ -639,8 +641,8 @@ export function analyzeClientDatabase(clientes: Cliente[]): DataQualityAnalysisR
         clientIssues.push({
           clientId: c.id,
           client: c,
-          issueType: "telefone_invalido", // agrupa em contato
-          category: "Alerta",
+          issueType: "email_invalido",
+          category: "Media",
           title: "E-mail inválido",
           description: emailStatus.message,
           affectedField: "email",
@@ -661,7 +663,7 @@ export function analyzeClientDatabase(clientes: Cliente[]): DataQualityAnalysisR
         clientId: c.id,
         client: c,
         issueType: "nome_suspeito",
-        category: "Critico",
+        category: "Alta",
         title: "Nome suspeito ou inconsistente",
         description: nameCheck.reason,
         affectedField: "nome",
@@ -685,7 +687,7 @@ export function analyzeClientDatabase(clientes: Cliente[]): DataQualityAnalysisR
           clientId: c.id,
           client: c,
           issueType: "texto_corrompido",
-          category: "Alerta",
+          category: "Baixa",
           title: `Texto corrompido no campo ${f.field}`,
           description: check.sample,
           affectedField: f.field,
@@ -703,7 +705,7 @@ export function analyzeClientDatabase(clientes: Cliente[]): DataQualityAnalysisR
         clientId: c.id,
         client: c,
         issueType: "sem_cidade",
-        category: "Alerta",
+        category: "Media",
         title: "Registro sem cidade",
         description: "A cidade não está informada, dificultando o roteamento e logística técnica.",
         affectedField: "cidade",
@@ -719,7 +721,7 @@ export function analyzeClientDatabase(clientes: Cliente[]): DataQualityAnalysisR
         clientId: c.id,
         client: c,
         issueType: "sem_origem",
-        category: "Informativo",
+        category: "Media",
         title: "Origem do lead não identificada",
         description: "Origem em branco ou genérica ('Outro').",
         affectedField: "origem_lead",
@@ -740,7 +742,7 @@ export function analyzeClientDatabase(clientes: Cliente[]): DataQualityAnalysisR
         clientId: c.id,
         client: c,
         issueType: "muitos_campos_vazios",
-        category: "Alerta",
+        category: "Media",
         title: "Cadastro com múltiplos campos em branco",
         description: `${emptyFieldsCount} campos principais não preenchidos.`,
         affectedField: "multiplos",
@@ -896,6 +898,8 @@ export function analyzeClientDatabase(clientes: Cliente[]): DataQualityAnalysisR
   const totalPenaltyScore = ((criticalPenalties + warningPenalties) / total) * 100;
   const healthScore = Math.max(10, Math.min(100, Math.round(100 - totalPenaltyScore)));
 
+  const uniqueClientsWithIssues = new Set(clientIssues.map(i => i.clientId)).size;
+
   return {
     totalClientes: clientes.length,
     healthScore,
@@ -912,6 +916,7 @@ export function analyzeClientDatabase(clientes: Cliente[]): DataQualityAnalysisR
       muitosCamposVazios: muitosCamposVaziosCount,
       semCidade: semCidadeCount,
       semOrigem: semOrigemCount,
+      uniqueClientsWithIssues
     },
     duplicateGroups,
     clientIssues,

@@ -27,6 +27,7 @@ import {
   type DuplicateGroup,
 } from "@/lib/data-quality";
 import { serverExecuteMerge, serverUndoMerge, serverGetMergeHistory } from "@/lib/merge.server";
+import { serverGetCorrectionHistory, serverUndoCorrection } from "@/lib/correction.server";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,6 +75,10 @@ function DataQualityPage() {
     queryKey: ["merge-history"],
     queryFn: async () => await serverGetMergeHistory()
   });
+  const { data: correctionHistory = [], refetch: refetchCorrections } = useQuery({
+    queryKey: ["correction-history"],
+    queryFn: async () => await serverGetCorrectionHistory()
+  });
 
   const [activeTab, setActiveTab] = useState("duplicidades");
   const [reviewingGroup, setReviewingGroup] = useState<DuplicateGroup | null>(null);
@@ -87,6 +92,7 @@ function DataQualityPage() {
   const [issueSearch, setIssueSearch] = useState("");
   const [issueTypeFilter, setIssueTypeFilter] = useState<string>("todos");
   const [issueCategoryFilter, setIssueCategoryFilter] = useState<string>("todos");
+  const [issueStatusFilter, setIssueStatusFilter] = useState<string>("pendente"); // Fixo por enquanto
   const [issuesPage, setIssuesPage] = useState(1);
 
   // Motor de análise executado exclusivamente em memória (read-only)
@@ -137,7 +143,8 @@ function DataQualityPage() {
         issue.description.toLowerCase().includes(q) ||
         (issue.client.whatsapp ?? "").includes(q) ||
         (issue.client.cpf_cnpj ?? "").includes(q) ||
-        (issue.client.cidade ?? "").toLowerCase().includes(q)
+        (issue.client.cidade ?? "").toLowerCase().includes(q) ||
+        (issue.client.origem_lead ?? "").toLowerCase().includes(q)
       );
     });
   }, [analysis.clientIssues, issueSearch, issueTypeFilter, issueCategoryFilter]);
@@ -363,9 +370,57 @@ function DataQualityPage() {
         {/* ABA 2: INCONSISTÊNCIAS CADASTRAIS                        */}
         {/* ========================================================= */}
         <TabsContent value="inconsistencias" className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          
+          {/* Fila de Trabalho: KPIs / Resumo */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Card className="border-destructive/30 bg-destructive/5">
+              <CardHeader className="px-4 py-3 pb-1">
+                <CardTitle className="text-xs font-medium uppercase text-muted-foreground">Prioridade Crítica</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4">
+                <span className="text-2xl font-black text-destructive">
+                  {analysis.clientIssues.filter(i => i.category === 'Critica').length}
+                </span>
+              </CardContent>
+            </Card>
+            <Card className="border-warning/30 bg-warning/5">
+              <CardHeader className="px-4 py-3 pb-1">
+                <CardTitle className="text-xs font-medium uppercase text-muted-foreground">Prioridade Alta</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4">
+                <span className="text-2xl font-black text-warning">
+                  {analysis.clientIssues.filter(i => i.category === 'Alta').length}
+                </span>
+              </CardContent>
+            </Card>
+            <Card className="border-info/30 bg-info/5">
+              <CardHeader className="px-4 py-3 pb-1">
+                <CardTitle className="text-xs font-medium uppercase text-muted-foreground">Prioridade Média</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4">
+                <span className="text-2xl font-black text-info">
+                  {analysis.clientIssues.filter(i => i.category === 'Media').length}
+                </span>
+              </CardContent>
+            </Card>
+            <Card className="border-muted bg-muted/30">
+              <CardHeader className="px-4 py-3 pb-1">
+                <CardTitle className="text-xs font-medium uppercase text-muted-foreground">Clientes Únicos Afetados</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-black text-foreground">
+                    {analysis.summary.uniqueClientsWithIssues}
+                  </span>
+                  <span className="text-xs text-muted-foreground">de {analysis.totalClientes}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
             <div className="flex flex-1 flex-wrap items-center gap-2">
-              <div className="relative min-w-[240px] max-w-sm flex-1">
+              <div className="relative min-w-[200px] flex-1">
                 <Search className="pointer-events-none absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   value={issueSearch}
@@ -373,7 +428,7 @@ function DataQualityPage() {
                     setIssueSearch(e.target.value);
                     setIssuesPage(1);
                   }}
-                  placeholder="Buscar por cliente, telefone, cidade..."
+                  placeholder="Buscar por cliente, origem, etc..."
                   className="pl-8"
                 />
               </div>
@@ -385,13 +440,14 @@ function DataQualityPage() {
                   setIssuesPage(1);
                 }}
               >
-                <SelectTrigger className="w-[220px]">
+                <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Tipo de Problema" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos os Problemas</SelectItem>
                   <SelectItem value="telefone_invalido">Telefones Inválidos</SelectItem>
                   <SelectItem value="telefone_ausente">Telefones Ausentes</SelectItem>
+                  <SelectItem value="email_invalido">E-mails Inválidos</SelectItem>
                   <SelectItem value="cpf_cnpj_invalido">CPF/CNPJ Inválido</SelectItem>
                   <SelectItem value="cpf_cnpj_data">Data no campo CPF/CNPJ</SelectItem>
                   <SelectItem value="nome_suspeito">Nomes Suspeitos</SelectItem>
@@ -409,20 +465,38 @@ function DataQualityPage() {
                   setIssuesPage(1);
                 }}
               >
-                <SelectTrigger className="w-[160px]">
+                <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="Severidade" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="todos">Todas as Severidades</SelectItem>
-                  <SelectItem value="Critico">Crítico</SelectItem>
-                  <SelectItem value="Alerta">Alerta</SelectItem>
-                  <SelectItem value="Informativo">Informativo</SelectItem>
+                  <SelectItem value="todos">Todas Prioridades</SelectItem>
+                  <SelectItem value="Critica">Crítica</SelectItem>
+                  <SelectItem value="Alta">Alta</SelectItem>
+                  <SelectItem value="Media">Média</SelectItem>
+                  <SelectItem value="Baixa">Baixa</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={issueStatusFilter}
+                onValueChange={(v) => {
+                  setIssueStatusFilter(v);
+                  setIssuesPage(1);
+                }}
+              >
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pendente">Pendentes</SelectItem>
+                  <SelectItem value="ignorado" disabled>Ignorados</SelectItem>
+                  <SelectItem value="resolvido" disabled>Resolvidos</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <span className="text-xs text-muted-foreground">
-              {filteredIssues.length} inconsistência(s) encontrada(s)
+            <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap bg-muted px-2 py-1 rounded">
+              {filteredIssues.length} alerta(s) pendente(s)
             </span>
           </div>
 
@@ -472,10 +546,10 @@ function DataQualityPage() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <SeverityBadge category={issue.category} />
+                          <SeverityBadge category={issue.category as any} />
                         </TableCell>
                         <TableCell>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-muted-foreground truncate max-w-[100px] block">
                             {issue.client.origem_lead || "—"}
                           </span>
                         </TableCell>
@@ -483,9 +557,10 @@ function DataQualityPage() {
                           <Link
                             to="/dashboard/clientes/$id"
                             params={{ id: issue.clientId }}
-                            className="inline-flex items-center gap-1 rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium text-foreground shadow-xs hover:bg-muted"
+                            target="_blank"
+                            className="inline-flex items-center gap-1 rounded border bg-background px-2.5 py-1 text-xs font-medium shadow-sm hover:bg-muted"
                           >
-                            Ver cliente <ExternalLink className="h-3 w-3" />
+                            Revisar cadastro <ExternalLink className="h-3 w-3" />
                           </Link>
                         </TableCell>
                       </TableRow>
@@ -604,12 +679,12 @@ function DataQualityPage() {
         </TabsContent>
 
         {/* ========================================================= */}
-        {/* ABA 4: HISTÓRICO DE MESCLAGENS                            */}
+        {/* ABA 4: HISTÓRICO GERAL (Mesclagens e Correções)           */}
         {/* ========================================================= */}
-        <TabsContent value="historico" className="space-y-4">
+        <TabsContent value="historico" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Histórico de Operações</CardTitle>
+              <CardTitle>Histórico de Mesclagens</CardTitle>
               <CardDescription>Registro auditável das mesclagens e opção de reversão.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
@@ -680,6 +755,76 @@ function DataQualityPage() {
               </Table>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Histórico de Correções Individuais</CardTitle>
+              <CardDescription>Registro auditável de campos alterados por administradores via Assistente de Correção.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data / Hora</TableHead>
+                    <TableHead>Cliente (ID)</TableHead>
+                    <TableHead>Campos Alterados</TableHead>
+                    <TableHead>Motivo</TableHead>
+                    <TableHead className="text-right">Ação</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {correctionHistory.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                        Nenhuma correção registrada.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    correctionHistory.map((audit: any) => {
+                      const isReverted = !!audit.reverted_at;
+                      return (
+                        <TableRow key={audit.id}>
+                          <TableCell>
+                            <div className="text-xs">{formatDate(audit.created_at)}</div>
+                            <div className="font-mono text-[10px] text-muted-foreground mt-0.5" title={audit.id}>
+                              OP: {audit.id.split('-')[0]}
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-mono text-xs">
+                            <Link to="/dashboard/clientes/$id" params={{ id: audit.cliente_id }} className="hover:underline text-accent">
+                              {audit.cliente_id.split('-')[0]}...
+                            </Link>
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            <div className="flex flex-wrap gap-1">
+                              {(audit.campos_modificados || []).map((campo: string) => (
+                                <Badge key={campo} variant="outline" className="text-[10px] bg-muted/20">
+                                  {campo}
+                                </Badge>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs truncate max-w-[200px]" title={audit.motivo_correcao}>
+                            {audit.motivo_correcao || "—"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {isReverted ? (
+                              <span className="text-xs text-muted-foreground px-2 py-1">Revertida</span>
+                            ) : (
+                              <UndoCorrectionButton 
+                                auditId={audit.id} 
+                                onSuccess={refetchCorrections}
+                              />
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
@@ -709,6 +854,34 @@ function UndoMergeButton({ auditId, isReverted, onSuccess }: { auditId: string, 
 
   if (isReverted) return <span className="text-xs text-muted-foreground">Revertida</span>;
   
+  return (
+    <Button variant="outline" size="sm" onClick={handleUndo} disabled={loading}>
+      {loading ? "Revertendo..." : "Desfazer"}
+    </Button>
+  );
+}
+
+function UndoCorrectionButton({ auditId, onSuccess }: { auditId: string, onSuccess: () => void }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleUndo = async () => {
+    if (!window.confirm("Atenção: Isso irá desfazer a correção, restaurando os valores anteriores EXATAMENTE como estavam. Se houve alguma alteração nesses campos posteriormente, a reversão será bloqueada automaticamente pelo banco para evitar perdas de dados. Deseja prosseguir?")) return;
+    setLoading(true);
+    try {
+      const res = await serverUndoCorrection({ data: { auditId } });
+      if (!res.success) {
+        alert("Erro ao desfazer: " + (res as any).error);
+      } else {
+        alert("Correção revertida com sucesso!");
+        onSuccess();
+      }
+    } catch (err: any) {
+      alert("Erro crítico: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Button variant="outline" size="sm" onClick={handleUndo} disabled={loading}>
       {loading ? "Revertendo..." : "Desfazer"}
@@ -860,24 +1033,31 @@ function DuplicateGroupCard({ group, onReview }: { group: DuplicateGroup; onRevi
   );
 }
 
-function SeverityBadge({ category }: { category: "Critico" | "Alerta" | "Informativo" }) {
-  if (category === "Critico") {
+function SeverityBadge({ category }: { category: "Critica" | "Alta" | "Media" | "Baixa" }) {
+  if (category === "Critica") {
     return (
-      <Badge variant="outline" className="border-destructive/50 bg-destructive/10 text-destructive text-xs">
-        Crítico
+      <Badge variant="outline" className="border-destructive/50 bg-destructive/10 text-destructive text-xs whitespace-nowrap">
+        <AlertTriangle className="mr-1 h-3 w-3" /> Crítica
       </Badge>
     );
   }
-  if (category === "Alerta") {
+  if (category === "Alta") {
     return (
-      <Badge variant="outline" className="border-warning/50 bg-warning/10 text-warning text-xs">
-        Alerta
+      <Badge variant="outline" className="border-warning/50 bg-warning/10 text-warning text-xs whitespace-nowrap">
+        <AlertCircle className="mr-1 h-3 w-3" /> Alta
+      </Badge>
+    );
+  }
+  if (category === "Media") {
+    return (
+      <Badge variant="outline" className="border-info/50 bg-info/10 text-info text-xs whitespace-nowrap">
+        Média
       </Badge>
     );
   }
   return (
-    <Badge variant="outline" className="border-muted-foreground/30 text-muted-foreground text-xs">
-      Informativo
+    <Badge variant="outline" className="border-muted-foreground/30 text-muted-foreground text-xs whitespace-nowrap">
+      Baixa
     </Badge>
   );
 }

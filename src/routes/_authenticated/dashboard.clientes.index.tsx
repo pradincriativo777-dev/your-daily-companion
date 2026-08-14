@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Download, Eye, MessageSquarePlus, Pencil, Plus, ShieldCheck, Trash2 } from "lucide-react";
+import { Download, Eye, MessageSquarePlus, Pencil, Plus, ShieldCheck, Trash2, List, Grid, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -30,15 +30,16 @@ import {
 } from "@/components/crm/ui";
 import { ClienteDialog } from "@/components/crm/ClienteDialog";
 import { InteracaoDialog } from "@/components/crm/GastoInteracaoDialogs";
+import { SpreadsheetView } from "@/components/crm/SpreadsheetView";
 import {
   MARCAS,
   ORIGENS_LEAD,
   STATUS_CLIENTE,
   TIPOS_SISTEMA,
-  exportCSV,
-  formatCurrency,
   formatDate,
+  formatCurrency,
 } from "@/lib/crm";
+import { exportClientsToXlsx } from "@/lib/export";
 import { useClientes, useRemove, useTecnicos, type Cliente } from "@/hooks/use-crm";
 
 export const Route = createFileRoute("/_authenticated/dashboard/clientes/")({
@@ -70,6 +71,7 @@ function ClientesPage() {
   const [fTecnico, setFTecnico] = useState("todos");
   const [fOrigem, setFOrigem] = useState("todas");
   const [page, setPage] = useState(1);
+  const [viewMode, setViewMode] = useState<"lista" | "planilha">("lista");
   const [sort, setSort] = useState<{ field: string; dir: "asc" | "desc" }>({
     field: "nome",
     dir: "asc",
@@ -131,68 +133,19 @@ function ClientesPage() {
       <PageHeader title="Clientes" description={`${filtrados.length} cliente(s) listado(s)`}>
         <Button
           variant="outline"
-          onClick={() =>
-            exportCSV(
-              "clientes.csv",
-              filtrados.map((c) => ({
-                Nome: c.nome,
-                Tipo: c.tipo,
-                "CPF/CNPJ": c.cpf_cnpj ?? "",
-                WhatsApp: c.whatsapp ?? "",
-                Email: c.email ?? "",
-                Endereco: c.endereco ?? "",
-                Cidade: c.cidade ?? "",
-                Sistema: c.tipo_sistema,
-                Marca: c.marca_equipamento ?? "",
-                "Data Instalacao": formatDate(c.data_instalacao),
-                Tecnico: nomeTecnico(c.tecnico_id),
-                "Valor Orcamento": c.valor_orcamento ?? 0,
-                "Valor Pago": c.valor_pago ?? 0,
-                Status: c.status,
-                "Ultimo Contato": formatDate(c.ultimo_contato),
-              })),
-            )
-          }
+          onClick={() => exportClientsToXlsx(filtrados, "clientes_filtrados.xlsx")}
         >
-          <Download className="mr-1.5 h-4 w-4" /> Exportar CSV
+          <Download className="mr-1.5 h-4 w-4" /> Exportar Filtrados (XLSX)
         </Button>
         <Button
           variant="outline"
-          onClick={() =>
-            exportCSV(
-              "todos-clientes.csv",
-              clientes.map((c) => ({
-                Nome: c.nome,
-                Tipo: c.tipo,
-                "CPF/CNPJ": c.cpf_cnpj ?? "",
-                WhatsApp: c.whatsapp ?? "",
-                Email: c.email ?? "",
-                Endereco: c.endereco ?? "",
-                Cidade: c.cidade ?? "",
-                Sistema: c.tipo_sistema,
-                Marca: c.marca_equipamento ?? "",
-                "Data Instalacao": formatDate(c.data_instalacao),
-                Tecnico: nomeTecnico(c.tecnico_id),
-                "Valor Orcamento": c.valor_orcamento ?? 0,
-                "Valor Pago": c.valor_pago ?? 0,
-                Status: c.status,
-                Origem: c.origem_lead ?? "",
-                "Ultimo Contato": formatDate(c.ultimo_contato),
-                Observacoes: c.observacoes ?? "",
-              })),
-            )
-          }
+          onClick={() => exportClientsToXlsx(clientes, "todos_clientes.xlsx")}
         >
-          <Download className="mr-1.5 h-4 w-4" /> Exportar Clientes
+          <Download className="mr-1.5 h-4 w-4" /> Exportar Todos (XLSX)
         </Button>
         <Link to="/dashboard/clientes/qualidade">
           <Button variant="outline" className="border-accent/40 bg-accent/5 hover:bg-accent/15 text-accent-foreground font-medium">
             <ShieldCheck className="mr-1.5 h-4 w-4 text-accent" /> Qualidade dos Dados
-          </Button>
-        </Link>
-        <Link to="/dashboard/migracao">
-          <Button variant="destructive" className="font-medium">
-            Executar Migração
           </Button>
         </Link>
         <Button
@@ -230,12 +183,35 @@ function ClientesPage() {
         <FilterSelect value={fOrigem} onChange={setFOrigem} all="todas" label="Origem" options={[...ORIGENS_LEAD]} />
       </div>
 
+      <div className="mb-4 flex items-center justify-end gap-2">
+          <div className="flex items-center border rounded-md p-0.5 bg-muted/50">
+            <Button 
+              variant={viewMode === "lista" ? "secondary" : "ghost"} 
+              size="sm" 
+              className="h-8 px-3 text-xs"
+              onClick={() => setViewMode("lista")}
+            >
+              <List className="mr-1.5 h-3.5 w-3.5" /> Lista
+            </Button>
+            <Button 
+              variant={viewMode === "planilha" ? "secondary" : "ghost"} 
+              size="sm" 
+              className="h-8 px-3 text-xs"
+              onClick={() => setViewMode("planilha")}
+            >
+              <Grid className="mr-1.5 h-3.5 w-3.5" /> Planilha
+            </Button>
+          </div>
+      </div>
+
       <Card className="overflow-hidden py-0">
         {filtrados.length === 0 ? (
           <EmptyState
             title="Nenhum cliente encontrado"
             description="Ajuste os filtros ou cadastre um novo cliente."
           />
+        ) : viewMode === "planilha" ? (
+          <SpreadsheetView clientes={filtrados} />
         ) : (
           <>
             <div className="overflow-x-auto">
