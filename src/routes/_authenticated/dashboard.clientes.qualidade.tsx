@@ -174,10 +174,10 @@ function DataQualityPage() {
       {/* Cabeçalho */}
       <PageHeader
         title="Central de Qualidade dos Dados"
-        description="Diagnóstico e auditoria da base de clientes · Fase 2 (Assistente de Mesclagem)"
+        description="Diagnóstico e auditoria da base de clientes · Fase 3 (Mesclagem Transacional)"
       >
         <Badge variant="outline" className="border-accent/40 bg-accent/10 text-accent-foreground">
-          <ShieldCheck className="mr-1 h-3.5 w-3.5 text-accent" /> Modo Leitura Ativo
+          <ShieldCheck className="mr-1 h-3.5 w-3.5 text-accent" /> Modo Seguro Ativo
         </Badge>
         <Link to="/dashboard/clientes">
           <Button variant="outline" size="sm">
@@ -190,9 +190,7 @@ function DataQualityPage() {
       <div className="flex items-center gap-3 rounded-lg border border-info/40 bg-info/10 px-4 py-3 text-sm text-info-foreground">
         <Sparkles className="h-5 w-5 shrink-0 text-info" />
         <div className="flex-1">
-          <span className="font-semibold">Fase 2 — Assistente de Mesclagem:</span> Nenhum cliente foi
-          alterado, mesclado ou excluído. Os dados exibidos abaixo são calculados dinamicamente em
-          memória para apoiar decisões operacionais.
+          <span className="font-semibold">Fase 3 — Mesclagem Transacional:</span> O sistema agora permite consolidações definitivas e reversíveis em banco. Todos os diagnósticos em memória continuam ativos para apoiar decisões operacionais.
         </div>
       </div>
 
