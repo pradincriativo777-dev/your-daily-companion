@@ -947,6 +947,8 @@ export type MergePreview = {
   secondaryClients: Cliente[];
   scores: ClientScore[];
   impactAnalysis: MergePreviewField[];
+  mergeStatus: "Recomendada" | "Revisão manual" | "Não mesclar";
+  blockingIssues: string[];
 };
 
 export function calculateClientScore(client: Cliente): ClientScore {
@@ -1017,6 +1019,8 @@ export function suggestPrincipalClient(clients: Cliente[]): MergePreview {
     { key: "marca_equipamento", label: "Equipamento" },
   ];
 
+  let hasConflict = false;
+
   for (const field of fieldsMap) {
     const pValue = (principal as any)[field.key];
     const sValues = secondaries
@@ -1041,6 +1045,7 @@ export function suggestPrincipalClient(clients: Cliente[]): MergePreview {
         suggestedResolution: sValues[0]?.value,
       });
     } else {
+      hasConflict = true;
       impactAnalysis.push({
         field: field.key,
         label: field.label,
@@ -1051,10 +1056,59 @@ export function suggestPrincipalClient(clients: Cliente[]): MergePreview {
     }
   }
 
+  // --- Validação de Regras de Negócio (Bloqueios e Classificação) ---
+  const blockingIssues: string[] = [];
+  let mergeStatus: "Recomendada" | "Revisão manual" | "Não mesclar" = "Recomendada";
+
+  // Regra 1: CPF/CNPJ válidos e diferentes
+  const validCpfs = new Set<string>();
+  for (const c of clients) {
+    if (c.cpf_cnpj) {
+      const status = analyzeCPFCNPJ(c.cpf_cnpj);
+      if (status.isValid && status.normalized) {
+        validCpfs.add(status.normalized);
+      }
+    }
+  }
+  if (validCpfs.size > 1) {
+    blockingIssues.push("Registros possuem CPFs/CNPJs válidos e diferentes.");
+  }
+
+  // Regra 2: Pessoas diferentes com o mesmo telefone
+  // Se eles têm um telefone em comum válido, mas nomes muito diferentes (< 0.4 similaridade)
+  for (let i = 0; i < clients.length; i++) {
+    for (let j = i + 1; j < clients.length; j++) {
+      const c1 = clients[i]!;
+      const c2 = clients[j]!;
+      if (c1.whatsapp && c2.whatsapp) {
+        const t1 = analyzePhone(c1.whatsapp);
+        const t2 = analyzePhone(c2.whatsapp);
+        if (t1.isValid && t2.isValid && t1.normalized === t2.normalized) {
+          const sim = calculateStringSimilarity(c1.nome, c2.nome);
+          if (sim < 0.4) {
+            blockingIssues.push(`Nomes muito diferentes (${c1.nome} vs ${c2.nome}) compartilhando o mesmo telefone.`);
+            break;
+          }
+        }
+      }
+    }
+    if (blockingIssues.length > 0) break; // Para não floodar
+  }
+
+  if (blockingIssues.length > 0) {
+    mergeStatus = "Não mesclar";
+  } else if (hasConflict) {
+    mergeStatus = "Revisão manual";
+  } else {
+    mergeStatus = "Recomendada";
+  }
+
   return {
     principalClient: principal,
     secondaryClients: secondaries,
     scores,
     impactAnalysis,
+    mergeStatus,
+    blockingIssues
   };
 }

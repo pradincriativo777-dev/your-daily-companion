@@ -15,7 +15,11 @@ export type SecurityEvent =
   | "ACCESS_DENIED"
   | "RECORD_CREATED"
   | "RECORD_UPDATED"
-  | "RECORD_DELETED";
+  | "RECORD_DELETED"
+  | "MERGE_SUCCESS"
+  | "MERGE_FAILED"
+  | "MERGE_UNAUTHORIZED"
+  | "UNDO_MERGE_SUCCESS";
 
 interface SecurityLogEntry {
   event: SecurityEvent;

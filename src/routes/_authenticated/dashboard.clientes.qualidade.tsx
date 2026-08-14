@@ -25,8 +25,9 @@ import {
   suggestPrincipalClient,
   type DuplicateConfidence,
   type DuplicateGroup,
-  type IssueType,
 } from "@/lib/data-quality";
+import { serverExecuteMerge, serverUndoMerge, serverGetMergeHistory } from "@/lib/merge.server";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -69,6 +70,10 @@ const ISSUES_PAGE_SIZE = 25;
 
 function DataQualityPage() {
   const { data: clientes = [], isLoading } = useClientes();
+  const { data: mergeHistory = [], refetch: refetchHistory } = useQuery({
+    queryKey: ["merge-history"],
+    queryFn: async () => await serverGetMergeHistory()
+  });
 
   const [activeTab, setActiveTab] = useState("duplicidades");
   const [reviewingGroup, setReviewingGroup] = useState<DuplicateGroup | null>(null);
@@ -275,7 +280,7 @@ function DataQualityPage() {
 
       {/* Abas Principais */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 max-w-xl">
+        <TabsList className="grid w-full grid-cols-4 max-w-3xl">
           <TabsTrigger value="duplicidades" className="gap-2">
             <Layers className="h-4 w-4" /> Duplicidades ({analysis.duplicateGroups.length})
           </TabsTrigger>
@@ -284,6 +289,9 @@ function DataQualityPage() {
           </TabsTrigger>
           <TabsTrigger value="diagnostico" className="gap-2">
             <Database className="h-4 w-4" /> Orientações
+          </TabsTrigger>
+          <TabsTrigger value="historico" className="gap-2">
+            <Sparkles className="h-4 w-4" /> Histórico
           </TabsTrigger>
         </TabsList>
 
@@ -596,8 +604,100 @@ function DataQualityPage() {
             </Card>
           </div>
         </TabsContent>
+
+        {/* ========================================================= */}
+        {/* ABA 4: HISTÓRICO DE MESCLAGENS                            */}
+        {/* ========================================================= */}
+        <TabsContent value="historico" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Histórico de Operações</CardTitle>
+              <CardDescription>Registro auditável das mesclagens e opção de reversão.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data / Hora</TableHead>
+                    <TableHead>Principal (ID)</TableHead>
+                    <TableHead>Secundários Afetados</TableHead>
+                    <TableHead>Status da Transação</TableHead>
+                    <TableHead className="text-right">Ação</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {mergeHistory.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                        Nenhuma mesclagem registrada.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    mergeHistory.map((audit: any) => (
+                      <TableRow key={audit.id}>
+                        <TableCell className="text-xs">
+                          {formatDate(audit.created_at)}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {audit.principal_id}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {audit.secondary_ids?.length || 0} registro(s)
+                        </TableCell>
+                        <TableCell>
+                          {audit.reverted_at ? (
+                            <Badge variant="outline" className="border-warning text-warning">Desfeita</Badge>
+                          ) : (
+                            <Badge variant="outline" className="border-success text-success">Aplicada</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <UndoMergeButton 
+                            auditId={audit.id} 
+                            isReverted={!!audit.reverted_at} 
+                            onSuccess={refetchHistory}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+function UndoMergeButton({ auditId, isReverted, onSuccess }: { auditId: string, isReverted: boolean, onSuccess: () => void }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleUndo = async () => {
+    if (!window.confirm("Atenção: Isso irá desfazer a mesclagem, restaurando os cadastros secundários e devolvendo os relacionamentos (gastos, interações). Deseja prosseguir?")) return;
+    setLoading(true);
+    try {
+      const res = await serverUndoMerge({ data: { auditId } });
+      if (!res.success) {
+        alert("Erro ao desfazer: " + res.error);
+      } else {
+        alert("Mesclagem revertida com sucesso!");
+        onSuccess();
+      }
+    } catch (err: any) {
+      alert("Erro crítico: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (isReverted) return <span className="text-xs text-muted-foreground">Revertida</span>;
+  
+  return (
+    <Button variant="outline" size="sm" onClick={handleUndo} disabled={loading}>
+      {loading ? "Revertendo..." : "Desfazer"}
+    </Button>
   );
 }
 
@@ -727,19 +827,139 @@ function SeverityBadge({ category }: { category: "Critico" | "Alerta" | "Informa
 function MergeAssistantView({ group }: { group: DuplicateGroup }) {
   const preview = useMemo(() => suggestPrincipalClient(group.clients), [group.clients]);
 
+  const [resolvedConflicts, setResolvedConflicts] = useState<Record<string, any>>({});
+  const [isMerging, setIsMerging] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [mergeResult, setMergeResult] = useState<{ success: boolean; error?: string; auditId?: string } | null>(null);
+
+  // Calcula os valores finais baseados na resolução de conflitos
+  const finalData = useMemo(() => {
+    const data: Record<string, any> = {};
+    for (const item of preview.impactAnalysis) {
+      if (item.action === "manter_principal") {
+        data[item.field] = item.principalValue;
+      } else if (item.action === "adicionar_secundario") {
+        data[item.field] = item.suggestedResolution;
+      } else if (item.action === "conflito") {
+        // Se já escolheu algo, usa, senão mantém o principal
+        data[item.field] = resolvedConflicts[item.field] !== undefined ? resolvedConflicts[item.field] : item.principalValue;
+      }
+    }
+    return data;
+  }, [preview.impactAnalysis, resolvedConflicts]);
+
+  const allConflictsResolved = preview.impactAnalysis
+    .filter(i => i.action === "conflito")
+    .every(i => resolvedConflicts[i.field] !== undefined);
+
+  const canMerge = preview.mergeStatus === "Recomendada" && allConflictsResolved;
+
+  const handleMerge = async () => {
+    if (confirmText !== "MESCLAR") return;
+    setIsMerging(true);
+    try {
+      const res = await serverExecuteMerge({
+        data: {
+          principalId: preview.principalClient.id,
+          secondaryIds: preview.secondaryClients.map(c => c.id),
+          finalData
+        }
+      });
+      setMergeResult(res);
+    } catch (e: any) {
+      setMergeResult({ success: false, error: e.message });
+    } finally {
+      setIsMerging(false);
+    }
+  };
+
+  if (mergeResult) {
+    return (
+      <Card className="border-primary">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-primary">
+            {mergeResult.success ? <CheckCircle2 className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5 text-destructive" />}
+            {mergeResult.success ? "Mesclagem Concluída com Sucesso!" : "Falha na Mesclagem"}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {mergeResult.success ? (
+            <>
+              <p className="text-sm">
+                A operação foi finalizada. Os registros secundários foram arquivados e todos os relacionamentos transferidos.
+              </p>
+              <div className="text-xs text-muted-foreground">Auditoria ID: {mergeResult.auditId}</div>
+              <Link to="/dashboard/clientes/$id" params={{ id: preview.principalClient.id }}>
+                <Button>Acessar Cadastro Principal</Button>
+              </Link>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-destructive">{mergeResult.error}</p>
+              <Button onClick={() => setMergeResult(null)} variant="outline">Tentar Novamente</Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (showConfirm) {
+    return (
+      <Card className="border-destructive shadow-lg border-2">
+        <CardHeader className="bg-destructive/10 pb-4">
+          <CardTitle className="text-destructive flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5" /> Confirmação de Impacto (Operação Irreversível sem Auditoria)
+          </CardTitle>
+          <CardDescription>Você está prestes a mesclar os seguintes clientes em uma única transação no banco de dados.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 mt-4">
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="rounded border p-3">
+              <span className="font-semibold block mb-1">Cadastro Principal</span>
+              {preview.principalClient.nome} <br/>
+              {preview.principalClient.cpf_cnpj || "Sem CPF/CNPJ"}
+            </div>
+            <div className="rounded border p-3">
+              <span className="font-semibold block mb-1">Secundários (serão arquivados)</span>
+              {preview.secondaryClients.length} registro(s)
+            </div>
+          </div>
+          <div className="text-sm border-l-4 border-warning pl-3 text-muted-foreground">
+            Todos os Gastos, Interações e Manutenções atrelados aos secundários serão transferidos automaticamente para o principal.
+          </div>
+          <div>
+            <label className="text-sm font-semibold">Digite MESCLAR para confirmar</label>
+            <Input 
+              className="mt-1 max-w-sm" 
+              placeholder="MESCLAR" 
+              value={confirmText} 
+              onChange={e => setConfirmText(e.target.value)} 
+              disabled={isMerging}
+            />
+          </div>
+          <div className="flex items-center gap-2 mt-4">
+            <Button variant="destructive" disabled={confirmText !== "MESCLAR" || isMerging} onClick={handleMerge}>
+              {isMerging ? "Processando..." : "Confirmar Mesclagem Definitiva"}
+            </Button>
+            <Button variant="ghost" disabled={isMerging} onClick={() => setShowConfirm(false)}>Cancelar</Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning-foreground">
         <FileWarning className="h-5 w-5 shrink-0 text-warning" />
         <div className="flex-1">
-          <span className="font-semibold">Modo de Análise e Prévia:</span> Esta tela exibe apenas
-          uma simulação de mesclagem. Nenhuma alteração real foi feita no banco de dados. Os
-          registros secundários seriam arquivados futuramente após confirmação.
+          <span className="font-semibold">Modo de Análise e Prévia:</span> Esta tela exibe a simulação. Avalie os conflitos abaixo antes de aprovar a mesclagem.
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        {/* Painel do Cadastro Principal */}
         <Card className="border-primary/50 shadow-md">
           <CardHeader className="bg-primary/5 px-4 py-3 pb-4">
             <div className="flex items-center justify-between">
@@ -757,7 +977,6 @@ function MergeAssistantView({ group }: { group: DuplicateGroup }) {
                   {preview.scores.find((s) => s.clientId === preview.principalClient.id)?.totalScore ?? 0}
                   <span className="text-xs font-normal text-muted-foreground ml-1">pts</span>
                 </div>
-                <div className="text-[10px] text-muted-foreground">Completude & Histórico</div>
               </div>
             </div>
           </CardHeader>
@@ -779,33 +998,18 @@ function MergeAssistantView({ group }: { group: DuplicateGroup }) {
                 <span className="block text-xs text-muted-foreground">Cidade</span>
                 <span className="font-medium">{preview.principalClient.cidade || "—"}</span>
               </div>
-              <div className="bg-background p-3">
-                <span className="block text-xs text-muted-foreground">Origem do Lead</span>
-                <span className="font-medium">{preview.principalClient.origem_lead || "—"}</span>
-              </div>
-              <div className="bg-background p-3">
-                <span className="block text-xs text-muted-foreground">Sistema / Status</span>
-                <span className="font-medium">
-                  {preview.principalClient.tipo_sistema} · <StatusBadge status={preview.principalClient.status} />
-                </span>
-              </div>
-              <div className="bg-background p-3 col-span-2">
-                <span className="block text-xs text-muted-foreground">Endereço</span>
-                <span className="font-medium">{preview.principalClient.endereco || "—"}</span>
-              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Análise de Impacto (Dados dos Secundários) */}
+        {/* Análise de Impacto e Resolução de Conflitos */}
         <Card>
           <CardHeader className="px-4 py-3 pb-4">
             <CardTitle className="text-base flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-accent" /> Análise de Impacto
+              <Sparkles className="h-4 w-4 text-accent" /> Análise de Impacto e Conflitos
             </CardTitle>
             <CardDescription className="text-xs">
-              Quais dados seriam migrados dos {preview.secondaryClients.length} registro(s)
-              secundário(s)
+              Resolva as divergências entre o principal e os {preview.secondaryClients.length} secundários
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0 text-sm">
@@ -822,21 +1026,38 @@ function MergeAssistantView({ group }: { group: DuplicateGroup }) {
                     <TableCell className="py-2 font-medium">{item.label}</TableCell>
                     <TableCell className="py-2">
                       {item.action === "manter_principal" && (
-                        <span className="text-muted-foreground text-xs">
-                          Nenhum dado extra nos secundários.
-                        </span>
+                        <span className="text-muted-foreground text-xs">Mantém o principal</span>
                       )}
                       {item.action === "adicionar_secundario" && (
                         <div className="text-xs text-accent-foreground font-medium">
-                          Adicionar: {String(item.suggestedResolution)}
+                          Incorporar do secundário: {String(item.suggestedResolution)}
                         </div>
                       )}
                       {item.action === "conflito" && (
-                        <div className="text-xs text-warning-foreground font-medium flex flex-col gap-1">
-                          <span>
-                            Conflito: Principal tem "{String(item.principalValue)}", Secundários
-                            possuem valores diferentes.
-                          </span>
+                        <div className="text-xs font-medium flex flex-col gap-2">
+                          <span className="text-warning-foreground">Conflito detectado. Qual valor manter?</span>
+                          <div className="flex flex-col gap-1">
+                            <label className="flex items-center gap-2 border rounded p-1.5 cursor-pointer hover:bg-muted/50">
+                              <input 
+                                type="radio" 
+                                name={`conflict-${item.field}`} 
+                                checked={resolvedConflicts[item.field] === item.principalValue}
+                                onChange={() => setResolvedConflicts(prev => ({...prev, [item.field]: item.principalValue}))}
+                              />
+                              <span className="truncate max-w-[200px]" title={String(item.principalValue)}>{String(item.principalValue)} (Principal)</span>
+                            </label>
+                            {item.secondaryValues.map((sv, i) => (
+                              <label key={i} className="flex items-center gap-2 border rounded p-1.5 cursor-pointer hover:bg-muted/50">
+                                <input 
+                                  type="radio" 
+                                  name={`conflict-${item.field}`} 
+                                  checked={resolvedConflicts[item.field] === sv.value}
+                                  onChange={() => setResolvedConflicts(prev => ({...prev, [item.field]: sv.value}))}
+                                />
+                                <span className="truncate max-w-[200px]" title={String(sv.value)}>{String(sv.value)} (Secundário)</span>
+                              </label>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </TableCell>
@@ -848,47 +1069,36 @@ function MergeAssistantView({ group }: { group: DuplicateGroup }) {
         </Card>
       </div>
 
-      {/* Cadastros Secundários Lado a Lado */}
-      <h3 className="font-semibold text-foreground border-b pb-2 mt-6">
-        Cadastros Secundários ({preview.secondaryClients.length})
-      </h3>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {preview.secondaryClients.map((client) => {
-          const score = preview.scores.find((s) => s.clientId === client.id)?.totalScore ?? 0;
-          return (
-            <Card key={client.id} className="opacity-80">
-              <CardHeader className="p-4 pb-2">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="font-medium text-foreground">{client.nome}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {formatDate(client.created_at)}
-                    </div>
-                  </div>
-                  <div className="text-right text-xs">
-                    <span className="font-bold">{score}</span> pts
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4 pt-2 text-xs space-y-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <span className="text-muted-foreground block">Telefone</span>
-                    {client.whatsapp || "—"}
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground block">Documento</span>
-                    {client.cpf_cnpj || "—"}
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-muted-foreground block">Email</span>
-                    {client.email || "—"}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+      {/* Alertas de Bloqueio e Botão de Ação */}
+      <div className="mt-6">
+        {preview.blockingIssues.length > 0 && (
+          <div className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-destructive">
+            <h4 className="font-semibold flex items-center gap-2 mb-2"><AlertTriangle className="h-4 w-4"/> Mesclagem Bloqueada</h4>
+            <ul className="list-disc list-inside text-sm space-y-1">
+              {preview.blockingIssues.map((issue, i) => <li key={i}>{issue}</li>)}
+            </ul>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between bg-muted/30 p-4 rounded-lg border">
+          <div>
+            <div className="font-semibold text-sm">Status: {preview.mergeStatus}</div>
+            <div className="text-xs text-muted-foreground">
+              {preview.mergeStatus === "Não mesclar" 
+                ? "Existem impeditivos graves. Resolva-os antes de prosseguir."
+                : preview.mergeStatus === "Revisão manual"
+                  ? "Resolva os conflitos na tabela acima para liberar a mesclagem."
+                  : "Nenhum conflito. Mesclagem pronta para execução."}
+            </div>
+          </div>
+          <Button 
+            disabled={!canMerge} 
+            onClick={() => setShowConfirm(true)}
+            className="gap-2"
+          >
+            <CheckCircle2 className="h-4 w-4"/> Aprovar e Iniciar Mesclagem
+          </Button>
+        </div>
       </div>
     </div>
   );
