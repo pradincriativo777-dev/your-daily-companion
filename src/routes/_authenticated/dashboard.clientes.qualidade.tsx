@@ -734,16 +734,27 @@ export function getSecondaryCount(audit: any): number | null {
 }
 
 export function getAuditStatus(audit: any): "SUCCESS" | "REVERTED" | "FAILED" | "PENDING" | "UNKNOWN" {
+  // Status legados ou de outras tabelas (como migration_audits)
   if (audit?.status === 'FAILED') return 'FAILED';
-  
-  const count = getSecondaryCount(audit);
-  if (count === 0 && !audit?.status) return 'FAILED';
-  
-  if (audit?.reverted_at || audit?.status === 'REVERTED' || audit?.status === 'UNDO_SUCCESS') return 'REVERTED';
-  
   if (audit?.status === 'PENDING') return 'PENDING';
   
-  if (audit?.status === 'SUCCESS') return 'SUCCESS';
+  const count = getSecondaryCount(audit);
+  
+  // Se não alterou ninguém e foi cancelada
+  if (count === 0 && !audit?.status) return 'FAILED';
+  
+  // Revertidas explicitamente ou via timestamp
+  if (audit?.reverted_at || audit?.status === 'REVERTED' || audit?.status === 'UNDO_SUCCESS') {
+    return 'REVERTED';
+  }
+  
+  // Evidências físicas de sucesso em merge_audits (atômico)
+  const hasBackups = audit?.campos_anteriores !== undefined && audit?.campos_anteriores !== null;
+  const hasArchivedIds = audit?.archived_ids !== undefined && Array.isArray(audit.archived_ids);
+  
+  if (audit?.status === 'SUCCESS' || (hasBackups && hasArchivedIds && count !== null && count > 0)) {
+    return 'SUCCESS';
+  }
   
   return 'UNKNOWN';
 }

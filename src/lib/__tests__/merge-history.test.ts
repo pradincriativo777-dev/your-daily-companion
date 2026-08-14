@@ -50,13 +50,23 @@ describe('Histórico de Mesclagens - Parse Functions', () => {
       expect(getAuditStatus({ status: 'PENDING' })).toBe('PENDING');
     });
 
-    it('deve retornar SUCCESS quando status for explícito', () => {
-      expect(getAuditStatus({ status: 'SUCCESS' })).toBe('SUCCESS');
+    it('deve retornar SUCCESS quando houver evidências físicas da mesclagem (archived_ids + backups)', () => {
+      // Sem coluna status, mas com evidências atômicas do RPC
+      const audit = { 
+        archived_ids: ['id1'], 
+        campos_anteriores: { secundarios: [{ id: 'id1' }] } 
+      };
+      expect(getAuditStatus(audit)).toBe('SUCCESS');
     });
 
-    it('deve retornar UNKNOWN para qualquer outro caso sem status definido', () => {
+    it('deve retornar UNKNOWN para qualquer outro caso sem status definido ou evidências suficientes', () => {
+      // Tem archived_ids, mas sem backup (impossível no RPC, mas blindado aqui)
       expect(getAuditStatus({ archived_ids: ['id1'] })).toBe('UNKNOWN');
+      // Tem backup, mas sem archived_ids
+      expect(getAuditStatus({ campos_anteriores: { secundarios: ['id1'] } })).toBe('UNKNOWN');
+      // Objeto vazio
       expect(getAuditStatus({})).toBe('UNKNOWN');
+      // Status maluco
       expect(getAuditStatus({ status: 'WEIRD_STATUS' })).toBe('UNKNOWN');
     });
   });
