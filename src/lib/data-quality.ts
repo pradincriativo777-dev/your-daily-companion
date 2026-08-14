@@ -918,3 +918,143 @@ export function analyzeClientDatabase(clientes: Cliente[]): DataQualityAnalysisR
     analyzedAt: new Date().toISOString(),
   };
 }
+
+// ==========================================
+// 8. ASSISTENTE DE MESCLAGEM (FASE 2)
+// ==========================================
+
+export type ClientScore = {
+  clientId: string;
+  totalScore: number;
+  breakdown: {
+    completeness: number;
+    validity: number;
+    history: number;
+  };
+};
+
+export type MergePreviewField = {
+  field: string;
+  label: string;
+  principalValue: any;
+  secondaryValues: { clientId: string; value: any }[];
+  action: "manter_principal" | "adicionar_secundario" | "conflito";
+  suggestedResolution?: any;
+};
+
+export type MergePreview = {
+  principalClient: Cliente;
+  secondaryClients: Cliente[];
+  scores: ClientScore[];
+  impactAnalysis: MergePreviewField[];
+};
+
+export function calculateClientScore(client: Cliente): ClientScore {
+  let completeness = 0;
+  let validity = 0;
+  let history = 0;
+
+  // 1. Completeness
+  const fieldsToCheck = [
+    client.nome, client.whatsapp, client.email, client.cpf_cnpj,
+    client.cidade, client.endereco, client.marca_equipamento,
+    client.observacoes, client.origem_lead
+  ];
+  for (const f of fieldsToCheck) {
+    if (f && String(f).trim().length > 0) completeness += 10;
+  }
+
+  // 2. Validity
+  if (client.cpf_cnpj) {
+    const status = analyzeCPFCNPJ(client.cpf_cnpj);
+    if (status.isValid) validity += 50;
+  }
+  if (client.whatsapp) {
+    const phoneStatus = analyzePhone(client.whatsapp);
+    if (phoneStatus.isValid) validity += 30;
+  }
+  if (client.email) {
+    const emailStatus = analyzeEmail(client.email);
+    if (emailStatus.isValid) validity += 20;
+  }
+
+  // 3. History
+  if (client.data_instalacao) history += 20;
+  if (client.status === "Instalado" || client.status === "Manutenção") history += 20;
+
+  return {
+    clientId: client.id,
+    totalScore: completeness + validity + history,
+    breakdown: { completeness, validity, history },
+  };
+}
+
+export function suggestPrincipalClient(clients: Cliente[]): MergePreview {
+  if (clients.length === 0) throw new Error("Não há clientes para mesclar");
+
+  const scores = clients.map(calculateClientScore);
+  
+  const sortedClients = [...clients].sort((a, b) => {
+    const scoreA = scores.find((s) => s.clientId === a.id)?.totalScore ?? 0;
+    const scoreB = scores.find((s) => s.clientId === b.id)?.totalScore ?? 0;
+    if (scoreA !== scoreB) return scoreB - scoreA;
+    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+  });
+
+  const principal = sortedClients[0]!;
+  const secondaries = sortedClients.slice(1);
+
+  const impactAnalysis: MergePreviewField[] = [];
+  const fieldsMap = [
+    { key: "nome", label: "Nome" },
+    { key: "whatsapp", label: "WhatsApp" },
+    { key: "email", label: "E-mail" },
+    { key: "cpf_cnpj", label: "CPF / CNPJ" },
+    { key: "endereco", label: "Endereço" },
+    { key: "cidade", label: "Cidade" },
+    { key: "observacoes", label: "Observações" },
+    { key: "origem_lead", label: "Origem" },
+    { key: "marca_equipamento", label: "Equipamento" },
+  ];
+
+  for (const field of fieldsMap) {
+    const pValue = (principal as any)[field.key];
+    const sValues = secondaries
+      .map((sc) => ({ clientId: sc.id, value: (sc as any)[field.key] }))
+      .filter((sv) => sv.value && String(sv.value).trim().length > 0 && String(sv.value).trim() !== String(pValue).trim());
+
+    if (sValues.length === 0) {
+      impactAnalysis.push({
+        field: field.key,
+        label: field.label,
+        principalValue: pValue,
+        secondaryValues: [],
+        action: "manter_principal",
+      });
+    } else if (!pValue || String(pValue).trim().length === 0) {
+      impactAnalysis.push({
+        field: field.key,
+        label: field.label,
+        principalValue: pValue,
+        secondaryValues: sValues,
+        action: "adicionar_secundario",
+        suggestedResolution: sValues[0]?.value,
+      });
+    } else {
+      impactAnalysis.push({
+        field: field.key,
+        label: field.label,
+        principalValue: pValue,
+        secondaryValues: sValues,
+        action: "conflito",
+      });
+    }
+  }
+
+  return {
+    principalClient: principal,
+    secondaryClients: secondaries,
+    scores,
+    impactAnalysis,
+  };
+}

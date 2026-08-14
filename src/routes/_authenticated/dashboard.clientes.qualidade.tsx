@@ -22,6 +22,7 @@ import {
 import { useClientes } from "@/hooks/use-crm";
 import {
   analyzeClientDatabase,
+  suggestPrincipalClient,
   type DuplicateConfidence,
   type DuplicateGroup,
   type IssueType,
@@ -70,6 +71,7 @@ function DataQualityPage() {
   const { data: clientes = [], isLoading } = useClientes();
 
   const [activeTab, setActiveTab] = useState("duplicidades");
+  const [reviewingGroup, setReviewingGroup] = useState<DuplicateGroup | null>(null);
 
   // Filtros de Duplicidades
   const [dupSearch, setDupSearch] = useState("");
@@ -145,6 +147,22 @@ function DataQualityPage() {
   const healthScore = analysis.healthScore;
   const scoreColor =
     healthScore >= 80 ? "text-success" : healthScore >= 60 ? "text-warning" : "text-destructive";
+
+  if (reviewingGroup) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Assistente de Mesclagem Segura"
+          description={`Revisando grupo de duplicidade: ${reviewingGroup.matchDescription}`}
+        >
+          <Button variant="outline" size="sm" onClick={() => setReviewingGroup(null)}>
+            <ArrowLeft className="mr-1.5 h-4 w-4" /> Voltar para Qualidade
+          </Button>
+        </PageHeader>
+        <MergeAssistantView group={reviewingGroup} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -318,7 +336,11 @@ function DataQualityPage() {
           ) : (
             <div className="space-y-4">
               {pagedDuplicates.map((group) => (
-                <DuplicateGroupCard key={group.id} group={group} />
+                <DuplicateGroupCard 
+                  key={group.id} 
+                  group={group} 
+                  onReview={() => setReviewingGroup(group)} 
+                />
               ))}
 
               <Pagination
@@ -583,7 +605,7 @@ function DataQualityPage() {
 // COMPONENTES AUXILIARES
 // ==========================================
 
-function DuplicateGroupCard({ group }: { group: DuplicateGroup }) {
+function DuplicateGroupCard({ group, onReview }: { group: DuplicateGroup; onReview: () => void }) {
   const confBadge = {
     alta: <Badge className="bg-destructive text-destructive-foreground">Alta Confiança</Badge>,
     media: <Badge className="bg-warning text-warning-foreground">Média Confiança</Badge>,
@@ -603,9 +625,16 @@ function DuplicateGroupCard({ group }: { group: DuplicateGroup }) {
               {group.matchedValue}
             </code>
           </div>
-          <span className="text-xs text-muted-foreground">
-            {group.clients.length} cadastros vinculados
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground">
+              {group.clients.length} cadastros vinculados
+            </span>
+            {group.confidence === "alta" && (
+              <Button size="sm" onClick={onReview} className="h-7 px-3 text-xs">
+                Revisar grupo
+              </Button>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="p-0">
@@ -692,5 +721,175 @@ function SeverityBadge({ category }: { category: "Critico" | "Alerta" | "Informa
     <Badge variant="outline" className="border-muted-foreground/30 text-muted-foreground text-xs">
       Informativo
     </Badge>
+  );
+}
+
+function MergeAssistantView({ group }: { group: DuplicateGroup }) {
+  const preview = useMemo(() => suggestPrincipalClient(group.clients), [group.clients]);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning-foreground">
+        <FileWarning className="h-5 w-5 shrink-0 text-warning" />
+        <div className="flex-1">
+          <span className="font-semibold">Modo de Análise e Prévia:</span> Esta tela exibe apenas
+          uma simulação de mesclagem. Nenhuma alteração real foi feita no banco de dados. Os
+          registros secundários seriam arquivados futuramente após confirmação.
+        </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Painel do Cadastro Principal */}
+        <Card className="border-primary/50 shadow-md">
+          <CardHeader className="bg-primary/5 px-4 py-3 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Badge className="mb-2 bg-primary text-primary-foreground hover:bg-primary/90">
+                  <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Sugestão de Cadastro Principal
+                </Badge>
+                <CardTitle className="text-base">{preview.principalClient.nome}</CardTitle>
+                <CardDescription className="text-xs">
+                  Cadastrado em {formatDate(preview.principalClient.created_at)}
+                </CardDescription>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-black text-primary">
+                  {preview.scores.find((s) => s.clientId === preview.principalClient.id)?.totalScore ?? 0}
+                  <span className="text-xs font-normal text-muted-foreground ml-1">pts</span>
+                </div>
+                <div className="text-[10px] text-muted-foreground">Completude & Histórico</div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="grid grid-cols-2 gap-px bg-border/50 text-sm">
+              <div className="bg-background p-3">
+                <span className="block text-xs text-muted-foreground">Telefone</span>
+                <span className="font-medium">{preview.principalClient.whatsapp || "—"}</span>
+              </div>
+              <div className="bg-background p-3">
+                <span className="block text-xs text-muted-foreground">CPF/CNPJ</span>
+                <span className="font-medium">{preview.principalClient.cpf_cnpj || "—"}</span>
+              </div>
+              <div className="bg-background p-3">
+                <span className="block text-xs text-muted-foreground">E-mail</span>
+                <span className="font-medium truncate block">{preview.principalClient.email || "—"}</span>
+              </div>
+              <div className="bg-background p-3">
+                <span className="block text-xs text-muted-foreground">Cidade</span>
+                <span className="font-medium">{preview.principalClient.cidade || "—"}</span>
+              </div>
+              <div className="bg-background p-3">
+                <span className="block text-xs text-muted-foreground">Origem do Lead</span>
+                <span className="font-medium">{preview.principalClient.origem_lead || "—"}</span>
+              </div>
+              <div className="bg-background p-3">
+                <span className="block text-xs text-muted-foreground">Sistema / Status</span>
+                <span className="font-medium">
+                  {preview.principalClient.tipo_sistema} · <StatusBadge status={preview.principalClient.status} />
+                </span>
+              </div>
+              <div className="bg-background p-3 col-span-2">
+                <span className="block text-xs text-muted-foreground">Endereço</span>
+                <span className="font-medium">{preview.principalClient.endereco || "—"}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Análise de Impacto (Dados dos Secundários) */}
+        <Card>
+          <CardHeader className="px-4 py-3 pb-4">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-accent" /> Análise de Impacto
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Quais dados seriam migrados dos {preview.secondaryClients.length} registro(s)
+              secundário(s)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0 text-sm">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/30">
+                  <TableHead className="h-8">Campo</TableHead>
+                  <TableHead className="h-8">Situação</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {preview.impactAnalysis.map((item, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell className="py-2 font-medium">{item.label}</TableCell>
+                    <TableCell className="py-2">
+                      {item.action === "manter_principal" && (
+                        <span className="text-muted-foreground text-xs">
+                          Nenhum dado extra nos secundários.
+                        </span>
+                      )}
+                      {item.action === "adicionar_secundario" && (
+                        <div className="text-xs text-accent-foreground font-medium">
+                          Adicionar: {String(item.suggestedResolution)}
+                        </div>
+                      )}
+                      {item.action === "conflito" && (
+                        <div className="text-xs text-warning-foreground font-medium flex flex-col gap-1">
+                          <span>
+                            Conflito: Principal tem "{String(item.principalValue)}", Secundários
+                            possuem valores diferentes.
+                          </span>
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Cadastros Secundários Lado a Lado */}
+      <h3 className="font-semibold text-foreground border-b pb-2 mt-6">
+        Cadastros Secundários ({preview.secondaryClients.length})
+      </h3>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {preview.secondaryClients.map((client) => {
+          const score = preview.scores.find((s) => s.clientId === client.id)?.totalScore ?? 0;
+          return (
+            <Card key={client.id} className="opacity-80">
+              <CardHeader className="p-4 pb-2">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="font-medium text-foreground">{client.nome}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {formatDate(client.created_at)}
+                    </div>
+                  </div>
+                  <div className="text-right text-xs">
+                    <span className="font-bold">{score}</span> pts
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 pt-2 text-xs space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <span className="text-muted-foreground block">Telefone</span>
+                    {client.whatsapp || "—"}
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block">Documento</span>
+                    {client.cpf_cnpj || "—"}
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-muted-foreground block">Email</span>
+                    {client.email || "—"}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
   );
 }
