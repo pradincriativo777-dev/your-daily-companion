@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,13 +9,13 @@ import { Card } from "@/components/ui/card";
 // RPC Dry Run - Apenas lê e não modifica nada (Garantido pelo RPC)
 const simularMigracao = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async (ctx) => {
     try {
-      const { data, error } = await supabaseAdmin.rpc("execute_migration_dry_run");
+      const { data, error } = await ctx.context.supabase.rpc("execute_migration_dry_run");
       if (error) throw new Error(error.message);
       return { success: true, payload: data };
     } catch (e: any) {
-      console.error("[Migration DryRun Error]", e);
+      console.error(`[Migration DryRun Error] Usuário ${ctx.context.userId}:`, e.message || e);
       return { success: false, error: "Ocorreu um erro ao simular a migração. Consulte os logs do servidor." };
     }
   });
@@ -24,13 +23,14 @@ const simularMigracao = createServerFn({ method: "POST" })
 // RPC Execute - Transacional
 const efetivarMigracao = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ data: opId }) => {
+  .handler(async (ctx) => {
+    const opId = ctx.data;
     try {
-      const { data, error } = await supabaseAdmin.rpc("execute_migration_real", { p_operation_id: opId });
+      const { data, error } = await ctx.context.supabase.rpc("execute_migration_real", { p_operation_id: opId });
       if (error) throw new Error(error.message);
       return { success: true, payload: data };
     } catch (e: any) {
-      console.error("[Migration Execute Error]", e);
+      console.error(`[Migration Execute Error] Usuário ${ctx.context.userId}:`, e.message || e);
       return { success: false, error: "Falha na migração real. Operação cancelada com segurança (Rollback). Consulte os logs." };
     }
   });
