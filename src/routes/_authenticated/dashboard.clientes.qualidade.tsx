@@ -631,33 +631,50 @@ function DataQualityPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    mergeHistory.map((audit: any) => (
-                      <TableRow key={audit.id}>
-                        <TableCell className="text-xs">
-                          {formatDate(audit.created_at)}
-                        </TableCell>
-                        <TableCell className="font-mono text-xs">
-                          {audit.principal_id}
-                        </TableCell>
-                        <TableCell className="text-xs">
-                          {audit.secondary_ids?.length || 0} registro(s)
-                        </TableCell>
-                        <TableCell>
-                          {audit.reverted_at ? (
-                            <Badge variant="outline" className="border-warning text-warning">Desfeita</Badge>
-                          ) : (
-                            <Badge variant="outline" className="border-success text-success">Aplicada</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <UndoMergeButton 
-                            auditId={audit.id} 
-                            isReverted={!!audit.reverted_at} 
-                            onSuccess={refetchHistory}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    mergeHistory.map((audit: any) => {
+                      const count = getSecondaryCount(audit);
+                      const status = getAuditStatus(audit);
+
+                      return (
+                        <TableRow key={audit.id}>
+                          <TableCell>
+                            <div className="text-xs">{formatDate(audit.created_at)}</div>
+                            <div className="font-mono text-[10px] text-muted-foreground mt-0.5" title={audit.operation_id || audit.id}>
+                              OP: {(audit.operation_id || audit.id).split('-')[0]}
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-mono text-xs">
+                            {audit.principal_id || "N/A"}
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            {count === null ? (
+                              <span className="text-muted-foreground italic">Não disponível</span>
+                            ) : (
+                              `${count} registro(s)`
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {status === 'SUCCESS' && <Badge variant="outline" className="border-success text-success">Concluída</Badge>}
+                            {status === 'REVERTED' && <Badge variant="outline" className="border-warning text-warning">Desfeita</Badge>}
+                            {status === 'FAILED' && <Badge variant="outline" className="border-destructive text-destructive">Falhou</Badge>}
+                            {status === 'PENDING' && <Badge variant="outline" className="border-info text-info">Processando</Badge>}
+                            {status === 'UNKNOWN' && <Badge variant="outline" className="border-muted-foreground text-muted-foreground">Revisão necessária</Badge>}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {status === 'SUCCESS' && (
+                              <UndoMergeButton 
+                                auditId={audit.id} 
+                                isReverted={false} 
+                                onSuccess={refetchHistory}
+                              />
+                            )}
+                            {status === 'REVERTED' && (
+                              <span className="text-xs text-muted-foreground px-2 py-1">Revertida</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
@@ -697,6 +714,31 @@ function UndoMergeButton({ auditId, isReverted, onSuccess }: { auditId: string, 
       {loading ? "Revertendo..." : "Desfazer"}
     </Button>
   );
+}
+
+// ==========================================
+// FUNÇÕES DE PARSE DO HISTÓRICO
+// ==========================================
+
+function getSecondaryCount(audit: any): number | null {
+  if (audit.archived_ids && Array.isArray(audit.archived_ids)) return audit.archived_ids.length;
+  if (audit.campos_anteriores?.secundarios && Array.isArray(audit.campos_anteriores.secundarios)) return audit.campos_anteriores.secundarios.length;
+  if (audit.total_afetados !== undefined) return audit.total_afetados;
+  return null;
+}
+
+function getAuditStatus(audit: any): "SUCCESS" | "REVERTED" | "FAILED" | "PENDING" | "UNKNOWN" {
+  if (audit.status === 'PENDING') return 'PENDING';
+  if (audit.status === 'FAILED') return 'FAILED';
+  
+  if (audit.reverted_at || audit.status === 'REVERTED' || audit.status === 'UNDO_SUCCESS') return 'REVERTED';
+  
+  const count = getSecondaryCount(audit);
+  if (count === 0 && !audit.status) return 'FAILED'; // Operação falha / vazia
+  
+  if (audit.status === 'SUCCESS' || (!audit.status && !audit.reverted_at)) return 'SUCCESS';
+  
+  return 'UNKNOWN';
 }
 
 // ==========================================
