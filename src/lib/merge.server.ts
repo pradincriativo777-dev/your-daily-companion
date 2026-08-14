@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logSecurityEvent } from "./security-logger";
 
 export const serverExecuteMerge = createServerFn({ method: "POST" })
@@ -40,8 +39,19 @@ export const serverExecuteMerge = createServerFn({ method: "POST" })
         });
         return { success: false, error: "Acesso negado. Faça login como administrador." };
       }
+
+      // Verificação de pré-requisitos: Garantir que o usuário atual é admin
+      const { data: isAdmin, error: adminCheckError } = await context.supabase.rpc('is_admin');
+      if (adminCheckError || !isAdmin) {
+        logSecurityEvent({
+          event: "MERGE_UNAUTHORIZED",
+          userId: userId,
+          reason: "Usuário não possui privilégios de administrador",
+        });
+        return { success: false, error: "Acesso negado. Esta operação exige privilégios de administrador." };
+      }
       
-      const { data: auditId, error: mergeError } = await (supabaseAdmin.rpc as any)("execute_merge_transaction", {
+      const { data: auditId, error: mergeError } = await context.supabase.rpc("execute_merge_transaction", {
         p_principal_id: data.principalId,
         p_secondary_ids: data.secondaryIds,
         p_final_data: data.finalData,
@@ -49,7 +59,7 @@ export const serverExecuteMerge = createServerFn({ method: "POST" })
       });
 
       if (mergeError) {
-        console.error("RPC Error:", mergeError);
+        console.error(`[Merge RPC Error] Usuário ${userId}:`, mergeError.message || mergeError);
         logSecurityEvent({
           event: "MERGE_FAILED",
           userId: userId,
@@ -71,8 +81,8 @@ export const serverExecuteMerge = createServerFn({ method: "POST" })
 
       return { success: true, auditId };
     } catch (err: any) {
-      console.error("Merge Exception:", err.message);
-      return { success: false, error: "Não foi possível concluir a mesclagem. Nenhum dado foi alterado." };
+      console.error(`[Merge Exception] Usuário ${context.userId}:`, err.message);
+      return { success: false, error: "Ocorreu um erro inesperado. Nenhum dado foi alterado." };
     }
   });
 
@@ -96,13 +106,19 @@ export const serverUndoMerge = createServerFn({ method: "POST" })
         return { success: false, error: "Acesso negado." };
       }
       
-      const { data: result, error: undoError } = await (supabaseAdmin.rpc as any)("undo_merge_transaction", {
+      // Verificação de pré-requisitos: Garantir que o usuário atual é admin
+      const { data: isAdmin, error: adminCheckError } = await context.supabase.rpc('is_admin');
+      if (adminCheckError || !isAdmin) {
+        return { success: false, error: "Acesso negado. Esta operação exige privilégios de administrador." };
+      }
+
+      const { data: result, error: undoError } = await context.supabase.rpc("undo_merge_transaction", {
         p_audit_id: data.auditId,
         p_admin_id: userId,
       });
 
       if (undoError) {
-        console.error("Undo RPC Error:", undoError);
+        console.error(`[Undo RPC Error] Usuário ${userId}:`, undoError.message || undoError);
         return { success: false, error: "Não foi possível desfazer a mesclagem. Nenhum dado foi alterado." };
       }
 
@@ -114,8 +130,8 @@ export const serverUndoMerge = createServerFn({ method: "POST" })
 
       return { success: true, result };
     } catch (err: any) {
-      console.error("Undo Exception:", err.message);
-      return { success: false, error: "Não foi possível desfazer a mesclagem. Nenhum dado foi alterado." };
+      console.error(`[Undo Exception] Usuário ${context.userId}:`, err.message);
+      return { success: false, error: "Ocorreu um erro inesperado. Nenhum dado foi alterado." };
     }
   });
 
@@ -129,7 +145,7 @@ export const serverGetMergeHistory = createServerFn({ method: "GET" })
         throw new Error("Acesso negado.");
       }
       
-      const { data, error } = await (supabaseAdmin as any)
+      const { data, error } = await context.supabase
         .from("merge_audits")
         .select("*")
         .order("created_at", { ascending: false })
@@ -141,7 +157,7 @@ export const serverGetMergeHistory = createServerFn({ method: "GET" })
 
       return data;
     } catch (err: any) {
-      console.error("History Exception:", err.message);
+      console.error(`[History Exception] Usuário ${context.userId}:`, err.message);
       return [];
     }
   });
