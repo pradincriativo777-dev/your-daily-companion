@@ -1,25 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logSecurityEvent } from "./security-logger";
 
-async function getAdminUserFromRequest() {
-  try {
-    const request = getRequest();
-    const token = request?.headers.get("Authorization")?.replace("Bearer ", "");
-    if (!token) return null;
-    
-    // Validar token e obter usuário usando a conexão segura já existente no projeto (Service Role)
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
-    if (error || !user) return null;
-    
-    return user;
-  } catch (error) {
-    return null;
-  }
-}
-
 export const serverExecuteMerge = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .validator((data: unknown): { 
     principalId: string; 
     secondaryIds: string[]; 
@@ -44,14 +29,14 @@ export const serverExecuteMerge = createServerFn({ method: "POST" })
       finalData: payload["finalData"] as Record<string, any> 
     };
   })
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     try {
-      const user = await getAdminUserFromRequest();
+      const userId = context.userId;
 
-      if (!user) {
+      if (!userId) {
         logSecurityEvent({
           event: "MERGE_UNAUTHORIZED",
-          reason: "Sem sessão válida",
+          reason: "Sem sessão válida via middleware",
         });
         return { success: false, error: "Acesso negado. Faça login como administrador." };
       }
@@ -60,14 +45,14 @@ export const serverExecuteMerge = createServerFn({ method: "POST" })
         p_principal_id: data.principalId,
         p_secondary_ids: data.secondaryIds,
         p_final_data: data.finalData,
-        p_admin_id: user.id,
+        p_admin_id: userId,
       });
 
       if (mergeError) {
         console.error("RPC Error:", mergeError);
         logSecurityEvent({
           event: "MERGE_FAILED",
-          userId: user.id,
+          userId: userId,
           reason: mergeError.message,
           meta: { principalId: data.principalId }
         });
@@ -76,7 +61,7 @@ export const serverExecuteMerge = createServerFn({ method: "POST" })
 
       logSecurityEvent({
         event: "MERGE_SUCCESS",
-        userId: user.id,
+        userId: userId,
         meta: { 
           auditId, 
           principalId: data.principalId, 
@@ -87,12 +72,12 @@ export const serverExecuteMerge = createServerFn({ method: "POST" })
       return { success: true, auditId };
     } catch (err: any) {
       console.error("Merge Exception:", err.message);
-      // Nunca expor detalhes internos ao usuário final, como "Missing Supabase env vars"
       return { success: false, error: "Não foi possível concluir a mesclagem. Nenhum dado foi alterado." };
     }
   });
 
 export const serverUndoMerge = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .validator((data: unknown): { auditId: string } => {
     if (typeof data !== "object" || data === null) throw new Error("Invalid payload");
     const payload = data as Record<string, unknown>;
@@ -103,17 +88,17 @@ export const serverUndoMerge = createServerFn({ method: "POST" })
 
     return { auditId: payload["auditId"] };
   })
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     try {
-      const user = await getAdminUserFromRequest();
+      const userId = context.userId;
 
-      if (!user) {
+      if (!userId) {
         return { success: false, error: "Acesso negado." };
       }
       
       const { data: result, error: undoError } = await (supabaseAdmin.rpc as any)("undo_merge_transaction", {
         p_audit_id: data.auditId,
-        p_admin_id: user.id,
+        p_admin_id: userId,
       });
 
       if (undoError) {
@@ -123,7 +108,7 @@ export const serverUndoMerge = createServerFn({ method: "POST" })
 
       logSecurityEvent({
         event: "UNDO_MERGE_SUCCESS",
-        userId: user.id,
+        userId: userId,
         meta: { auditId: data.auditId }
       });
 
@@ -135,11 +120,12 @@ export const serverUndoMerge = createServerFn({ method: "POST" })
   });
 
 export const serverGetMergeHistory = createServerFn({ method: "GET" })
-  .handler(async () => {
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
     try {
-      const user = await getAdminUserFromRequest();
+      const userId = context.userId;
 
-      if (!user) {
+      if (!userId) {
         throw new Error("Acesso negado.");
       }
       
