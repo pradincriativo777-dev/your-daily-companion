@@ -190,6 +190,11 @@ function ClientesPage() {
             <ShieldCheck className="mr-1.5 h-4 w-4 text-accent" /> Qualidade dos Dados
           </Button>
         </Link>
+        <Link to="/dashboard/migracao">
+          <Button variant="destructive" className="font-medium">
+            Executar Migração
+          </Button>
+        </Link>
         <Button
           onClick={() => {
             setEditing(null);
