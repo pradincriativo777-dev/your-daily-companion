@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { serverLogin } from "@/lib/login.server";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -44,20 +45,26 @@ function LoginPage() {
     e.preventDefault();
     setErro(null);
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password: senha,
-    });
-    setLoading(false);
-    if (error) {
-      setErro(
-        error.message.includes("Invalid login")
-          ? "E-mail ou senha incorretos."
-          : error.message,
-      );
-      return;
+    try {
+      const result = await serverLogin({ data: { email: email.trim(), password: senha } });
+      if (!result.success) {
+        setErro(result.error ?? "Erro ao autenticar.");
+        setLoading(false);
+        return;
+      }
+      // Set the Supabase session client-side with the server-returned tokens
+      if (result.accessToken && result.refreshToken) {
+        await supabase.auth.setSession({
+          access_token: result.accessToken,
+          refresh_token: result.refreshToken,
+        });
+      }
+      setLoading(false);
+      navigate({ to: "/dashboard", replace: true });
+    } catch {
+      setErro("Erro de conexão com o servidor.");
+      setLoading(false);
     }
-    navigate({ to: "/dashboard", replace: true });
   };
 
   return (

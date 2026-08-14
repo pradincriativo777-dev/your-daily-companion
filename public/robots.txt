@@ -1,14 +1,5 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
+# CRM JANSOL — sistema interno, acesso restrito
+# Bloquear todos os crawlers e rastreadores
 
 User-agent: *
-Allow: /
+Disallow: /
