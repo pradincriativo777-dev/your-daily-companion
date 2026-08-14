@@ -17,6 +17,7 @@ import {
   MessageSquare,
   Receipt,
   Search,
+  ShieldCheck,
   Upload,
   Users,
   Wrench,
@@ -35,7 +36,12 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/dashboard/kanban", label: "Kanban", icon: KanbanSquare },
-  { to: "/dashboard/clientes", label: "Clientes", icon: Users },
+  { to: "/dashboard/clientes", label: "Clientes", icon: Users, exact: true },
+  {
+    to: "/dashboard/clientes/qualidade",
+    label: "Qualidade dos Dados",
+    icon: ShieldCheck,
+  },
   {
     to: "/dashboard/importar-clientes",
     label: "Importar Clientes",

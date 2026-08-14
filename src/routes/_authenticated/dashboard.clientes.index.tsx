@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Download, Eye, MessageSquarePlus, Pencil, Plus, Trash2 } from "lucide-react";
+import { Download, Eye, MessageSquarePlus, Pencil, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -185,6 +185,11 @@ function ClientesPage() {
         >
           <Download className="mr-1.5 h-4 w-4" /> Exportar Clientes
         </Button>
+        <Link to="/dashboard/clientes/qualidade">
+          <Button variant="outline" className="border-accent/40 bg-accent/5 hover:bg-accent/15 text-accent-foreground font-medium">
+            <ShieldCheck className="mr-1.5 h-4 w-4 text-accent" /> Qualidade dos Dados
+          </Button>
+        </Link>
         <Button
           onClick={() => {
             setEditing(null);

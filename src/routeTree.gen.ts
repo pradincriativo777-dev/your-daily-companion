@@ -21,6 +21,7 @@ import { Route as AuthenticatedDashboardManutencoesRouteImport } from './routes/
 import { Route as AuthenticatedDashboardRelatoriosRouteImport } from './routes/_authenticated/dashboard.relatorios'
 import { Route as AuthenticatedDashboardClientesIndexRouteImport } from './routes/_authenticated/dashboard.clientes.index'
 import { Route as AuthenticatedDashboardClientesIdRouteImport } from './routes/_authenticated/dashboard.clientes.$id'
+import { Route as AuthenticatedDashboardClientesQualidadeRouteImport } from './routes/_authenticated/dashboard.clientes.qualidade'
 import { Route as AuthenticatedDashboardTecnicosIndexRouteImport } from './routes/_authenticated/dashboard.tecnicos.index'
 import { Route as AuthenticatedDashboardTecnicosIdRouteImport } from './routes/_authenticated/dashboard.tecnicos.$id'
 
@@ -92,6 +93,12 @@ const AuthenticatedDashboardClientesIdRoute =
     path: '/clientes/$id',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedDashboardClientesQualidadeRoute =
+  AuthenticatedDashboardClientesQualidadeRouteImport.update({
+    id: '/clientes/qualidade',
+    path: '/clientes/qualidade',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 const AuthenticatedDashboardTecnicosIndexRoute =
   AuthenticatedDashboardTecnicosIndexRouteImport.update({
     id: '/tecnicos/',
@@ -116,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/relatorios': typeof AuthenticatedDashboardRelatoriosRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/dashboard/clientes/$id': typeof AuthenticatedDashboardClientesIdRoute
+  '/dashboard/clientes/qualidade': typeof AuthenticatedDashboardClientesQualidadeRoute
   '/dashboard/tecnicos/$id': typeof AuthenticatedDashboardTecnicosIdRoute
   '/dashboard/clientes/': typeof AuthenticatedDashboardClientesIndexRoute
   '/dashboard/tecnicos/': typeof AuthenticatedDashboardTecnicosIndexRoute
@@ -130,6 +138,7 @@ export interface FileRoutesByTo {
   '/dashboard/relatorios': typeof AuthenticatedDashboardRelatoriosRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
   '/dashboard/clientes/$id': typeof AuthenticatedDashboardClientesIdRoute
+  '/dashboard/clientes/qualidade': typeof AuthenticatedDashboardClientesQualidadeRoute
   '/dashboard/tecnicos/$id': typeof AuthenticatedDashboardTecnicosIdRoute
   '/dashboard/clientes': typeof AuthenticatedDashboardClientesIndexRoute
   '/dashboard/tecnicos': typeof AuthenticatedDashboardTecnicosIndexRoute
@@ -147,6 +156,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/relatorios': typeof AuthenticatedDashboardRelatoriosRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/_authenticated/dashboard/clientes/$id': typeof AuthenticatedDashboardClientesIdRoute
+  '/_authenticated/dashboard/clientes/qualidade': typeof AuthenticatedDashboardClientesQualidadeRoute
   '/_authenticated/dashboard/tecnicos/$id': typeof AuthenticatedDashboardTecnicosIdRoute
   '/_authenticated/dashboard/clientes/': typeof AuthenticatedDashboardClientesIndexRoute
   '/_authenticated/dashboard/tecnicos/': typeof AuthenticatedDashboardTecnicosIndexRoute
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
     | '/dashboard/relatorios'
     | '/dashboard/'
     | '/dashboard/clientes/$id'
+    | '/dashboard/clientes/qualidade'
     | '/dashboard/tecnicos/$id'
     | '/dashboard/clientes/'
     | '/dashboard/tecnicos/'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/dashboard/relatorios'
     | '/dashboard'
     | '/dashboard/clientes/$id'
+    | '/dashboard/clientes/qualidade'
     | '/dashboard/tecnicos/$id'
     | '/dashboard/clientes'
     | '/dashboard/tecnicos'
@@ -194,6 +206,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/relatorios'
     | '/_authenticated/dashboard/'
     | '/_authenticated/dashboard/clientes/$id'
+    | '/_authenticated/dashboard/clientes/qualidade'
     | '/_authenticated/dashboard/tecnicos/$id'
     | '/_authenticated/dashboard/clientes/'
     | '/_authenticated/dashboard/tecnicos/'
@@ -290,6 +303,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardClientesIdRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/dashboard/clientes/qualidade': {
+      id: '/_authenticated/dashboard/clientes/qualidade'
+      path: '/clientes/qualidade'
+      fullPath: '/dashboard/clientes/qualidade'
+      preLoaderRoute: typeof AuthenticatedDashboardClientesQualidadeRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
     '/_authenticated/dashboard/tecnicos/': {
       id: '/_authenticated/dashboard/tecnicos/'
       path: '/tecnicos'
@@ -316,6 +336,7 @@ interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardRelatoriosRoute: typeof AuthenticatedDashboardRelatoriosRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
   AuthenticatedDashboardClientesIdRoute: typeof AuthenticatedDashboardClientesIdRoute
+  AuthenticatedDashboardClientesQualidadeRoute: typeof AuthenticatedDashboardClientesQualidadeRoute
   AuthenticatedDashboardTecnicosIdRoute: typeof AuthenticatedDashboardTecnicosIdRoute
   AuthenticatedDashboardClientesIndexRoute: typeof AuthenticatedDashboardClientesIndexRoute
   AuthenticatedDashboardTecnicosIndexRoute: typeof AuthenticatedDashboardTecnicosIndexRoute
@@ -336,6 +357,8 @@ const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
     AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
     AuthenticatedDashboardClientesIdRoute:
       AuthenticatedDashboardClientesIdRoute,
+    AuthenticatedDashboardClientesQualidadeRoute:
+      AuthenticatedDashboardClientesQualidadeRoute,
     AuthenticatedDashboardTecnicosIdRoute:
       AuthenticatedDashboardTecnicosIdRoute,
     AuthenticatedDashboardClientesIndexRoute:
