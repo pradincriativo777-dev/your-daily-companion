@@ -720,23 +720,30 @@ function UndoMergeButton({ auditId, isReverted, onSuccess }: { auditId: string, 
 // FUNÇÕES DE PARSE DO HISTÓRICO
 // ==========================================
 
-function getSecondaryCount(audit: any): number | null {
-  if (audit.archived_ids && Array.isArray(audit.archived_ids)) return audit.archived_ids.length;
-  if (audit.campos_anteriores?.secundarios && Array.isArray(audit.campos_anteriores.secundarios)) return audit.campos_anteriores.secundarios.length;
-  if (audit.total_afetados !== undefined) return audit.total_afetados;
+export function getSecondaryCount(audit: any): number | null {
+  if (audit?.archived_ids !== undefined && Array.isArray(audit.archived_ids)) {
+    return audit.archived_ids.length;
+  }
+  if (audit?.campos_anteriores?.secundarios !== undefined && Array.isArray(audit.campos_anteriores.secundarios)) {
+    return audit.campos_anteriores.secundarios.length;
+  }
+  if (typeof audit?.total_afetados === 'number') {
+    return audit.total_afetados;
+  }
   return null;
 }
 
-function getAuditStatus(audit: any): "SUCCESS" | "REVERTED" | "FAILED" | "PENDING" | "UNKNOWN" {
-  if (audit.status === 'PENDING') return 'PENDING';
-  if (audit.status === 'FAILED') return 'FAILED';
-  
-  if (audit.reverted_at || audit.status === 'REVERTED' || audit.status === 'UNDO_SUCCESS') return 'REVERTED';
+export function getAuditStatus(audit: any): "SUCCESS" | "REVERTED" | "FAILED" | "PENDING" | "UNKNOWN" {
+  if (audit?.status === 'FAILED') return 'FAILED';
   
   const count = getSecondaryCount(audit);
-  if (count === 0 && !audit.status) return 'FAILED'; // Operação falha / vazia
+  if (count === 0 && !audit?.status) return 'FAILED';
   
-  if (audit.status === 'SUCCESS' || (!audit.status && !audit.reverted_at)) return 'SUCCESS';
+  if (audit?.reverted_at || audit?.status === 'REVERTED' || audit?.status === 'UNDO_SUCCESS') return 'REVERTED';
+  
+  if (audit?.status === 'PENDING') return 'PENDING';
+  
+  if (audit?.status === 'SUCCESS') return 'SUCCESS';
   
   return 'UNKNOWN';
 }
