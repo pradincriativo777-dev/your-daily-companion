@@ -66,7 +66,7 @@ export const serverExecuteMerge = createServerFn({ method: "POST" })
           reason: mergeError.message,
           meta: { principalId: data.principalId }
         });
-        return { success: false, error: "Não foi possível concluir a mesclagem. Nenhum dado foi alterado." };
+        return { success: false, error: `Falha no Banco: ${mergeError.message}` };
       }
 
       logSecurityEvent({
