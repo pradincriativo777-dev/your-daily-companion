@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { getIntegrationsStatus, testAuvoConnection, simulateAuvoSync, getAuvoLogs } from "@/lib/integrations/auvo.server";
+import { getIntegrationsStatus, testAuvoConnection, simulateAuvoSync, executeAuvoSync, getAuvoLogs } from "@/lib/integrations/auvo.server";
 import { AuvoSyncPreviewDialog } from "@/components/integrations/AuvoSyncPreviewDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -75,6 +75,25 @@ function IntegracoesPage() {
       toast.error("Erro crítico na simulação: " + err.message);
     } finally {
       setSimulating(false);
+    }
+  };
+
+  const [syncing, setSyncing] = useState(false);
+  const handleExecuteSync = async () => {
+    setSyncing(true);
+    try {
+      const res = await executeAuvoSync();
+      if (res.success) {
+        toast.success(res.message);
+        setPreviewOpen(false);
+      } else {
+        toast.error(`Falha na sincronização: ${res.error}`);
+      }
+      await loadStatus();
+    } catch (err: any) {
+      toast.error("Erro na sincronização: " + err.message);
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -226,6 +245,8 @@ function IntegracoesPage() {
         onOpenChange={setPreviewOpen} 
         previewData={previewData.preview} 
         totais={previewData.totais} 
+        onConfirmSync={handleExecuteSync}
+        syncing={syncing}
       />
 
       {/* Logs Dialog */}

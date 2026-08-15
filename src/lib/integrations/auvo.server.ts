@@ -41,25 +41,52 @@ async function auvoFetch(endpoint: string, options: RequestInit = {}) {
   }
 
   const baseUrl = "https://app.auvo.com.br/api/v2";
-  const url = `${baseUrl}${endpoint}`;
 
-  // Se a API exige AppKey e Token nos headers:
-  const headers = new Headers(options.headers);
-  headers.set("Content-Type", "application/json");
-  // Dependendo da implementação da v2 pode ser accessToken ou esses headers diretamente
-  // Assumindo passagem pelos headers para simplificar:
-  // (Na realidade a v2 pode exigir um POST /api/v2/login para pegar um AccessToken, simularemos o fluxo direto)
-  
   // Vamos mockar o retorno caso as credenciais sejam "MOCK_KEY" para facilitar os testes se não tivermos a real
   if (appKey === "MOCK_KEY" && token === "MOCK_TOKEN") {
     return mockAuvoResponse(endpoint);
   }
 
+  // Tenta autenticação oficial v2 enviando apiKey e apiToken para /login
+  try {
+    const loginRes = await fetchWithRetry(`${baseUrl}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ apiKey: appKey, apiToken: token }),
+      timeoutMs: 10000,
+      maxRetries: 1,
+    });
+
+    if (loginRes.ok) {
+      const loginData = await loginRes.json();
+      const accessToken = loginData?.result?.accessToken;
+      if (accessToken) {
+        const headers = new Headers(options.headers);
+        headers.set("Content-Type", "application/json");
+        headers.set("Authorization", `Bearer ${accessToken}`);
+        return fetchWithRetry(`${baseUrl}${endpoint}`, {
+          ...options,
+          headers,
+          timeoutMs: 15000,
+          maxRetries: 3,
+        });
+      }
+    }
+  } catch (e) {
+    // Fallback se /login falhar ou se as chaves forem passadas diretamente no header
+  }
+
+  const url = `${baseUrl}${endpoint}`;
+  const headers = new Headers(options.headers);
+  headers.set("Content-Type", "application/json");
+  headers.set("apiKey", appKey);
+  headers.set("apiToken", token);
+
   return fetchWithRetry(url, {
     ...options,
     headers,
     timeoutMs: 15000,
-    maxRetries: 3
+    maxRetries: 3,
   });
 }
 
@@ -190,6 +217,80 @@ export const simulateAuvoSync = createServerFn({ method: "POST" })
     } catch (err: any) {
       const duracao = Date.now() - start;
       addLog({ integracao: "AUVO", operacao: "SimulateSync", resultado: "ERROR", duracao, errorCode: "SYNC_FAILED" });
+      return { success: false, error: err.message };
+    }
+  });
+
+export const executeAuvoSync = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: isAdmin } = await (context.supabase as any).rpc('is_admin');
+    if (!isAdmin) throw new Error("Acesso negado.");
+
+    const start = Date.now();
+    try {
+      const response = await auvoFetch("/clientes?pageSize=50");
+      if (!response.ok) throw new Error("Falha ao consultar API Auvo");
+      const auvoData = await response.json();
+
+      const { data: crmClientes } = await (context.supabase as any)
+        .from("clientes")
+        .select("id, cpf_cnpj, email, whatsapp");
+
+      let importadosCount = 0;
+      let ignoradosCount = 0;
+
+      const clientesParaInserir: any[] = [];
+
+      (auvoData.result || []).forEach((auvoCli: any) => {
+        const docNormalizado = auvoCli.orientation?.replace(/\D/g, '');
+        const foneNormalizado = auvoCli.mobilePhone?.replace(/\D/g, '');
+        const emailNormalizado = auvoCli.email?.toLowerCase();
+
+        let encontrado = crmClientes?.find((c: any) => 
+          (c.cpf_cnpj && c.cpf_cnpj.replace(/\D/g, '') === docNormalizado) ||
+          (c.email && c.email.toLowerCase() === emailNormalizado) ||
+          (c.whatsapp && c.whatsapp.replace(/\D/g, '') === foneNormalizado)
+        );
+
+        if (!encontrado) {
+          clientesParaInserir.push({
+            nome: auvoCli.name || "Cliente Auvo",
+            email: auvoCli.email || null,
+            whatsapp: auvoCli.mobilePhone || null,
+            cpf_cnpj: auvoCli.orientation || null,
+            cidade: auvoCli.city || null,
+            uf: auvoCli.state || null,
+            origem: "Auvo Sync",
+            status: "Lead",
+          });
+        } else {
+          ignoradosCount++;
+        }
+      });
+
+      if (clientesParaInserir.length > 0) {
+        const { error, data } = await (context.supabase as any)
+          .from("clientes")
+          .insert(clientesParaInserir)
+          .select("id");
+
+        if (error) throw new Error(`Erro ao salvar no CRM: ${error.message}`);
+        importadosCount = data?.length || 0;
+      }
+
+      const duracao = Date.now() - start;
+      addLog({ integracao: "AUVO", operacao: "ExecuteSync", resultado: "SUCCESS", duracao });
+
+      return { 
+        success: true, 
+        importados: importadosCount, 
+        ignorados: ignoradosCount,
+        message: `${importadosCount} cliente(s) importado(s) com sucesso!`
+      };
+    } catch (err: any) {
+      const duracao = Date.now() - start;
+      addLog({ integracao: "AUVO", operacao: "ExecuteSync", resultado: "ERROR", duracao, errorCode: "SYNC_EXECUTION_FAILED" });
       return { success: false, error: err.message };
     }
   });

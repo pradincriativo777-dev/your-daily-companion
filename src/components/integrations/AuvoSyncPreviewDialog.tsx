@@ -23,9 +23,18 @@ interface AuvoSyncPreviewDialogProps {
   onOpenChange: (open: boolean) => void;
   previewData: PreviewItem[];
   totais: Totais;
+  onConfirmSync?: () => void;
+  syncing?: boolean;
 }
 
-export function AuvoSyncPreviewDialog({ open, onOpenChange, previewData, totais }: AuvoSyncPreviewDialogProps) {
+export function AuvoSyncPreviewDialog({ 
+  open, 
+  onOpenChange, 
+  previewData, 
+  totais,
+  onConfirmSync,
+  syncing = false
+}: AuvoSyncPreviewDialogProps) {
   const getBadgeVariant = (status: PreviewItem["status"]) => {
     switch (status) {
       case "Já Vinculado": return "default";
@@ -43,7 +52,7 @@ export function AuvoSyncPreviewDialog({ open, onOpenChange, previewData, totais 
         <DialogHeader>
           <DialogTitle>Simulação de Sincronização (Dry-Run)</DialogTitle>
           <DialogDescription>
-            Resultados da análise de correspondência entre o AUVO e o CRM JANSOL. Nenhuma informação foi alterada.
+            Resultados da análise de correspondência entre o AUVO e o CRM JANSOL.
           </DialogDescription>
         </DialogHeader>
 
@@ -103,11 +112,15 @@ export function AuvoSyncPreviewDialog({ open, onOpenChange, previewData, totais 
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={syncing}>
             Cancelar simulação
           </Button>
-          <Button disabled variant="secondary" title="Sincronização real indisponível nesta fase">
-            Sincronizar (Bloqueado)
+          <Button 
+            variant="default" 
+            onClick={onConfirmSync} 
+            disabled={syncing || previewData.length === 0}
+          >
+            {syncing ? "Sincronizando..." : "Sincronizar Agora"}
           </Button>
         </DialogFooter>
       </DialogContent>
