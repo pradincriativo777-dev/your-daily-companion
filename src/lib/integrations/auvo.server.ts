@@ -42,54 +42,75 @@ function getAuvoCredentials() {
 async function auvoFetch(endpoint: string, options: RequestInit = {}) {
   const { appKey, token, isMock } = getAuvoCredentials();
 
-  const baseUrl = "https://app.auvo.com.br/api/v2";
-
-  // Vamos mockar o retorno caso as credenciais sejam "MOCK_KEY" para facilitar os testes se não tivermos a real
   if (isMock) {
     return mockAuvoResponse(endpoint, options);
   }
 
-  // Tenta autenticação oficial v2 enviando apiKey e apiToken para /login
-  try {
-    const loginRes = await fetchWithRetry(`${baseUrl}/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ apiKey: appKey, apiToken: token }),
-      timeoutMs: 10000,
-      maxRetries: 1,
-    });
+  const baseUrls = [
+    "https://app.auvo.com.br/api/v2",
+    "https://app.auvo.com.br/api/v1.0",
+  ];
 
-    if (loginRes.ok) {
-      const loginData = await loginRes.json();
-      const accessToken = loginData?.result?.accessToken;
-      if (accessToken) {
-        const headers = new Headers(options.headers);
-        headers.set("Content-Type", "application/json");
-        headers.set("Authorization", `Bearer ${accessToken}`);
-        return fetchWithRetry(`${baseUrl}${endpoint}`, {
-          ...options,
-          headers,
-          timeoutMs: 15000,
-          maxRetries: 3,
-        });
+  let lastResponse: Response | null = null;
+  let lastError: any = null;
+
+  for (const baseUrl of baseUrls) {
+    // Método 1: Auth Bearer token via /login
+    try {
+      const loginRes = await fetchWithRetry(`${baseUrl}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey: appKey, apiToken: token }),
+        timeoutMs: 8000,
+        maxRetries: 1,
+      });
+
+      if (loginRes.ok) {
+        const loginData = await loginRes.json();
+        const accessToken = loginData?.result?.accessToken || loginData?.accessToken;
+        if (accessToken) {
+          const headers = new Headers(options.headers);
+          headers.set("Content-Type", "application/json");
+          headers.set("Authorization", `Bearer ${accessToken}`);
+          const res = await fetchWithRetry(`${baseUrl}${endpoint}`, {
+            ...options,
+            headers,
+            timeoutMs: 12000,
+            maxRetries: 2,
+          });
+          if (res.ok) return res;
+          lastResponse = res;
+        }
       }
+    } catch (e) {
+      lastError = e;
     }
-  } catch (e) {
-    // Fallback se /login falhar ou se as chaves forem passadas diretamente no header
+
+    // Método 2: Query Params + Headers simultâneos
+    try {
+      const sep = endpoint.includes("?") ? "&" : "?";
+      const fullUrl = `${baseUrl}${endpoint}${sep}apiKey=${encodeURIComponent(appKey)}&apiToken=${encodeURIComponent(token)}`;
+      const headers = new Headers(options.headers);
+      headers.set("Content-Type", "application/json");
+      headers.set("apiKey", appKey);
+      headers.set("apiToken", token);
+
+      const res = await fetchWithRetry(fullUrl, {
+        ...options,
+        headers,
+        timeoutMs: 12000,
+        maxRetries: 2,
+      });
+
+      if (res.ok) return res;
+      lastResponse = res;
+    } catch (e) {
+      lastError = e;
+    }
   }
 
-  const url = `${baseUrl}${endpoint}`;
-  const headers = new Headers(options.headers);
-  headers.set("Content-Type", "application/json");
-  headers.set("apiKey", appKey);
-  headers.set("apiToken", token);
-
-  return fetchWithRetry(url, {
-    ...options,
-    headers,
-    timeoutMs: 15000,
-    maxRetries: 3,
-  });
+  if (lastResponse) return lastResponse;
+  throw lastError || new Error("Falha na comunicação com a API Auvo");
 }
 
 function mockAuvoResponse(endpoint: string, options: RequestInit = {}) {
