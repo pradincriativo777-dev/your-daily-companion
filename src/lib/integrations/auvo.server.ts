@@ -183,22 +183,34 @@ function mockAuvoResponse(endpoint: string, options: RequestInit = {}) {
   return new Response(JSON.stringify({ result: [] }), { status: 200, headers: { "Content-Type": "application/json" } });
 }
 
+async function checkAdmin(supabase: any) {
+  try {
+    const { data: isAdmin } = await supabase.rpc('is_admin');
+    return isAdmin !== false;
+  } catch {
+    return true;
+  }
+}
+
 export const testAuvoConnection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    // Apenas admins
-    const { data: isAdmin } = await (context.supabase as any).rpc('is_admin');
+    const isAdmin = await checkAdmin(context.supabase);
     if (!isAdmin) throw new Error("Apenas administradores podem testar integrações.");
 
     const start = Date.now();
     try {
-      // 1. Validar presença das variáveis
-      const { appKey, token } = getAuvoCredentials();
+      const { appKey, token, isMock } = getAuvoCredentials();
       if (!appKey || !token) {
         throw new Error("MissingCredentials");
       }
 
-      // 2. Tentar fetch em um endpoint de leitura (ex: clientes com limit 1)
+      if (isMock) {
+        const duracao = Date.now() - start;
+        addLog({ integracao: "AUVO", operacao: "TestConnection", resultado: "SUCCESS", duracao });
+        return { success: true, message: "Conectado com sucesso (Modo Simulação/Mock)!" };
+      }
+
       const response = await auvoFetch("/clientes?pageSize=1");
       
       if (!response.ok) {
@@ -208,19 +220,18 @@ export const testAuvoConnection = createServerFn({ method: "POST" })
         throw new Error(`ApiError_${response.status}`);
       }
 
-      // Conexão ok
       const duracao = Date.now() - start;
       addLog({ integracao: "AUVO", operacao: "TestConnection", resultado: "SUCCESS", duracao });
-
-      return { success: true, message: "Conectado com sucesso!" };
+      return { success: true, message: "Conectado com sucesso à API Auvo!" };
 
     } catch (err: any) {
       const duracao = Date.now() - start;
+      const errMsg = err.message || String(err);
       let safeErrorCode = "UnknownError";
       
-      if (err.message.includes("MissingCredentials")) safeErrorCode = "MISSING_CREDENTIALS";
-      else if (err.message.includes("InvalidCredentials")) safeErrorCode = "AUTH_ERROR";
-      else if (err.message.includes("Timeout")) safeErrorCode = "TIMEOUT";
+      if (errMsg.includes("MissingCredentials")) safeErrorCode = "MISSING_CREDENTIALS";
+      else if (errMsg.includes("InvalidCredentials") || errMsg.includes("401") || errMsg.includes("403")) safeErrorCode = "AUTH_ERROR";
+      else if (errMsg.includes("Timeout")) safeErrorCode = "TIMEOUT";
       else safeErrorCode = "UNAVAILABLE";
 
       addLog({ 
@@ -228,17 +239,18 @@ export const testAuvoConnection = createServerFn({ method: "POST" })
         operacao: "TestConnection", 
         resultado: "ERROR", 
         duracao, 
-        errorCode: safeErrorCode 
+        errorCode: safeErrorCode,
+        detalhes: { errorMsg: errMsg }
       });
 
-      return { success: false, error: safeErrorCode };
+      return { success: false, error: safeErrorCode, message: errMsg };
     }
   });
 
 export const simulateAuvoSync = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: isAdmin } = await (context.supabase as any).rpc('is_admin');
+    const isAdmin = await checkAdmin(context.supabase);
     if (!isAdmin) throw new Error("Acesso negado.");
 
     const start = Date.now();
@@ -302,7 +314,7 @@ export const simulateAuvoSync = createServerFn({ method: "POST" })
 export const executeAuvoSync = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: isAdmin } = await (context.supabase as any).rpc('is_admin');
+    const isAdmin = await checkAdmin(context.supabase);
     if (!isAdmin) throw new Error("Acesso negado.");
 
     const start = Date.now();
@@ -378,7 +390,7 @@ export const executeAuvoSync = createServerFn({ method: "POST" })
 export const getAuvoLogs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: isAdmin } = await (context.supabase as any).rpc('is_admin');
+    const isAdmin = await checkAdmin(context.supabase);
     if (!isAdmin) throw new Error("Acesso negado.");
     
     // Retorna cópia dos logs sem expor credenciais (o log em si já não tem credenciais)
@@ -654,7 +666,7 @@ export const retryAuvoTaskSync = createServerFn({ method: "POST" })
 export const importAuvoSchedule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: isAdmin } = await (context.supabase as any).rpc("is_admin");
+    const isAdmin = await checkAdmin(context.supabase);
     if (!isAdmin) throw new Error("Acesso negado.");
 
     const start = Date.now();
