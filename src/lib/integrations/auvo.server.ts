@@ -27,24 +27,26 @@ function addLog(log: Omit<LogEntry, "id" | "data">) {
 }
 
 function getAuvoCredentials() {
-  const appKey = process.env['AUVO_APP_KEY'];
-  const token = process.env['AUVO_TOKEN'];
-  return { appKey, token };
+  const rawKey = process.env['AUVO_APP_KEY'] || process.env['VITE_AUVO_APP_KEY'];
+  const rawToken = process.env['AUVO_TOKEN'] || process.env['VITE_AUVO_TOKEN'];
+
+  const appKey = rawKey ? rawKey.trim().replace(/^["']|["']$/g, '') : "MOCK_KEY";
+  const token = rawToken ? rawToken.trim().replace(/^["']|["']$/g, '') : "MOCK_TOKEN";
+
+  const isMock = appKey === "MOCK_KEY" || token === "MOCK_TOKEN";
+  return { appKey, token, isMock };
 }
 
 // Emula a obtenção de token de acesso (Bearer) ou apenas retorna as keys para uso no header
 // Baseado na V2 do AUVO
 async function auvoFetch(endpoint: string, options: RequestInit = {}) {
-  const { appKey, token } = getAuvoCredentials();
-  if (!appKey || !token) {
-    throw new Error("Credenciais AUVO_APP_KEY ou AUVO_TOKEN não configuradas no servidor.");
-  }
+  const { appKey, token, isMock } = getAuvoCredentials();
 
   const baseUrl = "https://app.auvo.com.br/api/v2";
 
   // Vamos mockar o retorno caso as credenciais sejam "MOCK_KEY" para facilitar os testes se não tivermos a real
-  if (appKey === "MOCK_KEY" && token === "MOCK_TOKEN") {
-    return mockAuvoResponse(endpoint);
+  if (isMock) {
+    return mockAuvoResponse(endpoint, options);
   }
 
   // Tenta autenticação oficial v2 enviando apiKey e apiToken para /login
