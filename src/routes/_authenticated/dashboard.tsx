@@ -21,6 +21,7 @@ import {
   Upload,
   Users,
   Wrench,
+  Blocks,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,7 @@ const NAV = [
   { to: "/dashboard/gastos", label: "Gastos", icon: Receipt },
   { to: "/dashboard/interacoes", label: "Interações", icon: MessageSquare },
   { to: "/dashboard/relatorios", label: "Relatórios", icon: BarChart3 },
+  { to: "/dashboard/integracoes", label: "Integrações", icon: Blocks },
 ] as const;
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
