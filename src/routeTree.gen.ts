@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
+import { Route as AuthenticatedDashboardAgendaRouteImport } from './routes/_authenticated/dashboard.agenda'
 import { Route as AuthenticatedDashboardGastosRouteImport } from './routes/_authenticated/dashboard.gastos'
 import { Route as AuthenticatedDashboardImportarClientesRouteImport } from './routes/_authenticated/dashboard.importar-clientes'
 import { Route as AuthenticatedDashboardIntegracoesRouteImport } from './routes/_authenticated/dashboard.integracoes'
@@ -45,6 +46,12 @@ const AuthenticatedDashboardIndexRoute =
   AuthenticatedDashboardIndexRouteImport.update({
     id: '/',
     path: '/',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardAgendaRoute =
+  AuthenticatedDashboardAgendaRouteImport.update({
+    id: '/agenda',
+    path: '/agenda',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
 const AuthenticatedDashboardGastosRoute =
@@ -129,6 +136,7 @@ const AuthenticatedDashboardTecnicosIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
+  '/dashboard/agenda': typeof AuthenticatedDashboardAgendaRoute
   '/dashboard/gastos': typeof AuthenticatedDashboardGastosRoute
   '/dashboard/importar-clientes': typeof AuthenticatedDashboardImportarClientesRoute
   '/dashboard/integracoes': typeof AuthenticatedDashboardIntegracoesRoute
@@ -146,6 +154,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard/agenda': typeof AuthenticatedDashboardAgendaRoute
   '/dashboard/gastos': typeof AuthenticatedDashboardGastosRoute
   '/dashboard/importar-clientes': typeof AuthenticatedDashboardImportarClientesRoute
   '/dashboard/integracoes': typeof AuthenticatedDashboardIntegracoesRoute
@@ -166,6 +175,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
+  '/_authenticated/dashboard/agenda': typeof AuthenticatedDashboardAgendaRoute
   '/_authenticated/dashboard/gastos': typeof AuthenticatedDashboardGastosRoute
   '/_authenticated/dashboard/importar-clientes': typeof AuthenticatedDashboardImportarClientesRoute
   '/_authenticated/dashboard/integracoes': typeof AuthenticatedDashboardIntegracoesRoute
@@ -186,6 +196,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/dashboard'
+    | '/dashboard/agenda'
     | '/dashboard/gastos'
     | '/dashboard/importar-clientes'
     | '/dashboard/integracoes'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/dashboard/agenda'
     | '/dashboard/gastos'
     | '/dashboard/importar-clientes'
     | '/dashboard/integracoes'
@@ -222,6 +234,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/_authenticated/dashboard'
+    | '/_authenticated/dashboard/agenda'
     | '/_authenticated/dashboard/gastos'
     | '/_authenticated/dashboard/importar-clientes'
     | '/_authenticated/dashboard/integracoes'
@@ -271,6 +284,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/dashboard/'
       preLoaderRoute: typeof AuthenticatedDashboardIndexRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/agenda': {
+      id: '/_authenticated/dashboard/agenda'
+      path: '/agenda'
+      fullPath: '/dashboard/agenda'
+      preLoaderRoute: typeof AuthenticatedDashboardAgendaRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
     '/_authenticated/dashboard/gastos': {
@@ -368,6 +388,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedDashboardRouteChildren {
+  AuthenticatedDashboardAgendaRoute: typeof AuthenticatedDashboardAgendaRoute
   AuthenticatedDashboardGastosRoute: typeof AuthenticatedDashboardGastosRoute
   AuthenticatedDashboardImportarClientesRoute: typeof AuthenticatedDashboardImportarClientesRoute
   AuthenticatedDashboardIntegracoesRoute: typeof AuthenticatedDashboardIntegracoesRoute
@@ -386,6 +407,7 @@ interface AuthenticatedDashboardRouteChildren {
 
 const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
   {
+    AuthenticatedDashboardAgendaRoute: AuthenticatedDashboardAgendaRoute,
     AuthenticatedDashboardGastosRoute: AuthenticatedDashboardGastosRoute,
     AuthenticatedDashboardImportarClientesRoute:
       AuthenticatedDashboardImportarClientesRoute,

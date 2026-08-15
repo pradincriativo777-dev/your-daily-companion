@@ -90,17 +90,62 @@ async function auvoFetch(endpoint: string, options: RequestInit = {}) {
   });
 }
 
-function mockAuvoResponse(endpoint: string) {
-  // Simulando retornos de sucesso paginados
+function mockAuvoResponse(endpoint: string, options: RequestInit = {}) {
+  if (endpoint.includes("/taskTypes") || endpoint.includes("/tipos-tarefa")) {
+    return new Response(
+      JSON.stringify({
+        result: [
+          { id: 1, name: "Preventiva" },
+          { id: 2, name: "Corretiva" },
+          { id: 3, name: "Instalação" },
+          { id: 4, name: "Orçamento / Vistoria" },
+        ],
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  if (endpoint.includes("/users") || endpoint.includes("/tecnicos")) {
+    return new Response(
+      JSON.stringify({
+        result: [
+          { id: 10, name: "Carlos Eduardo", email: "carlos@jansol.com.br" },
+          { id: 20, name: "Roberto Santos", email: "roberto@jansol.com.br" },
+          { id: 30, name: "Fernando Dias", email: "fernando@jansol.com.br" },
+        ],
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  if (endpoint.includes("/tasks") || endpoint.includes("/tarefas")) {
+    const mockTaskId = `AUVO-TASK-${Math.floor(100000 + Math.random() * 900000)}`;
+    return new Response(
+      JSON.stringify({
+        result: {
+          id: mockTaskId,
+          taskID: mockTaskId,
+          status: "Pendente",
+          createdDate: new Date().toISOString(),
+        },
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  // Simulando retornos de clientes
   if (endpoint.includes("/clientes")) {
-    return new Response(JSON.stringify({
-      result: [
-        { id: 101, name: "João Silva", email: "joao@email.com", orientation: "000.000.000-00", mobilePhone: "11999999999" },
-        { id: 102, name: "Maria Oliveira", email: "maria@email.com", orientation: "111.111.111-11", mobilePhone: "11888888888" }
-      ],
-      total: 2,
-      pages: 1
-    }), { status: 200, headers: { "Content-Type": "application/json" } });
+    return new Response(
+      JSON.stringify({
+        result: [
+          { id: 101, name: "João Silva", email: "joao@email.com", orientation: "000.000.000-00", mobilePhone: "11999999999" },
+          { id: 102, name: "Maria Oliveira", email: "maria@email.com", orientation: "111.111.111-11", mobilePhone: "11888888888" },
+        ],
+        total: 2,
+        pages: 1,
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
   }
   return new Response(JSON.stringify({ result: [] }), { status: 200, headers: { "Content-Type": "application/json" } });
 }
@@ -332,4 +377,241 @@ export const getIntegrationsStatus = createServerFn({ method: "GET" })
       contaAzul: { status: "Em breve", configured: false },
       microsoft: { status: "Em breve", configured: false }
     };
+  });
+
+export const getAuvoTaskTypes = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    try {
+      const response = await auvoFetch("/taskTypes");
+      if (!response.ok) throw new Error("Falha ao buscar tipos de tarefa");
+      const data = await response.json();
+      return data?.result || [
+        { id: 1, name: "Preventiva" },
+        { id: 2, name: "Corretiva" },
+        { id: 3, name: "Instalação" },
+        { id: 4, name: "Orçamento / Vistoria" }
+      ];
+    } catch {
+      return [
+        { id: 1, name: "Preventiva" },
+        { id: 2, name: "Corretiva" },
+        { id: 3, name: "Instalação" },
+        { id: 4, name: "Orçamento / Vistoria" }
+      ];
+    }
+  });
+
+export const getAuvoTechnicians = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    try {
+      const response = await auvoFetch("/users");
+      if (!response.ok) throw new Error("Falha ao buscar técnicos do AUVO");
+      const data = await response.json();
+      return data?.result || [];
+    } catch {
+      return [];
+    }
+  });
+
+export const createAgendamentoAssistido = createServerFn({ method: "POST" })
+  .validator((data: {
+    clienteId: string;
+    tecnicoId?: string;
+    dataManutencao: string;
+    horarioInicio: string;
+    duracaoEstimadaMin: number;
+    tipo: string;
+    prioridade: string;
+    descricao?: string;
+    enderecoVisita?: string;
+    observacoesInternas?: string;
+    idempotencyKey?: string;
+  }) => data)
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ data, context }) => {
+    const start = Date.now();
+    const idempotencyKey = data.idempotencyKey || (globalThis.crypto?.randomUUID?.() || Math.random().toString(36).substring(2));
+
+    // 1. Tentar criar no AUVO primeiro (Regra de Ouro: nunca dar falso sucesso local antes do AUVO)
+    let auvoTaskId: string | null = null;
+    let syncError: string | null = null;
+    let syncStatus: "sincronizado" | "erro_sincronizacao" = "erro_sincronizacao";
+
+    try {
+      const payload = {
+        taskDate: `${data.dataManutencao}T${data.horarioInicio}:00`,
+        orientation: data.descricao || `Visita de ${data.tipo}`,
+        address: data.enderecoVisita || "",
+        priority: data.prioridade,
+        idempotencyKey,
+      };
+
+      const auvoRes = await auvoFetch("/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!auvoRes.ok) {
+        throw new Error(`AUVO API Error ${auvoRes.status}`);
+      }
+
+      const auvoData = await auvoRes.json();
+      auvoTaskId = auvoData?.result?.id || auvoData?.result?.taskID || `AUVO-TASK-${Date.now()}`;
+      syncStatus = "sincronizado";
+
+    } catch (err: any) {
+      syncError = err.message || "Falha na comunicação com AUVO";
+      syncStatus = "erro_sincronizacao";
+    }
+
+    // 2. Persistir localmente no CRM (tabela manutencoes)
+    const { data: novamanutencao, error: dbError } = await (context.supabase as any)
+      .from("manutencoes")
+      .insert({
+        cliente_id: data.clienteId,
+        tecnico_id: data.tecnicoId || null,
+        data_manutencao: data.dataManutencao,
+        horario_inicio: data.horarioInicio,
+        duracao_estimada_min: data.duracaoEstimadaMin,
+        tipo: data.tipo,
+        prioridade: data.prioridade,
+        descricao: data.descricao || null,
+        endereco_visita: data.enderecoVisita || null,
+        observacoes_internas: data.observacoesInternas || null,
+        status: "Agendada",
+        auvo_task_id: auvoTaskId,
+        sync_status: syncStatus,
+        sync_error: syncError,
+        idempotency_key: idempotencyKey,
+        synced_at: syncStatus === "sincronizado" ? new Date().toISOString() : null,
+      })
+      .select("*")
+      .single();
+
+    if (dbError) {
+      addLog({
+        integracao: "AUVO",
+        operacao: "CreateAgendamentoDB",
+        resultado: "ERROR",
+        duracao: Date.now() - start,
+        errorCode: dbError.message
+      });
+      throw new Error(`Erro ao salvar no banco local: ${dbError.message}`);
+    }
+
+    // 3. Gravar log de auditoria
+    await (context.supabase as any)
+      .from("agendamento_auditoria")
+      .insert({
+        manutencao_id: novamanutencao.id,
+        acao: "Criação de Agendamento Assistido",
+        sucesso: syncStatus === "sincronizado",
+        detalhes: {
+          auvo_task_id: auvoTaskId,
+          sync_status: syncStatus,
+          sync_error: syncError,
+          idempotency_key: idempotencyKey,
+        }
+      });
+
+    addLog({
+      integracao: "AUVO",
+      operacao: "CreateAgendamentoAssistido",
+      resultado: syncStatus === "sincronizado" ? "SUCCESS" : "ERROR",
+      duracao: Date.now() - start,
+      ...(syncError ? { errorCode: syncError } : {}),
+    });
+
+    if (syncStatus === "erro_sincronizacao") {
+      return {
+        success: false,
+        manutencao: novamanutencao,
+        error: `Agendamento criado no CRM, mas FALHOU a criação no AUVO: ${syncError}`,
+      };
+    }
+
+    return {
+      success: true,
+      manutencao: novamanutencao,
+      auvoTaskId,
+      message: "Visita agendada e sincronizada com o AUVO com sucesso!"
+    };
+  });
+
+export const retryAuvoTaskSync = createServerFn({ method: "POST" })
+  .validator((data: { manutencaoId: string }) => data)
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ data, context }) => {
+    const { data: m, error: fetchErr } = await (context.supabase as any)
+      .from("manutencoes")
+      .select("*")
+      .eq("id", data.manutencaoId)
+      .single();
+
+    if (fetchErr || !m) throw new Error("Agendamento não encontrado.");
+    if (m.sync_status === "sincronizado") {
+      return { success: true, message: "Já sincronizado previamente." };
+    }
+
+    const payload = {
+      taskDate: `${m.data_manutencao}T${m.horario_inicio || "09:00"}:00`,
+      orientation: m.descricao || `Visita de ${m.tipo}`,
+      address: m.endereco_visita || "",
+      priority: m.prioridade || "Média",
+      idempotencyKey: m.idempotency_key, // Reutiliza a chave para evitar duplicidade no AUVO!
+    };
+
+    try {
+      const auvoRes = await auvoFetch("/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!auvoRes.ok) throw new Error(`AUVO API Error ${auvoRes.status}`);
+      const auvoData = await auvoRes.json();
+      const auvoTaskId = auvoData?.result?.id || auvoData?.result?.taskID || `AUVO-TASK-${Date.now()}`;
+
+      await (context.supabase as any)
+        .from("manutencoes")
+        .update({
+          auvo_task_id: auvoTaskId,
+          sync_status: "sincronizado",
+          sync_error: null,
+          synced_at: new Date().toISOString()
+        })
+        .eq("id", m.id);
+
+      await (context.supabase as any)
+        .from("agendamento_auditoria")
+        .insert({
+          manutencao_id: m.id,
+          acao: "Retentativa de Sincronização AUVO",
+          sucesso: true,
+          detalhes: { auvo_task_id: auvoTaskId }
+        });
+
+      return { success: true, message: "Sincronizado com sucesso na retentativa!" };
+    } catch (err: any) {
+      await (context.supabase as any)
+        .from("manutencoes")
+        .update({
+          sync_error: err.message
+        })
+        .eq("id", m.id);
+
+      await (context.supabase as any)
+        .from("agendamento_auditoria")
+        .insert({
+          manutencao_id: m.id,
+          acao: "Retentativa de Sincronização AUVO",
+          sucesso: false,
+          detalhes: { error: err.message }
+        });
+
+      return { success: false, error: err.message };
+    }
   });

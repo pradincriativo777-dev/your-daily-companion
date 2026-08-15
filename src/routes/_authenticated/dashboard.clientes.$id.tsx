@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, CalendarClock, Pencil, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +22,7 @@ import {
 } from "@/components/crm/ui";
 import { ClienteDialog } from "@/components/crm/ClienteDialog";
 import { ManutencaoDialog } from "@/components/crm/TecnicoManutencaoDialogs";
+import { AgendarVisitaDialog } from "@/components/crm/AgendarVisitaDialog";
 import {
   GastoDialog,
   InteracaoDialog,
@@ -83,6 +84,7 @@ function ClienteDetalhe() {
 
   const [editar, setEditar] = useState(false);
   const [revisao, setRevisao] = useState(search.revisao === true);
+  const [agendarVisitaOpen, setAgendarVisitaOpen] = useState(false);
   const [novaManut, setNovaManut] = useState(false);
   const [novoGasto, setNovoGasto] = useState(false);
   const [novaInter, setNovaInter] = useState(false);
@@ -140,6 +142,12 @@ function ClienteDetalhe() {
               Revisar Cadastro (Inconsistência)
             </Button>
           )}
+          <Button
+            onClick={() => setAgendarVisitaOpen(true)}
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <CalendarClock className="mr-1.5 h-4 w-4" /> Agendar visita
+          </Button>
           <Button
             onClick={() => setEditar(true)}
             className="bg-accent text-accent-foreground hover:bg-accent/90"

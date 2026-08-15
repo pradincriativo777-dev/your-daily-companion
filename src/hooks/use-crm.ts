@@ -52,6 +52,16 @@ export type Manutencao = {
   proxima_manutencao: string | null;
   custo: number | null;
   observacoes: string | null;
+  horario_inicio?: string | null;
+  duracao_estimada_min?: number | null;
+  prioridade?: string | null;
+  endereco_visita?: string | null;
+  observacoes_internas?: string | null;
+  auvo_task_id?: string | null;
+  sync_status?: "sincronizado" | "pendente" | "erro_sincronizacao" | string;
+  sync_error?: string | null;
+  idempotency_key?: string;
+  synced_at?: string | null;
 };
 
 export type Gasto = {
