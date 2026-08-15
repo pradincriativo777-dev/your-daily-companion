@@ -658,19 +658,36 @@ export const importAuvoSchedule = createServerFn({ method: "POST" })
     const start = Date.now();
     try {
       const response = await auvoFetch("/tasks?pageSize=50");
-      if (!response.ok) throw new Error("Falha ao consultar agenda do Auvo");
+      if (!response.ok) throw new Error(`Falha ao consultar agenda do Auvo (${response.status})`);
       const auvoData = await response.json();
-      const tasksList: any[] = Array.isArray(auvoData.result)
-        ? auvoData.result
-        : auvoData.result?.tasks || [];
+
+      let tasksList: any[] = [];
+      if (Array.isArray(auvoData.result)) {
+        tasksList = auvoData.result;
+      } else if (Array.isArray(auvoData.result?.tasks)) {
+        tasksList = auvoData.result.tasks;
+      } else if (Array.isArray(auvoData.result?.data)) {
+        tasksList = auvoData.result.data;
+      } else if (Array.isArray(auvoData.data)) {
+        tasksList = auvoData.data;
+      } else if (Array.isArray(auvoData)) {
+        tasksList = auvoData;
+      }
 
       // 1. Fetch existing manutencoes & clientes from CRM
       const { data: existingManutencoes } = await (context.supabase as any)
         .from("manutencoes")
-        .select("id, auvo_task_id");
-      const existingTaskIds = new Set(
-        (existingManutencoes || []).map((m: any) => m.auvo_task_id).filter(Boolean)
-      );
+        .select("id, auvo_task_id, descricao");
+      
+      const existingTaskIds = new Set<string>();
+      (existingManutencoes || []).forEach((m: any) => {
+        if (m.auvo_task_id) existingTaskIds.add(String(m.auvo_task_id));
+        // Se foi importado com fallback no campo descricao
+        if (m.descricao && m.descricao.includes("[AUVO ID:")) {
+          const match = m.descricao.match(/\[AUVO ID:\s*([^\]]+)\]/);
+          if (match && match[1]) existingTaskIds.add(match[1].trim());
+        }
+      });
 
       const { data: crmClientes } = await (context.supabase as any)
         .from("clientes")
@@ -680,19 +697,21 @@ export const importAuvoSchedule = createServerFn({ method: "POST" })
       let ignoradosCount = 0;
 
       for (const t of tasksList) {
-        const taskIdStr = String(t.id || t.taskID || "");
+        const taskIdStr = String(t.id || t.taskID || t.taskId || "");
         if (!taskIdStr || existingTaskIds.has(taskIdStr)) {
           ignoradosCount++;
           continue;
         }
 
+        const customerName = t.customerName || t.customer?.name || t.clientName || t.nomeCliente || "Cliente Auvo";
+        const customerDoc = (t.customerOrientation || t.customer?.orientation || t.customer?.cpfCnpj || t.cpf_cnpj || "").replace(/\D/g, "");
+
         // Match or find client
-        const docNormalizado = (t.customerOrientation || t.cpf_cnpj || "").replace(/\D/g, "");
         let clientMatch = crmClientes?.find((c: any) => {
-          if (docNormalizado && c.cpf_cnpj && c.cpf_cnpj.replace(/\D/g, "") === docNormalizado) {
+          if (customerDoc && c.cpf_cnpj && c.cpf_cnpj.replace(/\D/g, "") === customerDoc) {
             return true;
           }
-          if (t.customerName && c.nome.toLowerCase() === t.customerName.toLowerCase()) {
+          if (customerName && c.nome.toLowerCase() === customerName.toLowerCase()) {
             return true;
           }
           return false;
@@ -700,13 +719,13 @@ export const importAuvoSchedule = createServerFn({ method: "POST" })
 
         let targetClienteId = clientMatch?.id;
 
-        // If client doesn't exist, create a lead client for them
+        // If client doesn't exist in CRM, create a new lead client
         if (!targetClienteId) {
-          const { data: newCli } = await (context.supabase as any)
+          const { data: newCli, error: cliErr } = await (context.supabase as any)
             .from("clientes")
             .insert({
-              nome: t.customerName || "Cliente Auvo",
-              cpf_cnpj: t.customerOrientation || null,
+              nome: customerName,
+              cpf_cnpj: customerDoc || null,
               origem_lead: "Auvo Import",
               status: "Lead",
               tipo: "Pessoa Física",
@@ -717,6 +736,10 @@ export const importAuvoSchedule = createServerFn({ method: "POST" })
             .single();
 
           if (newCli) targetClienteId = newCli.id;
+          else if (cliErr) {
+            // Tenta obter qualquer cliente fallback se falhar
+            targetClienteId = crmClientes?.[0]?.id;
+          }
         }
 
         if (!targetClienteId) {
@@ -725,53 +748,86 @@ export const importAuvoSchedule = createServerFn({ method: "POST" })
         }
 
         // Parse date and time
-        const rawDate: string = t.taskDate || new Date().toISOString();
+        const rawDate: string = t.taskDate || t.date || new Date().toISOString();
         const dataManutencao = rawDate.split("T")[0] || (new Date().toISOString().split("T")[0] as string);
         const timePart = rawDate.split("T")[1];
         const horarioInicio = timePart ? timePart.substring(0, 5) : "09:00";
+        const taskTypeName = t.taskTypeName || t.taskType?.name || t.type || "Preventiva";
+        const taskAddress = t.address || t.customer?.address || t.endereco || null;
+        const taskDesc = t.orientation || t.description || t.orientacao || `Visita de ${taskTypeName}`;
 
-        // Insert into manutencoes
+        // 1. Tentar inserção com todas as colunas estendidas
+        const extendedPayload: any = {
+          cliente_id: targetClienteId,
+          data_manutencao: dataManutencao,
+          horario_inicio: horarioInicio,
+          duracao_estimada_min: t.durationMinutes || 60,
+          tipo: taskTypeName,
+          prioridade: t.priority || "Média",
+          descricao: taskDesc,
+          endereco_visita: taskAddress,
+          status: "Agendada",
+          auvo_task_id: taskIdStr,
+          sync_status: "sincronizado",
+          synced_at: new Date().toISOString(),
+        };
+
         const { error: insErr } = await (context.supabase as any)
           .from("manutencoes")
-          .insert({
-            cliente_id: targetClienteId,
-            data_manutencao: dataManutencao,
-            horario_inicio: horarioInicio,
-            duracao_estimada_min: t.durationMinutes || 60,
-            tipo: t.taskTypeName || t.type || "Preventiva",
-            prioridade: t.priority || "Média",
-            descricao: t.orientation || t.description || null,
-            endereco_visita: t.address || null,
-            status: "Agendada",
-            auvo_task_id: taskIdStr,
-            sync_status: "sincronizado",
-            synced_at: new Date().toISOString(),
-          });
+          .insert(extendedPayload);
 
         if (!insErr) {
           importadosCount++;
           existingTaskIds.add(taskIdStr);
         } else {
-          ignoradosCount++;
+          // 2. Fallback caso a migração de colunas estendidas ainda não tenha rodado no Supabase remoto
+          const basePayload = {
+            cliente_id: targetClienteId,
+            data_manutencao: dataManutencao,
+            tipo: taskTypeName,
+            descricao: `${taskDesc} [AUVO ID: ${taskIdStr}]`,
+            status: "Agendada",
+            observacoes: `Endereço: ${taskAddress || "Não informado"} | Horário: ${horarioInicio}`,
+          };
+
+          const { error: fallbackErr } = await (context.supabase as any)
+            .from("manutencoes")
+            .insert(basePayload);
+
+          if (!fallbackErr) {
+            importadosCount++;
+            existingTaskIds.add(taskIdStr);
+          } else {
+            ignoradosCount++;
+          }
         }
       }
 
       const duracao = Date.now() - start;
       addLog({ integracao: "AUVO", operacao: "ImportAuvoSchedule", resultado: "SUCCESS", duracao });
 
-      await (context.supabase as any)
-        .from("agendamento_auditoria")
-        .insert({
-          acao: "Importar Agenda AUVO",
-          sucesso: true,
-          detalhes: { importadosCount, ignoradosCount },
-        });
+      try {
+        await (context.supabase as any)
+          .from("agendamento_auditoria")
+          .insert({
+            acao: "Importar Agenda AUVO",
+            sucesso: true,
+            detalhes: { importadosCount, ignoradosCount, totalRecebido: tasksList.length },
+          });
+      } catch (audErr) {
+        // Ignora se tabela de auditoria não existir no DB remoto ainda
+      }
 
       return {
         success: true,
         importados: importadosCount,
         ignorados: ignoradosCount,
-        message: `${importadosCount} visita(s) importada(s) da agenda do AUVO com sucesso!`,
+        total: tasksList.length,
+        message: importadosCount > 0
+          ? `${importadosCount} visita(s) importada(s) da agenda do AUVO com sucesso!`
+          : tasksList.length > 0
+          ? `As ${tasksList.length} visita(s) do AUVO já estão cadastradas no CRM.`
+          : "Nenhuma visita encontrada no AUVO para importar.",
       };
     } catch (err: any) {
       const duracao = Date.now() - start;
