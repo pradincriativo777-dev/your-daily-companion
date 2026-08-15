@@ -23,6 +23,7 @@ import {
   Wrench,
   Blocks,
   Calendar,
+  FileText,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { to: "/dashboard/ordens", label: "Ordens de Serviço", icon: FileText },
   { to: "/dashboard/agenda", label: "Agenda", icon: Calendar },
   { to: "/dashboard/kanban", label: "Kanban", icon: KanbanSquare },
   { to: "/dashboard/clientes", label: "Clientes", icon: Users, exact: true },

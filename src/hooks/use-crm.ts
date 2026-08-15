@@ -57,6 +57,7 @@ export type Manutencao = {
   prioridade?: string | null;
   endereco_visita?: string | null;
   observacoes_internas?: string | null;
+  ordem_servico_id?: string | null;
   auvo_task_id?: string | null;
   sync_status?: "sincronizado" | "pendente" | "erro_sincronizacao" | string;
   sync_error?: string | null;
@@ -69,6 +70,7 @@ export type Gasto = {
   created_at: string;
   cliente_id: string | null;
   tecnico_id: string | null;
+  ordem_servico_id?: string | null;
   categoria: string;
   descricao: string;
   valor: number | null;
@@ -81,6 +83,7 @@ export type Interacao = {
   id: string;
   created_at: string;
   cliente_id: string;
+  ordem_servico_id?: string | null;
   data_interacao: string;
   tipo: string;
   descricao: string;
@@ -89,14 +92,56 @@ export type Interacao = {
   usuario: string | null;
 };
 
-type TableName = "clientes" | "tecnicos" | "manutencoes" | "gastos" | "interacoes";
+export type OrdemServico = {
+  id: string;
+  codigo: string;
+  cliente_id: string;
+  tecnico_id: string | null;
+  tipo_atendimento: string;
+  prioridade: string;
+  descricao_problema: string;
+  servico_solicitado: string | null;
+  endereco_visita: string;
+  data_prevista: string;
+  horario_inicio: string | null;
+  duracao_estimada_min: number | null;
+  origem_solicitacao: string | null;
+  observacoes_internas: string | null;
+  status: string;
+  motivo_cancelamento: string | null;
+  auvo_task_id: string | null;
+  sync_status: string;
+  idempotency_key: string;
+  version: number;
+  valor_orcado: number;
+  valor_aprovado: number;
+  valor_recebido: number;
+  situacao_pagamento: string;
+  created_at: string;
+  updated_at: string;
+  usuario_criacao_id: string | null;
+};
+
+export type OrdemServicoAuditoria = {
+  id: string;
+  ordem_id: string;
+  usuario_id: string | null;
+  acao: string;
+  status_anterior: string | null;
+  status_novo: string | null;
+  motivo_cancelamento: string | null;
+  detalhes: Record<string, any> | null;
+  created_at: string;
+};
+
+type TableName = "clientes" | "tecnicos" | "manutencoes" | "gastos" | "interacoes" | "ordens_servico";
 
 function useList<T>(table: TableName, order: string, ascending = false) {
   return useQuery({
     queryKey: [table],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from(table)
+        .from(table as any)
         .select("*")
         .order(order, { ascending });
       if (error) throw error;
@@ -112,6 +157,8 @@ export const useManutencoes = () =>
 export const useGastos = () => useList<Gasto>("gastos", "data");
 export const useInteracoes = () =>
   useList<Interacao>("interacoes", "data_interacao");
+export const useOrdensServico = () =>
+  useList<OrdemServico>("ordens_servico", "created_at");
 
 const labels: Record<TableName, string> = {
   clientes: "Cliente",
@@ -119,6 +166,7 @@ const labels: Record<TableName, string> = {
   manutencoes: "Manutenção",
   gastos: "Gasto",
   interacoes: "Interação",
+  ordens_servico: "Ordem de Serviço",
 };
 
 export function useUpsert(table: TableName) {
@@ -127,15 +175,13 @@ export function useUpsert(table: TableName) {
     mutationFn: async (values: Record<string, unknown>) => {
       const { id, ...rest } = values as { id?: string };
       if (id) {
-        const { error } = await supabase
-          .from(table)
+        const { error } = await (supabase.from as any)(table)
           .update(rest as never)
           .eq("id", id);
         if (error) throw error;
         return { id };
       }
-      const { data, error } = await supabase
-        .from(table)
+      const { data, error } = await (supabase.from as any)(table)
         .insert(rest as never)
         .select("id")
         .single();
@@ -156,7 +202,7 @@ export function useRemove(table: TableName) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from(table).delete().eq("id", id);
+      const { error } = await (supabase.from as any)(table).delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
