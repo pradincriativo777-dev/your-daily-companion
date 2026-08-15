@@ -14,6 +14,8 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
 import { Route as AuthenticatedDashboardAgendaRouteImport } from './routes/_authenticated/dashboard.agenda'
+import { Route as AuthenticatedDashboardEquipamentosRouteImport } from './routes/_authenticated/dashboard.equipamentos'
+import { Route as AuthenticatedDashboardGarantiasRouteImport } from './routes/_authenticated/dashboard.garantias'
 import { Route as AuthenticatedDashboardGastosRouteImport } from './routes/_authenticated/dashboard.gastos'
 import { Route as AuthenticatedDashboardImportarClientesRouteImport } from './routes/_authenticated/dashboard.importar-clientes'
 import { Route as AuthenticatedDashboardIntegracoesRouteImport } from './routes/_authenticated/dashboard.integracoes'
@@ -53,6 +55,18 @@ const AuthenticatedDashboardAgendaRoute =
   AuthenticatedDashboardAgendaRouteImport.update({
     id: '/agenda',
     path: '/agenda',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardEquipamentosRoute =
+  AuthenticatedDashboardEquipamentosRouteImport.update({
+    id: '/equipamentos',
+    path: '/equipamentos',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardGarantiasRoute =
+  AuthenticatedDashboardGarantiasRouteImport.update({
+    id: '/garantias',
+    path: '/garantias',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
 const AuthenticatedDashboardGastosRoute =
@@ -144,6 +158,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/dashboard/agenda': typeof AuthenticatedDashboardAgendaRoute
+  '/dashboard/equipamentos': typeof AuthenticatedDashboardEquipamentosRoute
+  '/dashboard/garantias': typeof AuthenticatedDashboardGarantiasRoute
   '/dashboard/gastos': typeof AuthenticatedDashboardGastosRoute
   '/dashboard/importar-clientes': typeof AuthenticatedDashboardImportarClientesRoute
   '/dashboard/integracoes': typeof AuthenticatedDashboardIntegracoesRoute
@@ -163,6 +179,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard/agenda': typeof AuthenticatedDashboardAgendaRoute
+  '/dashboard/equipamentos': typeof AuthenticatedDashboardEquipamentosRoute
+  '/dashboard/garantias': typeof AuthenticatedDashboardGarantiasRoute
   '/dashboard/gastos': typeof AuthenticatedDashboardGastosRoute
   '/dashboard/importar-clientes': typeof AuthenticatedDashboardImportarClientesRoute
   '/dashboard/integracoes': typeof AuthenticatedDashboardIntegracoesRoute
@@ -185,6 +203,8 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/_authenticated/dashboard/agenda': typeof AuthenticatedDashboardAgendaRoute
+  '/_authenticated/dashboard/equipamentos': typeof AuthenticatedDashboardEquipamentosRoute
+  '/_authenticated/dashboard/garantias': typeof AuthenticatedDashboardGarantiasRoute
   '/_authenticated/dashboard/gastos': typeof AuthenticatedDashboardGastosRoute
   '/_authenticated/dashboard/importar-clientes': typeof AuthenticatedDashboardImportarClientesRoute
   '/_authenticated/dashboard/integracoes': typeof AuthenticatedDashboardIntegracoesRoute
@@ -207,6 +227,8 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/dashboard/agenda'
+    | '/dashboard/equipamentos'
+    | '/dashboard/garantias'
     | '/dashboard/gastos'
     | '/dashboard/importar-clientes'
     | '/dashboard/integracoes'
@@ -226,6 +248,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/dashboard/agenda'
+    | '/dashboard/equipamentos'
+    | '/dashboard/garantias'
     | '/dashboard/gastos'
     | '/dashboard/importar-clientes'
     | '/dashboard/integracoes'
@@ -247,6 +271,8 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/_authenticated/dashboard'
     | '/_authenticated/dashboard/agenda'
+    | '/_authenticated/dashboard/equipamentos'
+    | '/_authenticated/dashboard/garantias'
     | '/_authenticated/dashboard/gastos'
     | '/_authenticated/dashboard/importar-clientes'
     | '/_authenticated/dashboard/integracoes'
@@ -304,6 +330,20 @@ declare module '@tanstack/react-router' {
       path: '/agenda'
       fullPath: '/dashboard/agenda'
       preLoaderRoute: typeof AuthenticatedDashboardAgendaRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/equipamentos': {
+      id: '/_authenticated/dashboard/equipamentos'
+      path: '/equipamentos'
+      fullPath: '/dashboard/equipamentos'
+      preLoaderRoute: typeof AuthenticatedDashboardEquipamentosRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/garantias': {
+      id: '/_authenticated/dashboard/garantias'
+      path: '/garantias'
+      fullPath: '/dashboard/garantias'
+      preLoaderRoute: typeof AuthenticatedDashboardGarantiasRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
     '/_authenticated/dashboard/gastos': {
@@ -409,6 +449,8 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardAgendaRoute: typeof AuthenticatedDashboardAgendaRoute
+  AuthenticatedDashboardEquipamentosRoute: typeof AuthenticatedDashboardEquipamentosRoute
+  AuthenticatedDashboardGarantiasRoute: typeof AuthenticatedDashboardGarantiasRoute
   AuthenticatedDashboardGastosRoute: typeof AuthenticatedDashboardGastosRoute
   AuthenticatedDashboardImportarClientesRoute: typeof AuthenticatedDashboardImportarClientesRoute
   AuthenticatedDashboardIntegracoesRoute: typeof AuthenticatedDashboardIntegracoesRoute
@@ -429,6 +471,9 @@ interface AuthenticatedDashboardRouteChildren {
 const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
   {
     AuthenticatedDashboardAgendaRoute: AuthenticatedDashboardAgendaRoute,
+    AuthenticatedDashboardEquipamentosRoute:
+      AuthenticatedDashboardEquipamentosRoute,
+    AuthenticatedDashboardGarantiasRoute: AuthenticatedDashboardGarantiasRoute,
     AuthenticatedDashboardGastosRoute: AuthenticatedDashboardGastosRoute,
     AuthenticatedDashboardImportarClientesRoute:
       AuthenticatedDashboardImportarClientesRoute,

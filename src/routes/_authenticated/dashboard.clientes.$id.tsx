@@ -29,6 +29,7 @@ import {
 } from "@/components/crm/GastoInteracaoDialogs";
 import { AssistenteCorrecaoDialog } from "@/components/crm/AssistenteCorrecaoDialog";
 import { formatCurrency, formatDate, num } from "@/lib/crm";
+import { supabase } from "@/integrations/supabase/client";
 import {
   useClientes,
   useGastos,
@@ -36,7 +37,15 @@ import {
   useManutencoes,
   useRemove,
   useTecnicos,
+  useEquipamentos,
+  useEquipamentoGarantias,
+  useEquipamentoPlanosPreventivos,
+  useEquipamentoAnexos,
+  useOrdensServico,
+  Equipamento,
 } from "@/hooks/use-crm";
+import { EquipamentoDialog } from "@/components/crm/EquipamentoDialog";
+import { EquipamentoDetalhesDialog } from "@/components/crm/EquipamentoDetalhesDialog";
 
 export const Route = createFileRoute("/_authenticated/dashboard/clientes/$id")({
   validateSearch: (search: Record<string, unknown>): { revisao?: boolean } => {
@@ -77,6 +86,12 @@ function ClienteDetalhe() {
   const { data: manutencoes = [] } = useManutencoes();
   const { data: gastos = [] } = useGastos();
   const { data: interacoes = [] } = useInteracoes();
+  const { data: equipamentos = [], refetch: refetchEquipamentos } = useEquipamentos();
+  const { data: garantias = [], refetch: refetchGarantias } = useEquipamentoGarantias();
+  const { data: planos = [], refetch: refetchPlanos } = useEquipamentoPlanosPreventivos();
+  const { data: anexos = [], refetch: refetchAnexos } = useEquipamentoAnexos();
+  const { data: ordensServico = [] } = useOrdensServico();
+
   const removeCliente = useRemove("clientes");
   const removeManutencao = useRemove("manutencoes");
   const removeGasto = useRemove("gastos");
@@ -88,6 +103,11 @@ function ClienteDetalhe() {
   const [novaManut, setNovaManut] = useState(false);
   const [novoGasto, setNovoGasto] = useState(false);
   const [novaInter, setNovaInter] = useState(false);
+
+  const [novoEquipamentoOpen, setNovoEquipamentoOpen] = useState(false);
+  const [equipamentoParaEditar, setEquipamentoParaEditar] = useState<Equipamento | null>(null);
+  const [equipamentoDetalhesOpen, setEquipamentoDetalhesOpen] = useState(false);
+  const [equipamentoSelecionado, setEquipamentoSelecionado] = useState<Equipamento | null>(null);
 
   if (isLoading) return <Loading />;
   const cliente = clientes.find((c) => c.id === id);
@@ -260,6 +280,7 @@ function ClienteDetalhe() {
       <Tabs defaultValue="manutencoes">
         <TabsList>
           <TabsTrigger value="manutencoes">Manutenções</TabsTrigger>
+          <TabsTrigger value="equipamentos">Equipamentos</TabsTrigger>
           <TabsTrigger value="gastos">Gastos</TabsTrigger>
           <TabsTrigger value="interacoes">Interações</TabsTrigger>
           <TabsTrigger value="financeiro">Resumo Financeiro</TabsTrigger>
@@ -319,6 +340,85 @@ function ClienteDetalhe() {
                         </TableCell>
                       </TableRow>
                     ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="equipamentos">
+          <Card className="overflow-hidden py-0">
+            <div className="flex justify-between items-center p-3">
+              <p className="text-sm font-medium">
+                Equipamentos instalados:{" "}
+                <span className="font-bold">{equipamentos.filter((e) => e.cliente_id === cliente.id).length}</span>
+              </p>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setEquipamentoParaEditar(null);
+                  setNovoEquipamentoOpen(true);
+                }}
+                className="bg-accent text-accent-foreground hover:bg-accent/90"
+              >
+                <Plus className="mr-1.5 h-4 w-4" /> Novo Equipamento
+              </Button>
+            </div>
+            {equipamentos.filter((e) => e.cliente_id === cliente.id).length === 0 ? (
+              <EmptyState title="Nenhum equipamento cadastrado para este cliente" />
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Categoria</TableHead>
+                      <TableHead>Equipamento (Marca / Modelo)</TableHead>
+                      <TableHead>Nº de Série</TableHead>
+                      <TableHead>Instalação</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {equipamentos
+                      .filter((e) => e.cliente_id === cliente.id)
+                      .map((eq) => (
+                        <TableRow
+                          key={eq.id}
+                          className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/50"
+                          onClick={() => {
+                            setEquipamentoSelecionado(eq);
+                            setEquipamentoDetalhesOpen(true);
+                          }}
+                        >
+                          <TableCell className="font-mono text-xs uppercase">{eq.categoria}</TableCell>
+                          <TableCell className="font-bold">{eq.marca} {eq.modelo}</TableCell>
+                          <TableCell className="font-mono text-xs">{eq.numero_serie || "—"}</TableCell>
+                          <TableCell>
+                            {eq.data_instalacao
+                              ? new Date(eq.data_instalacao + "T00:00:00").toLocaleDateString("pt-BR")
+                              : "—"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-[10px] font-bold">
+                              {eq.estado}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setEquipamentoSelecionado(eq);
+                                setEquipamentoDetalhesOpen(true);
+                              }}
+                            >
+                              Ver detalhes
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                   </TableBody>
                 </Table>
               </div>
@@ -487,6 +587,45 @@ function ClienteDetalhe() {
         open={novaInter}
         onOpenChange={setNovaInter}
         clienteId={cliente.id}
+      />
+      <EquipamentoDialog
+        open={novoEquipamentoOpen}
+        onOpenChange={setNovoEquipamentoOpen}
+        clientes={clientes}
+        ordensServico={ordensServico}
+        equipamentosExistentes={equipamentos}
+        equipamentoParaEditar={equipamentoParaEditar}
+        clienteIdPreDefinido={cliente.id}
+        onSave={async (dados) => {
+          if (dados.id) {
+            await (supabase.from as any)("equipamentos")
+              .update({ ...dados, updated_at: new Date().toISOString() })
+              .eq("id", dados.id);
+          } else {
+            await (supabase.from as any)("equipamentos").insert(dados);
+          }
+          refetchEquipamentos();
+        }}
+      />
+      <EquipamentoDetalhesDialog
+        open={equipamentoDetalhesOpen}
+        onOpenChange={setEquipamentoDetalhesOpen}
+        equipamento={equipamentoSelecionado}
+        cliente={cliente}
+        garantias={garantias}
+        planosPreventivos={planos}
+        anexos={anexos}
+        ordensServico={ordensServico}
+        onRefreshData={() => {
+          refetchEquipamentos();
+          refetchGarantias();
+          refetchPlanos();
+          refetchAnexos();
+        }}
+        onEditarEquipamento={(eq) => {
+          setEquipamentoParaEditar(eq);
+          setNovoEquipamentoOpen(true);
+        }}
       />
       <AssistenteCorrecaoDialog
         open={revisao}

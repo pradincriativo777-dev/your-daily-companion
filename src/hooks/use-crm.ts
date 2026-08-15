@@ -134,14 +134,85 @@ export type OrdemServicoAuditoria = {
   created_at: string;
 };
 
-type TableName = "clientes" | "tecnicos" | "manutencoes" | "gastos" | "interacoes" | "ordens_servico";
+export type Equipamento = {
+  id: string;
+  cliente_id: string;
+  categoria: string;
+  marca: string;
+  modelo: string;
+  numero_serie: string | null;
+  quantidade: number;
+  data_instalacao: string | null;
+  empresa_responsavel_instalacao: string | null;
+  local_instalacao: string | null;
+  ordem_servico_origem_id: string | null;
+  estado: string;
+  equipamento_substituido_id: string | null;
+  observacoes_tecnicas: string | null;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  usuario_criacao_id: string | null;
+};
+
+export type EquipamentoGarantia = {
+  id: string;
+  equipamento_id: string;
+  tipo: string;
+  data_inicio: string | null;
+  data_termino: string | null;
+  responsavel: string | null;
+  descricao_cobertura: string | null;
+  observacoes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EquipamentoPlanoPreventivo = {
+  id: string;
+  equipamento_id: string;
+  tipo_manutencao: string;
+  periodicidade_meses: number;
+  data_ultima_manutencao: string | null;
+  proxima_manutencao: string | null;
+  responsavel: string | null;
+  instrucoes: string | null;
+  status: string;
+  motivo_pausa_arquivamento: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EquipamentoAnexo = {
+  id: string;
+  equipamento_id: string;
+  garantia_id: string | null;
+  tipo: string;
+  nome_arquivo: string;
+  file_path: string;
+  file_size_bytes: number;
+  mime_type: string;
+  usuario_id: string | null;
+  created_at: string;
+};
+
+type TableName =
+  | "clientes"
+  | "tecnicos"
+  | "manutencoes"
+  | "gastos"
+  | "interacoes"
+  | "ordens_servico"
+  | "equipamentos"
+  | "equipamentos_garantias"
+  | "equipamentos_planos_preventivos"
+  | "equipamentos_anexos";
 
 function useList<T>(table: TableName, order: string, ascending = false) {
   return useQuery({
     queryKey: [table],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from(table as any)
+      const { data, error } = await (supabase.from as any)(table)
         .select("*")
         .order(order, { ascending });
       if (error) throw error;
@@ -159,6 +230,14 @@ export const useInteracoes = () =>
   useList<Interacao>("interacoes", "data_interacao");
 export const useOrdensServico = () =>
   useList<OrdemServico>("ordens_servico", "created_at");
+export const useEquipamentos = () =>
+  useList<Equipamento>("equipamentos", "created_at");
+export const useEquipamentoGarantias = () =>
+  useList<EquipamentoGarantia>("equipamentos_garantias", "created_at");
+export const useEquipamentoPlanosPreventivos = () =>
+  useList<EquipamentoPlanoPreventivo>("equipamentos_planos_preventivos", "created_at");
+export const useEquipamentoAnexos = () =>
+  useList<EquipamentoAnexo>("equipamentos_anexos", "created_at");
 
 const labels: Record<TableName, string> = {
   clientes: "Cliente",
@@ -167,6 +246,10 @@ const labels: Record<TableName, string> = {
   gastos: "Gasto",
   interacoes: "Interação",
   ordens_servico: "Ordem de Serviço",
+  equipamentos: "Equipamento",
+  equipamentos_garantias: "Garantia do Equipamento",
+  equipamentos_planos_preventivos: "Plano Preventivo",
+  equipamentos_anexos: "Anexo do Equipamento",
 };
 
 export function useUpsert(table: TableName) {
