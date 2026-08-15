@@ -1,5 +1,15 @@
 import { useState } from "react";
-import { OrdemServico, Cliente, Tecnico, Gasto, Interacao, Manutencao } from "@/hooks/use-crm";
+import {
+  OrdemServico,
+  Cliente,
+  Tecnico,
+  Gasto,
+  Interacao,
+  Manutencao,
+  useEstoqueItens,
+  useEstoqueMovimentacoes,
+  useEquipamentos,
+} from "@/hooks/use-crm";
 import {
   calcularFinanceiroOS,
   formatCurrency,
@@ -8,6 +18,11 @@ import {
   ORDENS_STATUS_LIST,
   OrdemStatus,
 } from "@/lib/ordens-servico";
+import {
+  gerarCodigoOperacao,
+  calcularSaldosEstoque,
+  validarSaldoDisponivel,
+} from "@/lib/estoque";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +37,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
@@ -38,12 +61,14 @@ import {
   History,
   FileText,
   Plus,
+  Trash2,
   AlertTriangle,
   CheckCircle2,
   XCircle,
   TrendingUp,
   TrendingDown,
   Lock,
+  Package,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -89,9 +114,24 @@ export function OrdemServicoDetalhesDialog({
   const [situacaoPagamento, setSituacaoPagamento] = useState(ordem.situacao_pagamento || "Pendente");
   const [salvandoFinanceiro, setSalvandoFinanceiro] = useState(false);
 
+  // Hooks de Estoque e Equipamentos
+  const { data: estoqueItens = [], refetch: refetchEstoqueItens } = useEstoqueItens();
+  const { data: estoqueMovs = [], refetch: refetchEstoqueMovs } = useEstoqueMovimentacoes();
+  const { data: equipamentosCliente = [] } = useEquipamentos();
+
+  // Movimentações ligadas a esta OS
+  const movsDaOrdem = estoqueMovs.filter((m) => m.ordem_servico_id === ordem.id);
+
   // Modal de Cancelamento
   const [modalCancelamentoOpen, setModalCancelamentoOpen] = useState(false);
   const [motivoCancelamentoInput, setMotivoCancelamentoInput] = useState("");
+
+  // Modais de Peças
+  const [modalReservaOpen, setModalReservaOpen] = useState(false);
+  const [pecaItemId, setPecaItemId] = useState("");
+  const [pecaQuantidade, setPecaQuantidade] = useState(1);
+  const [pecaEquipamentoId, setPecaEquipamentoId] = useState("");
+  const [processandoPeca, setProcessandoPeca] = useState(false);
 
   // Modal de Adição de Gasto
   const [modalGastoOpen, setModalGastoOpen] = useState(false);
@@ -190,7 +230,123 @@ export function OrdemServicoDetalhesDialog({
       setGastoValor("");
       onRefreshData();
     } catch (e: any) {
-      toast.error(e.message || "Erro ao vincular gasto.");
+      toast.error(e.message || "Erro ao adicionar gasto.");
+    }
+  };
+
+  const handleReservarPeca = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pecaItemId || pecaQuantidade <= 0) {
+      toast.error("Selecione a peça e informe uma quantidade válida.");
+      return;
+    }
+
+    const itemObj = estoqueItens.find((i) => i.id === pecaItemId);
+    if (!itemObj) return;
+
+    const movsItem = estoqueMovs.filter((m) => m.item_id === pecaItemId);
+    const saldos = calcularSaldosEstoque(movsItem);
+
+    const valSaldo = validarSaldoDisponivel({
+      saldoDisponivel: saldos.saldoDisponivel,
+      qtdSolicitada: pecaQuantidade,
+      userRole,
+    });
+
+    if (!valSaldo.permitido) {
+      toast.error(valSaldo.erro);
+      return;
+    }
+
+    try {
+      setProcessandoPeca(true);
+      const codOp = gerarCodigoOperacao();
+
+      const { error } = await (supabase.from as any)("estoque_movimentacoes").insert({
+        item_id: pecaItemId,
+        codigo_operacao: codOp,
+        tipo: "reserva",
+        quantidade: Number(pecaQuantidade),
+        custo_unitario: itemObj.custo_medio || 0,
+        ordem_servico_id: ordem.id,
+        equipamento_id: pecaEquipamentoId || null,
+        motivo: `Reserva de peça para a Ordem de Serviço ${ordem.codigo}`,
+      });
+
+      if (error) throw error;
+
+      toast.success(`Peça "${itemObj.nome}" reservada com sucesso! (${codOp})`);
+      setModalReservaOpen(false);
+      setPecaItemId("");
+      setPecaQuantidade(1);
+      setPecaEquipamentoId("");
+      refetchEstoqueMovs();
+      refetchEstoqueItens();
+      onRefreshData();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao reservar peça.");
+    } finally {
+      setProcessandoPeca(false);
+    }
+  };
+
+  const handleConsumirPeca = async (itemObj: typeof estoqueItens[0], qtd: number, eqId?: string | null) => {
+    try {
+      setProcessandoPeca(true);
+      const codOp = gerarCodigoOperacao();
+      const valorTotalConsumo = Number((qtd * (itemObj.custo_medio || 0)).toFixed(2));
+
+      // 1. Registrar movimentação de CONSUMO no estoque
+      const { error: errMov } = await (supabase.from as any)("estoque_movimentacoes").insert({
+        item_id: itemObj.id,
+        codigo_operacao: codOp,
+        tipo: "consumo",
+        quantidade: Number(qtd),
+        custo_unitario: itemObj.custo_medio || 0,
+        ordem_servico_id: ordem.id,
+        equipamento_id: eqId || null,
+        motivo: `Consumo efetuado na Ordem de Serviço ${ordem.codigo}`,
+      });
+
+      if (errMov) throw errMov;
+
+      // 2. Criar ou atualizar o gasto correspondente na OS
+      const { error: errGasto } = await (supabase.from as any)("gastos").insert({
+        ordem_servico_id: ordem.id,
+        cliente_id: ordem.cliente_id,
+        tecnico_id: ordem.tecnico_id,
+        categoria: "Materiais",
+        descricao: `Consumo de peça: ${itemObj.nome} (${qtd} ${itemObj.unidade_medida})`,
+        valor: valorTotalConsumo,
+        data: new Date().toISOString().split("T")[0],
+        tipo: "Operacional",
+      });
+
+      if (errGasto) throw errGasto;
+
+      // 3. Se houver equipamento selecionado, registrar no histórico do equipamento
+      if (eqId) {
+        await (supabase.from as any)("equipamentos_auditoria").insert({
+          equipamento_id: eqId,
+          acao: "CONSUMO_PECA",
+          detalhes: {
+            ordem_id: ordem.id,
+            ordem_codigo: ordem.codigo,
+            peca_nome: itemObj.nome,
+            sku: itemObj.sku,
+            quantidade: qtd,
+          },
+        });
+      }
+
+      toast.success(`Consumo da peça "${itemObj.nome}" registrado com sucesso! Gasto de R$ ${valorTotalConsumo.toFixed(2)} lançado na OS.`);
+      refetchEstoqueMovs();
+      refetchEstoqueItens();
+      onRefreshData();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao registrar consumo de peça.");
+    } finally {
+      setProcessandoPeca(false);
     }
   };
 
@@ -238,9 +394,12 @@ export function OrdemServicoDetalhesDialog({
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="pt-2">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="geral" className="text-xs">
               <FileText className="h-3.5 w-3.5 mr-1.5" /> Dados Gerais
+            </TabsTrigger>
+            <TabsTrigger value="pecas" className="text-xs">
+              <Package className="h-3.5 w-3.5 mr-1.5" /> Peças e Materiais
             </TabsTrigger>
             <TabsTrigger value="timeline" className="text-xs">
               <History className="h-3.5 w-3.5 mr-1.5" /> Linha do Tempo
@@ -324,6 +483,108 @@ export function OrdemServicoDetalhesDialog({
                 </div>
               )}
             </div>
+          </TabsContent>
+
+          {/* TAB PEÇAS E MATERIAIS */}
+          <TabsContent value="pecas" className="space-y-4 pt-3 text-xs">
+            <div className="flex items-center justify-between">
+              <h4 className="font-bold text-xs uppercase text-slate-500">
+                Peças Reservadas e Consumidas nesta Ordem
+              </h4>
+
+              {userRole !== "financeiro" && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-xs"
+                  onClick={() => setModalReservaOpen(true)}
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Reservar / Consumir Peça
+                </Button>
+              )}
+            </div>
+
+            {movsDaOrdem.length === 0 ? (
+              <div className="text-center py-8 text-slate-400 border border-dashed rounded-md">
+                Nenhuma peça ou material reservado/consumido para esta ordem.
+              </div>
+            ) : (
+              <Card className="border">
+                <CardContent className="p-0 overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50 dark:bg-slate-900 text-xs">
+                        <TableHead className="font-bold">Código Op.</TableHead>
+                        <TableHead className="font-bold">Peça / Produto</TableHead>
+                        <TableHead className="font-bold">Tipo</TableHead>
+                        <TableHead className="font-bold text-center">Quantidade</TableHead>
+                        <TableHead className="font-bold text-right">Custo Unit.</TableHead>
+                        <TableHead className="font-bold text-right">Custo Total</TableHead>
+                        <TableHead className="font-bold text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {movsDaOrdem.map((m) => {
+                        const itemObj = estoqueItens.find((i) => i.id === m.item_id);
+                        const custoTotal = Number((m.quantidade * m.custo_unitario).toFixed(2));
+
+                        return (
+                          <TableRow key={m.id} className="text-xs">
+                            <TableCell className="font-mono font-bold text-blue-600">
+                              {m.codigo_operacao}
+                            </TableCell>
+
+                            <TableCell className="font-medium">
+                              {itemObj ? `[${itemObj.sku}] ${itemObj.nome}` : "Item de Estoque"}
+                            </TableCell>
+
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] uppercase font-mono ${
+                                  m.tipo === "consumo"
+                                    ? "bg-blue-50 text-blue-600 border-blue-200"
+                                    : m.tipo === "reserva"
+                                    ? "bg-amber-50 text-amber-600 border-amber-200"
+                                    : "bg-emerald-50 text-emerald-600 border-emerald-200"
+                                }`}
+                              >
+                                {m.tipo}
+                              </Badge>
+                            </TableCell>
+
+                            <TableCell className="text-center font-bold">
+                              {m.quantidade} {itemObj?.unidade_medida || ""}
+                            </TableCell>
+
+                            <TableCell className="text-right font-mono">
+                              R$ {m.custo_unitario.toFixed(2)}
+                            </TableCell>
+
+                            <TableCell className="text-right font-mono font-bold">
+                              R$ {custoTotal.toFixed(2)}
+                            </TableCell>
+
+                            <TableCell className="text-right">
+                              {m.tipo === "reserva" && userRole !== "financeiro" && itemObj && (
+                                <Button
+                                  size="sm"
+                                  className="h-7 text-[11px]"
+                                  disabled={processandoPeca}
+                                  onClick={() => handleConsumirPeca(itemObj, m.quantidade, m.equipamento_id)}
+                                >
+                                  Registrar Consumo
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* TAB 2: LINHA DO TEMPO & HISTÓRICO */}
@@ -623,6 +884,81 @@ export function OrdemServicoDetalhesDialog({
                 Cancelar
               </Button>
               <Button type="submit">Salvar e Vincular</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL RESERVAR PEÇA */}
+      <Dialog open={modalReservaOpen} onOpenChange={setModalReservaOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reservar / Consumir Peça de Estoque</DialogTitle>
+            <DialogDescription>
+              Selecione o produto do estoque para atrelar a esta Ordem de Serviço.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleReservarPeca} className="space-y-3 py-2">
+            <div className="space-y-1">
+              <Label htmlFor="pecaItem">Item de Estoque *</Label>
+              <Select value={pecaItemId} onValueChange={setPecaItemId}>
+                <SelectTrigger id="pecaItem">
+                  <SelectValue placeholder="Selecione o produto" />
+                </SelectTrigger>
+                <SelectContent>
+                  {estoqueItens.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      [{item.sku}] {item.nome} ({item.marca})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="pecaQtd">Quantidade *</Label>
+              <Input
+                id="pecaQtd"
+                type="number"
+                step="0.001"
+                min="0.001"
+                value={pecaQuantidade}
+                onChange={(e) => setPecaQuantidade(Number(e.target.value))}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="pecaEq">Equipamento Atendido (Opcional)</Label>
+              <Select value={pecaEquipamentoId} onValueChange={setPecaEquipamentoId}>
+                <SelectTrigger id="pecaEq">
+                  <SelectValue placeholder="Selecione o equipamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">-- Nenhum --</SelectItem>
+                  {equipamentosCliente
+                    .filter((e) => e.cliente_id === ordem.cliente_id)
+                    .map((eq) => (
+                      <SelectItem key={eq.id} value={eq.id}>
+                        {eq.marca} {eq.modelo} ({eq.categoria})
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setModalReservaOpen(false)}
+                disabled={processandoPeca}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={processandoPeca}>
+                {processandoPeca ? "Processando..." : "Confirmar Reserva"}
+              </Button>
             </div>
           </form>
         </DialogContent>

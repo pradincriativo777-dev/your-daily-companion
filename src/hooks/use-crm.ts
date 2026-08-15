@@ -196,6 +196,65 @@ export type EquipamentoAnexo = {
   created_at: string;
 };
 
+export type EstoqueItem = {
+  id: string;
+  sku: string;
+  nome: string;
+  categoria: string;
+  marca: string;
+  modelo: string;
+  descricao: string | null;
+  unidade_medida: string;
+  localizacao_fisica: string | null;
+  fornecedor_principal: string | null;
+  custo_medio: number;
+  preco_referencia: number;
+  estoque_minimo: number;
+  estado: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EstoqueMovimentacao = {
+  id: string;
+  item_id: string;
+  codigo_operacao: string;
+  tipo: string;
+  quantidade: number;
+  custo_unitario: number;
+  ordem_servico_id: string | null;
+  equipamento_id: string | null;
+  movimentacao_origem_id: string | null;
+  motivo: string | null;
+  documento_comprovante_url: string | null;
+  idempotency_key: string | null;
+  usuario_id: string | null;
+  created_at: string;
+};
+
+export type EstoqueInventario = {
+  id: string;
+  codigo: string;
+  status: string;
+  observacoes: string | null;
+  usuario_criacao_id: string | null;
+  usuario_conclusao_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EstoqueInventarioItem = {
+  id: string;
+  inventario_id: string;
+  item_id: string;
+  quantidade_esperada: number;
+  quantidade_contada: number;
+  divergencia: number;
+  observacoes: string | null;
+  created_at: string;
+};
+
 type TableName =
   | "clientes"
   | "tecnicos"
@@ -206,7 +265,11 @@ type TableName =
   | "equipamentos"
   | "equipamentos_garantias"
   | "equipamentos_planos_preventivos"
-  | "equipamentos_anexos";
+  | "equipamentos_anexos"
+  | "estoque_itens"
+  | "estoque_movimentacoes"
+  | "estoque_inventarios"
+  | "estoque_inventario_itens";
 
 function useList<T>(table: TableName, order: string, ascending = false) {
   return useQuery({
@@ -239,6 +302,15 @@ export const useEquipamentoPlanosPreventivos = () =>
 export const useEquipamentoAnexos = () =>
   useList<EquipamentoAnexo>("equipamentos_anexos", "created_at");
 
+export const useEstoqueItens = () =>
+  useList<EstoqueItem>("estoque_itens", "created_at");
+export const useEstoqueMovimentacoes = () =>
+  useList<EstoqueMovimentacao>("estoque_movimentacoes", "created_at");
+export const useEstoqueInventarios = () =>
+  useList<EstoqueInventario>("estoque_inventarios", "created_at");
+export const useEstoqueInventarioItens = () =>
+  useList<EstoqueInventarioItem>("estoque_inventario_itens", "created_at");
+
 const labels: Record<TableName, string> = {
   clientes: "Cliente",
   tecnicos: "Técnico",
@@ -250,6 +322,10 @@ const labels: Record<TableName, string> = {
   equipamentos_garantias: "Garantia do Equipamento",
   equipamentos_planos_preventivos: "Plano Preventivo",
   equipamentos_anexos: "Anexo do Equipamento",
+  estoque_itens: "Item de Estoque",
+  estoque_movimentacoes: "Movimentação de Estoque",
+  estoque_inventarios: "Inventário de Estoque",
+  estoque_inventario_itens: "Item do Inventário",
 };
 
 export function useUpsert(table: TableName) {

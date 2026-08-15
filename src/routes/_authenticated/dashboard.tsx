@@ -40,6 +40,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/dashboard/ordens", label: "Ordens de Serviço", icon: FileText },
+  { to: "/dashboard/estoque", label: "Estoque & Peças", icon: Package },
   { to: "/dashboard/equipamentos", label: "Equipamentos", icon: Package },
   { to: "/dashboard/garantias", label: "Garantias & Alertas", icon: ShieldCheck },
   { to: "/dashboard/agenda", label: "Agenda", icon: Calendar },

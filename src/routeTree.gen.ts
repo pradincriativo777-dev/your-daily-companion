@@ -15,6 +15,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
 import { Route as AuthenticatedDashboardAgendaRouteImport } from './routes/_authenticated/dashboard.agenda'
 import { Route as AuthenticatedDashboardEquipamentosRouteImport } from './routes/_authenticated/dashboard.equipamentos'
+import { Route as AuthenticatedDashboardEstoqueRouteImport } from './routes/_authenticated/dashboard.estoque'
 import { Route as AuthenticatedDashboardGarantiasRouteImport } from './routes/_authenticated/dashboard.garantias'
 import { Route as AuthenticatedDashboardGastosRouteImport } from './routes/_authenticated/dashboard.gastos'
 import { Route as AuthenticatedDashboardImportarClientesRouteImport } from './routes/_authenticated/dashboard.importar-clientes'
@@ -61,6 +62,12 @@ const AuthenticatedDashboardEquipamentosRoute =
   AuthenticatedDashboardEquipamentosRouteImport.update({
     id: '/equipamentos',
     path: '/equipamentos',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardEstoqueRoute =
+  AuthenticatedDashboardEstoqueRouteImport.update({
+    id: '/estoque',
+    path: '/estoque',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
 const AuthenticatedDashboardGarantiasRoute =
@@ -159,6 +166,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/dashboard/agenda': typeof AuthenticatedDashboardAgendaRoute
   '/dashboard/equipamentos': typeof AuthenticatedDashboardEquipamentosRoute
+  '/dashboard/estoque': typeof AuthenticatedDashboardEstoqueRoute
   '/dashboard/garantias': typeof AuthenticatedDashboardGarantiasRoute
   '/dashboard/gastos': typeof AuthenticatedDashboardGastosRoute
   '/dashboard/importar-clientes': typeof AuthenticatedDashboardImportarClientesRoute
@@ -180,6 +188,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard/agenda': typeof AuthenticatedDashboardAgendaRoute
   '/dashboard/equipamentos': typeof AuthenticatedDashboardEquipamentosRoute
+  '/dashboard/estoque': typeof AuthenticatedDashboardEstoqueRoute
   '/dashboard/garantias': typeof AuthenticatedDashboardGarantiasRoute
   '/dashboard/gastos': typeof AuthenticatedDashboardGastosRoute
   '/dashboard/importar-clientes': typeof AuthenticatedDashboardImportarClientesRoute
@@ -204,6 +213,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/_authenticated/dashboard/agenda': typeof AuthenticatedDashboardAgendaRoute
   '/_authenticated/dashboard/equipamentos': typeof AuthenticatedDashboardEquipamentosRoute
+  '/_authenticated/dashboard/estoque': typeof AuthenticatedDashboardEstoqueRoute
   '/_authenticated/dashboard/garantias': typeof AuthenticatedDashboardGarantiasRoute
   '/_authenticated/dashboard/gastos': typeof AuthenticatedDashboardGastosRoute
   '/_authenticated/dashboard/importar-clientes': typeof AuthenticatedDashboardImportarClientesRoute
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboard/agenda'
     | '/dashboard/equipamentos'
+    | '/dashboard/estoque'
     | '/dashboard/garantias'
     | '/dashboard/gastos'
     | '/dashboard/importar-clientes'
@@ -249,6 +260,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard/agenda'
     | '/dashboard/equipamentos'
+    | '/dashboard/estoque'
     | '/dashboard/garantias'
     | '/dashboard/gastos'
     | '/dashboard/importar-clientes'
@@ -272,6 +284,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/dashboard/agenda'
     | '/_authenticated/dashboard/equipamentos'
+    | '/_authenticated/dashboard/estoque'
     | '/_authenticated/dashboard/garantias'
     | '/_authenticated/dashboard/gastos'
     | '/_authenticated/dashboard/importar-clientes'
@@ -337,6 +350,13 @@ declare module '@tanstack/react-router' {
       path: '/equipamentos'
       fullPath: '/dashboard/equipamentos'
       preLoaderRoute: typeof AuthenticatedDashboardEquipamentosRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/estoque': {
+      id: '/_authenticated/dashboard/estoque'
+      path: '/estoque'
+      fullPath: '/dashboard/estoque'
+      preLoaderRoute: typeof AuthenticatedDashboardEstoqueRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
     '/_authenticated/dashboard/garantias': {
@@ -450,6 +470,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardAgendaRoute: typeof AuthenticatedDashboardAgendaRoute
   AuthenticatedDashboardEquipamentosRoute: typeof AuthenticatedDashboardEquipamentosRoute
+  AuthenticatedDashboardEstoqueRoute: typeof AuthenticatedDashboardEstoqueRoute
   AuthenticatedDashboardGarantiasRoute: typeof AuthenticatedDashboardGarantiasRoute
   AuthenticatedDashboardGastosRoute: typeof AuthenticatedDashboardGastosRoute
   AuthenticatedDashboardImportarClientesRoute: typeof AuthenticatedDashboardImportarClientesRoute
@@ -473,6 +494,7 @@ const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
     AuthenticatedDashboardAgendaRoute: AuthenticatedDashboardAgendaRoute,
     AuthenticatedDashboardEquipamentosRoute:
       AuthenticatedDashboardEquipamentosRoute,
+    AuthenticatedDashboardEstoqueRoute: AuthenticatedDashboardEstoqueRoute,
     AuthenticatedDashboardGarantiasRoute: AuthenticatedDashboardGarantiasRoute,
     AuthenticatedDashboardGastosRoute: AuthenticatedDashboardGastosRoute,
     AuthenticatedDashboardImportarClientesRoute:
