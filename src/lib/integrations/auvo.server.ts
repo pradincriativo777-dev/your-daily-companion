@@ -52,22 +52,27 @@ async function auvoFetch(endpoint: string, options: RequestInit = {}) {
   ];
 
   let lastResponse: Response | null = null;
-  let lastError: any = null;
+  let lastErrorText = "";
 
   for (const baseUrl of baseUrls) {
-    // Método 1: Auth Bearer token via /login
+    // 1. Tentar Login para obter Bearer Token (v2 / v1.0)
     try {
-      const loginRes = await fetchWithRetry(`${baseUrl}/login`, {
+      const loginParams = `apiKey=${encodeURIComponent(appKey)}&apiToken=${encodeURIComponent(token)}`;
+      const loginUrl = baseUrl.includes("v2")
+        ? `${baseUrl}/login`
+        : `${baseUrl}/login?${loginParams}`;
+
+      const loginRes = await fetchWithRetry(loginUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey: appKey, apiToken: token }),
+        body: JSON.stringify({ apiKey: appKey, apiToken: token, token: token }),
         timeoutMs: 8000,
         maxRetries: 1,
       });
 
       if (loginRes.ok) {
         const loginData = await loginRes.json();
-        const accessToken = loginData?.result?.accessToken || loginData?.accessToken;
+        const accessToken = loginData?.result?.accessToken || loginData?.accessToken || loginData?.result?.token;
         if (accessToken) {
           const headers = new Headers(options.headers);
           headers.set("Content-Type", "application/json");
@@ -83,34 +88,61 @@ async function auvoFetch(endpoint: string, options: RequestInit = {}) {
         }
       }
     } catch (e) {
-      lastError = e;
+      // continua para tentativas diretas
     }
 
-    // Método 2: Query Params + Headers simultâneos
-    try {
-      const sep = endpoint.includes("?") ? "&" : "?";
-      const fullUrl = `${baseUrl}${endpoint}${sep}apiKey=${encodeURIComponent(appKey)}&apiToken=${encodeURIComponent(token)}`;
-      const headers = new Headers(options.headers);
-      headers.set("Content-Type", "application/json");
-      headers.set("apiKey", appKey);
-      headers.set("apiToken", token);
+    // 2. Tentar requisição direta com variações de parâmetros (apiKey+apiToken e apiKey+token)
+    const paramVariants = [
+      `apiKey=${encodeURIComponent(appKey)}&apiToken=${encodeURIComponent(token)}`,
+      `apiKey=${encodeURIComponent(appKey)}&token=${encodeURIComponent(token)}`,
+      `appKey=${encodeURIComponent(appKey)}&token=${encodeURIComponent(token)}`,
+    ];
 
-      const res = await fetchWithRetry(fullUrl, {
-        ...options,
-        headers,
-        timeoutMs: 12000,
-        maxRetries: 2,
-      });
+    for (const pStr of paramVariants) {
+      try {
+        const sep = endpoint.includes("?") ? "&" : "?";
+        const fullUrl = `${baseUrl}${endpoint}${sep}${pStr}`;
+        
+        const headers = new Headers(options.headers);
+        headers.set("Content-Type", "application/json");
+        headers.set("apiKey", appKey);
+        headers.set("apiToken", token);
+        headers.set("token", token);
 
-      if (res.ok) return res;
-      lastResponse = res;
-    } catch (e) {
-      lastError = e;
+        // Se a requisição for POST ou PUT, funde as credenciais no body JSON se possível
+        let requestOptions = { ...options, headers, timeoutMs: 12000, maxRetries: 2 };
+        if (options.method && ["POST", "PUT"].includes(options.method.toUpperCase())) {
+          try {
+            const bodyObj = options.body ? JSON.parse(options.body as string) : {};
+            requestOptions.body = JSON.stringify({
+              apiKey: appKey,
+              apiToken: token,
+              token: token,
+              ...bodyObj,
+            });
+          } catch {
+            // se o body não for JSON, mantém o original
+          }
+        }
+
+        const res = await fetchWithRetry(fullUrl, requestOptions);
+        if (res.ok) return res;
+
+        lastResponse = res;
+        try {
+          const txt = await res.clone().text();
+          if (txt) lastErrorText = `[HTTP ${res.status}] ${txt.substring(0, 150)}`;
+        } catch {
+          lastErrorText = `[HTTP ${res.status}] ${res.statusText}`;
+        }
+      } catch (err: any) {
+        lastErrorText = err.message;
+      }
     }
   }
 
   if (lastResponse) return lastResponse;
-  throw lastError || new Error("Falha na comunicação com a API Auvo");
+  throw new Error(lastErrorText || "Falha na comunicação com a API Auvo");
 }
 
 function mockAuvoResponse(endpoint: string, options: RequestInit = {}) {
