@@ -23,7 +23,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useClientes, useManutencoes, useTecnicos } from "@/hooks/use-crm";
 import { AgendarVisitaDialog } from "@/components/crm/AgendarVisitaDialog";
-import { retryAuvoTaskSync } from "@/lib/integrations/auvo.server";
+import { DownloadCloud } from "lucide-react";
+import { retryAuvoTaskSync, importAuvoSchedule } from "@/lib/integrations/auvo.server";
 import { format, parseISO, isSameDay, isSameWeek, isSameMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -49,6 +50,24 @@ function AgendaPage() {
 
   const [agendarOpen, setAgendarOpen] = useState(false);
   const [retryingId, setRetryingId] = useState<string | null>(null);
+  const [importingSchedule, setImportingSchedule] = useState(false);
+
+  const handleImportSchedule = async () => {
+    setImportingSchedule(true);
+    try {
+      const res = await importAuvoSchedule();
+      if (res.success) {
+        toast.success(res.message);
+        refetch();
+      } else {
+        toast.error(`Falha ao importar agenda: ${res.error}`);
+      }
+    } catch (err: any) {
+      toast.error(`Erro ao importar agenda: ${err.message}`);
+    } finally {
+      setImportingSchedule(false);
+    }
+  };
 
   // Map Clientes & Tecnicos lookup for quick access
   const clientesMap = useMemo(() => {
@@ -126,9 +145,20 @@ function AgendaPage() {
             Visão de compromissos, visitas técnicas e sincronização direta com o AUVO.
           </p>
         </div>
-        <Button onClick={() => setAgendarOpen(true)} size="lg" className="gap-2 shrink-0">
-          <Plus className="h-5 w-5" /> Nova Visita Técnica
-        </Button>
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <Button
+            variant="outline"
+            onClick={handleImportSchedule}
+            disabled={importingSchedule}
+            className="gap-2"
+          >
+            <DownloadCloud className={`h-4 w-4 ${importingSchedule ? "animate-bounce" : ""}`} />
+            {importingSchedule ? "Puxando..." : "Puxar Agenda do AUVO"}
+          </Button>
+          <Button onClick={() => setAgendarOpen(true)} size="default" className="gap-2">
+            <Plus className="h-5 w-5" /> Nova Visita Técnica
+          </Button>
+        </div>
       </div>
 
       {/* Bar Controls: Mode, Date & Quick Filters */}

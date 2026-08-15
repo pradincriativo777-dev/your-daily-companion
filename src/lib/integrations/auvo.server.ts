@@ -119,15 +119,46 @@ function mockAuvoResponse(endpoint: string, options: RequestInit = {}) {
   }
 
   if (endpoint.includes("/tasks") || endpoint.includes("/tarefas")) {
-    const mockTaskId = `AUVO-TASK-${Math.floor(100000 + Math.random() * 900000)}`;
+    if (options.method === "POST") {
+      const mockTaskId = `AUVO-TASK-${Math.floor(100000 + Math.random() * 900000)}`;
+      return new Response(
+        JSON.stringify({
+          result: {
+            id: mockTaskId,
+            taskID: mockTaskId,
+            status: "Pendente",
+            createdDate: new Date().toISOString(),
+          },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const todayStr = new Date().toISOString().split("T")[0];
     return new Response(
       JSON.stringify({
-        result: {
-          id: mockTaskId,
-          taskID: mockTaskId,
-          status: "Pendente",
-          createdDate: new Date().toISOString(),
-        },
+        result: [
+          {
+            id: "AUVO-TASK-881201",
+            customerName: "João Silva",
+            customerOrientation: "000.000.000-00",
+            taskDate: `${todayStr}T09:00:00`,
+            orientation: "Manutenção preventiva em coletor solar",
+            address: "Rua das Flores, 123 - Centro",
+            taskTypeName: "Preventiva",
+            priority: "Média",
+          },
+          {
+            id: "AUVO-TASK-881202",
+            customerName: "Maria Oliveira",
+            customerOrientation: "111.111.111-11",
+            taskDate: `${todayStr}T14:30:00`,
+            orientation: "Vistoria técnica para orçamento de boiler",
+            address: "Av. Brasil, 456 - Jardim das Palmeiras",
+            taskTypeName: "Orçamento / Vistoria",
+            priority: "Alta",
+          },
+        ],
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
@@ -613,6 +644,144 @@ export const retryAuvoTaskSync = createServerFn({ method: "POST" })
           sucesso: false,
           detalhes: { error: err.message }
         });
+
+      return { success: false, error: err.message };
+    }
+  });
+
+export const importAuvoSchedule = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: isAdmin } = await (context.supabase as any).rpc("is_admin");
+    if (!isAdmin) throw new Error("Acesso negado.");
+
+    const start = Date.now();
+    try {
+      const response = await auvoFetch("/tasks?pageSize=50");
+      if (!response.ok) throw new Error("Falha ao consultar agenda do Auvo");
+      const auvoData = await response.json();
+      const tasksList: any[] = Array.isArray(auvoData.result)
+        ? auvoData.result
+        : auvoData.result?.tasks || [];
+
+      // 1. Fetch existing manutencoes & clientes from CRM
+      const { data: existingManutencoes } = await (context.supabase as any)
+        .from("manutencoes")
+        .select("id, auvo_task_id");
+      const existingTaskIds = new Set(
+        (existingManutencoes || []).map((m: any) => m.auvo_task_id).filter(Boolean)
+      );
+
+      const { data: crmClientes } = await (context.supabase as any)
+        .from("clientes")
+        .select("id, nome, cpf_cnpj");
+
+      let importadosCount = 0;
+      let ignoradosCount = 0;
+
+      for (const t of tasksList) {
+        const taskIdStr = String(t.id || t.taskID || "");
+        if (!taskIdStr || existingTaskIds.has(taskIdStr)) {
+          ignoradosCount++;
+          continue;
+        }
+
+        // Match or find client
+        const docNormalizado = (t.customerOrientation || t.cpf_cnpj || "").replace(/\D/g, "");
+        let clientMatch = crmClientes?.find((c: any) => {
+          if (docNormalizado && c.cpf_cnpj && c.cpf_cnpj.replace(/\D/g, "") === docNormalizado) {
+            return true;
+          }
+          if (t.customerName && c.nome.toLowerCase() === t.customerName.toLowerCase()) {
+            return true;
+          }
+          return false;
+        });
+
+        let targetClienteId = clientMatch?.id;
+
+        // If client doesn't exist, create a lead client for them
+        if (!targetClienteId) {
+          const { data: newCli } = await (context.supabase as any)
+            .from("clientes")
+            .insert({
+              nome: t.customerName || "Cliente Auvo",
+              cpf_cnpj: t.customerOrientation || null,
+              origem_lead: "Auvo Import",
+              status: "Lead",
+              tipo: "Pessoa Física",
+              tipo_sistema: "Banho",
+              valor_orcamento: 0,
+            })
+            .select("id")
+            .single();
+
+          if (newCli) targetClienteId = newCli.id;
+        }
+
+        if (!targetClienteId) {
+          ignoradosCount++;
+          continue;
+        }
+
+        // Parse date and time
+        const rawDate: string = t.taskDate || new Date().toISOString();
+        const dataManutencao = rawDate.split("T")[0] || (new Date().toISOString().split("T")[0] as string);
+        const timePart = rawDate.split("T")[1];
+        const horarioInicio = timePart ? timePart.substring(0, 5) : "09:00";
+
+        // Insert into manutencoes
+        const { error: insErr } = await (context.supabase as any)
+          .from("manutencoes")
+          .insert({
+            cliente_id: targetClienteId,
+            data_manutencao: dataManutencao,
+            horario_inicio: horarioInicio,
+            duracao_estimada_min: t.durationMinutes || 60,
+            tipo: t.taskTypeName || t.type || "Preventiva",
+            prioridade: t.priority || "Média",
+            descricao: t.orientation || t.description || null,
+            endereco_visita: t.address || null,
+            status: "Agendada",
+            auvo_task_id: taskIdStr,
+            sync_status: "sincronizado",
+            synced_at: new Date().toISOString(),
+          });
+
+        if (!insErr) {
+          importadosCount++;
+          existingTaskIds.add(taskIdStr);
+        } else {
+          ignoradosCount++;
+        }
+      }
+
+      const duracao = Date.now() - start;
+      addLog({ integracao: "AUVO", operacao: "ImportAuvoSchedule", resultado: "SUCCESS", duracao });
+
+      await (context.supabase as any)
+        .from("agendamento_auditoria")
+        .insert({
+          acao: "Importar Agenda AUVO",
+          sucesso: true,
+          detalhes: { importadosCount, ignoradosCount },
+        });
+
+      return {
+        success: true,
+        importados: importadosCount,
+        ignorados: ignoradosCount,
+        message: `${importadosCount} visita(s) importada(s) da agenda do AUVO com sucesso!`,
+      };
+    } catch (err: any) {
+      const duracao = Date.now() - start;
+      addLog({
+        integracao: "AUVO",
+        operacao: "ImportAuvoSchedule",
+        resultado: "ERROR",
+        duracao,
+        ...(err.message ? { errorCode: err.message } : {}),
+      });
 
       return { success: false, error: err.message };
     }
