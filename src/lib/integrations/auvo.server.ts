@@ -301,13 +301,15 @@ export const executeAuvoSync = createServerFn({ method: "POST" })
         if (!encontrado) {
           clientesParaInserir.push({
             nome: auvoCli.name || "Cliente Auvo",
+            tipo: "Pessoa Física",
             email: auvoCli.email || null,
             whatsapp: auvoCli.mobilePhone || null,
             cpf_cnpj: auvoCli.orientation || null,
             cidade: auvoCli.city || null,
-            uf: auvoCli.state || null,
-            origem: "Auvo Sync",
+            origem_lead: "Auvo Sync",
             status: "Lead",
+            valor_orcamento: 0,
+            tipo_sistema: "Banho",
           });
         } else {
           ignoradosCount++;
