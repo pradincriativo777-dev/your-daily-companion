@@ -47,6 +47,7 @@ async function auvoFetch(endpoint: string, options: RequestInit = {}) {
   }
 
   const baseUrls = [
+    "https://api.auvo.com.br/v2",
     "https://app.auvo.com.br/api/v2",
     "https://app.auvo.com.br/api/v1.0",
   ];
@@ -58,9 +59,7 @@ async function auvoFetch(endpoint: string, options: RequestInit = {}) {
     // 1. Tentar Login para obter Bearer Token (v2 / v1.0)
     try {
       const loginParams = `apiKey=${encodeURIComponent(appKey)}&apiToken=${encodeURIComponent(token)}`;
-      const loginUrl = baseUrl.includes("v2")
-        ? `${baseUrl}/login`
-        : `${baseUrl}/login?${loginParams}`;
+      const loginUrl = `${baseUrl}/login${baseUrl.includes("v2") ? "" : "?" + loginParams}`;
 
       const loginRes = await fetchWithRetry(loginUrl, {
         method: "POST",
@@ -72,6 +71,14 @@ async function auvoFetch(endpoint: string, options: RequestInit = {}) {
 
       if (loginRes.ok) {
         const loginData = await loginRes.json();
+        if (loginData?.result?.authenticated === false) {
+          const msg = loginData?.result?.message || "Autenticação recusada pelo Auvo.";
+          if (msg.toLowerCase().includes("disabled") || msg.toLowerCase().includes("desativad")) {
+            throw new Error("A integração por API está desativada no seu painel Auvo. Acesse o Auvo em Configurações > Integrações e ative a chave de API.");
+          }
+          throw new Error(`Auvo Auth Error: ${msg}`);
+        }
+
         const accessToken = loginData?.result?.accessToken || loginData?.accessToken || loginData?.result?.token;
         if (accessToken) {
           const headers = new Headers(options.headers);
@@ -87,8 +94,11 @@ async function auvoFetch(endpoint: string, options: RequestInit = {}) {
           lastResponse = res;
         }
       }
-    } catch (e) {
-      // continua para tentativas diretas
+    } catch (e: any) {
+      if (e.message?.includes("integração por API está desativada")) {
+        throw e;
+      }
+      lastErrorText = e.message || String(e);
     }
 
     // 2. Tentar requisição direta com variações de parâmetros (apiKey+apiToken e apiKey+token)
