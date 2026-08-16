@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Cliente, Equipamento, OrdemServico } from "@/hooks/use-crm";
+import { ClienteComboboxAsync } from "@/components/crm/ClienteComboboxAsync";
 import {
   CATEGORIAS_EQUIPAMENTO_INICIAIS,
   EQUIPAMENTO_ESTADOS_LIST,
@@ -184,22 +185,12 @@ export function EquipamentoDialog({
             {/* Cliente */}
             <div className="space-y-1.5">
               <Label htmlFor="cliente">Cliente *</Label>
-              <Select
+              <ClienteComboboxAsync
                 value={clienteId}
-                onValueChange={setClienteId}
+                onValueChange={(id) => setClienteId(id)}
                 disabled={!!clienteIdPreDefinido}
-              >
-                <SelectTrigger id="cliente">
-                  <SelectValue placeholder="Selecione o cliente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clientes.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.nome} {c.cidade ? `(${c.cidade})` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Pesquisar cliente por nome ou cidade..."
+              />
             </div>
 
             {/* Categoria */}

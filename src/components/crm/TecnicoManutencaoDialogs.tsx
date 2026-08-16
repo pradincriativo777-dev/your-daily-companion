@@ -29,6 +29,7 @@ import {
   type Manutencao,
   type Tecnico,
 } from "@/hooks/use-crm";
+import { ClienteComboboxAsync } from "@/components/crm/ClienteComboboxAsync";
 
 export function TecnicoDialog({
   open,
@@ -160,14 +161,14 @@ export function ManutencaoDialog({
           </DialogTitle>
         </DialogHeader>
         <div className="grid gap-3 sm:grid-cols-2">
-          <SelectField
-            label="Cliente"
-            required
-            value={form.cliente_id ?? null}
-            onChange={(v) => set("cliente_id", v)}
-            options={clientes.map((c) => ({ value: c.id, label: c.nome }))}
-            className="sm:col-span-2"
-          />
+          <div className="space-y-1 sm:col-span-2">
+            <label className="text-xs font-semibold text-foreground">Cliente *</label>
+            <ClienteComboboxAsync
+              value={form.cliente_id ?? ""}
+              onValueChange={(id) => set("cliente_id", id)}
+              placeholder="Pesquisar cliente por nome ou cidade..."
+            />
+          </div>
           <DateField
             label="Data da Manutenção"
             required

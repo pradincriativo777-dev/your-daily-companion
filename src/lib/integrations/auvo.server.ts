@@ -470,17 +470,22 @@ export const getIntegrationsStatus = createServerFn({ method: "GET" })
     // Podemos determinar o status baseado no último log de conexão, se houver
     const ultimoTeste = auvoLogs.find(l => l.operacao === "TestConnection");
     let auvoStatus = "Não configurada";
-    if (auvoConfigured) auvoStatus = "Configurada";
-    if (ultimoTeste) {
-      if (ultimoTeste.resultado === "SUCCESS") auvoStatus = "Conectada";
-      else if (ultimoTeste.errorCode === "AUTH_ERROR") auvoStatus = "Erro de autenticação";
-      else auvoStatus = "Indisponível";
+    let isBlocked = false;
+
+    if (auvoConfigured) {
+      auvoStatus = "API bloqueada pela conta AUVO";
+      isBlocked = true;
+    }
+    if (ultimoTeste && ultimoTeste.resultado === "SUCCESS") {
+      auvoStatus = "Conectada";
+      isBlocked = false;
     }
 
     return {
       auvo: {
         status: auvoStatus,
         configured: auvoConfigured,
+        isBlocked,
         lastCheck: ultimoTeste?.data || null,
         requiredEnvVars: ["AUVO_APP_KEY", "AUVO_TOKEN"]
       },

@@ -73,6 +73,8 @@ function startOfYear() {
   return `${new Date().getFullYear()}-01-01`;
 }
 
+import { calcularMetricasOficiais } from "@/lib/metricas";
+
 function RelatoriosPage() {
   const { data: clientes = [], isLoading } = useClientes();
   const { data: gastos = [] } = useGastos();
@@ -81,6 +83,15 @@ function RelatoriosPage() {
 
   const [de, setDe] = useState(startOfYear());
   const [ate, setAte] = useState(new Date().toISOString().slice(0, 10));
+
+  const metricasOficiais = useMemo(() => {
+    return calcularMetricasOficiais({
+      clientes,
+      manutencoes,
+      gastos,
+      filtroPeriodo: { dataInicio: de, dataFim: ate },
+    });
+  }, [clientes, manutencoes, gastos, de, ate]);
 
   const inRange = (d: string | null) => !!d && d >= de && d <= ate;
 
@@ -100,20 +111,16 @@ function RelatoriosPage() {
     [manutencoes, de, ate],
   );
 
-  const receitaInstalacoes = clientesPeriodo.reduce(
-    (s, c) => s + num(c.valor_pago),
-    0,
-  );
+  const receitaInstalacoes = metricasOficiais.faturamentoReal.valor;
   const receitaManutencoes = manutencoesPeriodo
     .filter((m) => m.status === "Concluída")
     .reduce((s, m) => s + num(m.custo), 0);
   const receitaTotal = receitaInstalacoes + receitaManutencoes;
-  const custoTotal = gastosPeriodo.reduce((s, g) => s + num(g.valor), 0);
+  const custoTotal = metricasOficiais.totalGastos;
   const lucro = receitaTotal - custoTotal;
 
-  const margem = receitaTotal > 0 ? (lucro / receitaTotal) * 100 : 0;
-  const ticket =
-    clientesPeriodo.length > 0 ? receitaInstalacoes / clientesPeriodo.length : 0;
+  const margem = metricasOficiais.margemLucro.valor ?? 0;
+  const ticket = metricasOficiais.ticketMedio.valor ?? 0;
 
   // Financeiro mensal
   const mensal = useMemo(() => {

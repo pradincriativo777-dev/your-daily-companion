@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ClienteComboboxAsync } from "@/components/crm/ClienteComboboxAsync";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -109,12 +110,14 @@ export function GastoDialog({
             value={form.data ?? null}
             onChange={(v) => set("data", v)}
           />
-          <SelectField
-            label="Cliente"
-            value={form.cliente_id ?? null}
-            onChange={(v) => set("cliente_id", v)}
-            options={clientes.map((c) => ({ value: c.id, label: c.nome }))}
-          />
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-foreground">Cliente (Opcional)</label>
+            <ClienteComboboxAsync
+              value={form.cliente_id ?? ""}
+              onValueChange={(id) => set("cliente_id", id)}
+              placeholder="Pesquisar cliente..."
+            />
+          </div>
           <SelectField
             label="Técnico"
             value={form.tecnico_id ?? null}
@@ -195,14 +198,14 @@ export function InteracaoDialog({
           </DialogTitle>
         </DialogHeader>
         <div className="grid gap-3 sm:grid-cols-2">
-          <SelectField
-            label="Cliente"
-            required
-            value={form.cliente_id ?? null}
-            onChange={(v) => set("cliente_id", v)}
-            options={clientes.map((c) => ({ value: c.id, label: c.nome }))}
-            className="sm:col-span-2"
-          />
+          <div className="space-y-1 sm:col-span-2">
+            <label className="text-xs font-semibold text-foreground">Cliente *</label>
+            <ClienteComboboxAsync
+              value={form.cliente_id ?? ""}
+              onValueChange={(id) => set("cliente_id", id)}
+              placeholder="Pesquisar cliente por nome ou cidade..."
+            />
+          </div>
           <DateField
             label="Data da Interação"
             required

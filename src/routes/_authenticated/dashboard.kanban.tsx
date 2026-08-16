@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -53,12 +53,26 @@ function KanbanPage() {
   const [fTecnico, setFTecnico] = useState("todos");
   const [fSistema, setFSistema] = useState("todos");
 
+  const [limitePorColuna, setLimitePorColuna] = useState<Record<string, number>>({});
+  const [atualizandoId, setAtualizandoId] = useState<string | null>(null);
+
+  // 1. Deduplicação Estrita por ID do Cliente
+  const clientesDeduplicados = useMemo(() => {
+    const map = new Map<string, Cliente>();
+    for (const c of clientes) {
+      if (c && c.id && !map.has(c.id)) {
+        map.set(c.id, c);
+      }
+    }
+    return Array.from(map.values());
+  }, [clientes]);
+
   const cidades = Array.from(
-    new Set(clientes.map((c) => c.cidade).filter(Boolean) as string[]),
+    new Set(clientesDeduplicados.map((c: Cliente) => c.cidade).filter(Boolean) as string[]),
   ).sort();
 
-  const filtrados = clientes.filter(
-    (c) =>
+  const filtrados = clientesDeduplicados.filter(
+    (c: Cliente) =>
       (fCidade === "todas" || c.cidade === fCidade) &&
       (fTecnico === "todos" || c.tecnico_id === fTecnico) &&
       (fSistema === "todos" || c.tipo_sistema === fSistema),
@@ -68,11 +82,26 @@ function KanbanPage() {
     tecnicos.find((t) => t.id === id)?.nome ?? null;
 
   const drop = (status: string) => {
-    if (!dragId) return;
-    const cliente = clientes.find((c) => c.id === dragId);
+    if (!dragId || atualizandoId === dragId) return;
+    const cliente = clientesDeduplicados.find((c) => c.id === dragId);
     setDragId(null);
     if (!cliente || cliente.status === status) return;
-    updateStatus.mutate({ id: dragId, status });
+    setAtualizandoId(cliente.id);
+    updateStatus.mutate(
+      { id: cliente.id, status },
+      {
+        onSettled: () => setAtualizandoId(null),
+      },
+    );
+  };
+
+  const getLimite = (status: string) => limitePorColuna[status] || 50;
+
+  const carregarMais = (status: string) => {
+    setLimitePorColuna((prev) => ({
+      ...prev,
+      [status]: (prev[status] || 50) + 50,
+    }));
   };
 
   if (isLoading) return <Loading />;
@@ -81,7 +110,7 @@ function KanbanPage() {
     <div>
       <PageHeader
         title="Kanban de Vendas"
-        description="Arraste os cards entre as colunas para atualizar o status."
+        description="Pipeline visual de vendas e instalações da JANSOL."
       >
         <Button
           onClick={() => setDialog(true)}
@@ -135,7 +164,11 @@ function KanbanPage() {
 
       <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-5">
         {STATUS_CLIENTE.map((status) => {
-          const cards = filtrados.filter((c) => c.status === status);
+          const todosCardsColuna = filtrados.filter((c: Cliente) => c.status === status);
+          const limiteAtual = getLimite(status);
+          const cardsExibidos = todosCardsColuna.slice(0, limiteAtual);
+          const possuiMais = todosCardsColuna.length > cardsExibidos.length;
+
           return (
             <div
               key={status}
@@ -150,12 +183,12 @@ function KanbanPage() {
                 )}
               >
                 <span>{status}</span>
-                <span className="rounded-full bg-black/15 px-2 text-xs">
-                  {cards.length}
+                <span className="rounded-full bg-black/15 px-2 text-xs" title="Carregados de Total">
+                  {cardsExibidos.length} de {todosCardsColuna.length}
                 </span>
               </div>
               <div className="flex-1 space-y-2 p-2">
-                {cards.map((c: Cliente) => (
+                {cardsExibidos.map((c: Cliente) => (
                   <button
                     key={c.id}
                     type="button"
@@ -167,7 +200,10 @@ function KanbanPage() {
                         params: { id: c.id },
                       })
                     }
-                    className="w-full cursor-grab rounded-md border bg-background p-2.5 text-left text-sm shadow-sm transition hover:border-accent active:cursor-grabbing"
+                    className={cn(
+                      "w-full cursor-grab rounded-md border bg-background p-2.5 text-left text-sm shadow-sm transition hover:border-accent active:cursor-grabbing",
+                      atualizandoId === c.id && "opacity-50 pointer-events-none",
+                    )}
                   >
                     <p className="font-semibold text-primary">{c.nome}</p>
                     <p className="text-xs text-muted-foreground">
@@ -183,7 +219,19 @@ function KanbanPage() {
                     )}
                   </button>
                 ))}
-                {cards.length === 0 && (
+
+                {possuiMais && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => carregarMais(status)}
+                    className="w-full text-xs text-slate-600 mt-2"
+                  >
+                    Carregar mais (+50)
+                  </Button>
+                )}
+
+                {todosCardsColuna.length === 0 && (
                   <p className="py-6 text-center text-xs text-muted-foreground">
                     Nenhum cliente
                   </p>

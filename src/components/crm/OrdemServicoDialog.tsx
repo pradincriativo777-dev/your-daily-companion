@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Cliente, Tecnico, OrdemServico } from "@/hooks/use-crm";
+import { ClienteComboboxAsync } from "@/components/crm/ClienteComboboxAsync";
 import { ORDENS_STATUS_LIST, OrdemStatus } from "@/lib/ordens-servico";
 import {
   Dialog,
@@ -163,18 +164,16 @@ export function OrdemServicoDialog({
             {/* Cliente */}
             <div className="space-y-1.5">
               <Label htmlFor="cliente">Cliente *</Label>
-              <Select value={clienteId} onValueChange={handleClienteChange}>
-                <SelectTrigger id="cliente">
-                  <SelectValue placeholder="Selecione o cliente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clientes.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.nome} {c.cidade ? `(${c.cidade})` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <ClienteComboboxAsync
+                value={clienteId}
+                onValueChange={(id, cli) => {
+                  setClienteId(id);
+                  if (!enderecoVisita && cli && cli.endereco) {
+                    setEnderecoVisita(`${cli.endereco}${cli.cidade ? `, ${cli.cidade}` : ""}`);
+                  }
+                }}
+                placeholder="Pesquisar cliente por nome ou cidade..."
+              />
             </div>
 
             {/* Técnico */}

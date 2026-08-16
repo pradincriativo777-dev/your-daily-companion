@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useClientes, useTecnicos } from "@/hooks/use-crm";
+import { ClienteComboboxAsync } from "@/components/crm/ClienteComboboxAsync";
 import { createAgendamentoAssistido, getAuvoTaskTypes } from "@/lib/integrations/auvo.server";
 import { CalendarClock, CheckCircle, ShieldAlert, ArrowLeft, ArrowRight } from "lucide-react";
 
@@ -161,20 +162,19 @@ export function AgendarVisitaDialog({
         {step === "form" ? (
           <form onSubmit={handleGoToPreview} className="space-y-4 py-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
               <div className="space-y-2">
                 <Label htmlFor="cliente">Cliente *</Label>
-                <Select value={clienteId} onValueChange={handleClienteChange}>
-                  <SelectTrigger id="cliente">
-                    <SelectValue placeholder="Selecione o cliente..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clientes.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.nome} {c.cidade ? `(${c.cidade})` : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <ClienteComboboxAsync
+                  value={clienteId}
+                  onValueChange={(id, cli) => {
+                    setClienteId(id);
+                    if (cli && cli.endereco) {
+                      setEnderecoVisita(`${cli.endereco}${cli.cidade ? `, ${cli.cidade}` : ""}`);
+                    }
+                  }}
+                  placeholder="Pesquisar cliente por nome ou cidade..."
+                />
               </div>
 
               <div className="space-y-2">

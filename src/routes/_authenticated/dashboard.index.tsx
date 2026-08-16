@@ -33,7 +33,12 @@ import {
   formatDate,
   num,
 } from "@/lib/crm";
-import { useClientes, useManutencoes } from "@/hooks/use-crm";
+import {
+  useClientes,
+  useGastos,
+  useManutencoes,
+  type Cliente,
+} from "@/hooks/use-crm";
 
 export const Route = createFileRoute("/_authenticated/dashboard/")({
   head: () => ({
@@ -54,46 +59,23 @@ const STATUS_COLORS: Record<string, string> = {
   Finalizado: "#0D0D0D",
 };
 
+import { calcularMetricasOficiais } from "@/lib/metricas";
+
 function DashboardHome() {
   const { data: clientes = [], isLoading } = useClientes();
   const { data: manutencoes = [] } = useManutencoes();
+  const { data: gastos = [] } = useGastos();
 
   if (isLoading) return <Loading />;
 
-  const now = new Date();
-  const mes = now.getMonth();
-  const ano = now.getFullYear();
+  // Métricas Oficiais Centralizadas
+  const metricas = calcularMetricasOficiais({ clientes, manutencoes, gastos });
 
-  const faturamentoMes = clientes
-    .filter(
-      (c) =>
-        ["Instalado", "Finalizado"].includes(c.status) &&
-        c.data_instalacao &&
-        new Date(`${c.data_instalacao}T00:00:00`).getMonth() === mes &&
-        new Date(`${c.data_instalacao}T00:00:00`).getFullYear() === ano,
-    )
-    .reduce((s, c) => s + num(c.valor_pago), 0);
-
-  const orcamentosPendentes = clientes.filter(
-    (c) => c.status === "Orçamento",
-  ).length;
-
-  const convertidos = clientes.filter((c) =>
-    ["Aprovado", "Instalado", "Finalizado"].includes(c.status),
-  ).length;
-  const taxaConversao = clientes.length
-    ? (convertidos / clientes.length) * 100
-    : 0;
-
-  const ticketMedio = clientes.length
-    ? clientes.reduce((s, c) => s + num(c.valor_orcamento), 0) / clientes.length
-    : 0;
-
-  const emRisco = clientes.filter((c) => {
-    if (c.status === "Finalizado") return false;
-    const d = daysSince(c.ultimo_contato);
-    return d === null || d > 30;
-  });
+  const faturamentoRealFormatado = metricas.faturamentoReal.formatado;
+  const orcamentosPendentesTexto = metricas.orcamentosPendentes.formatado;
+  const taxaConversao = metricas.taxaConversao.valor ?? 0;
+  const ticketMedioFormatado = metricas.ticketMedio.formatado;
+  const emRiscoCount = metricas.clientesEmRisco.valor;
 
   const proximasManutencoes = manutencoes.filter((m) => {
     const d = daysUntil(m.proxima_manutencao);
@@ -112,6 +94,16 @@ function DashboardHome() {
 
   const nomeCliente = (id: string) =>
     clientes.find((c) => c.id === id)?.nome ?? "Cliente";
+
+  const now = new Date();
+  const mes = now.getMonth();
+  const ano = now.getFullYear();
+
+  const emRiscoClientes = clientes.filter((c: Cliente) => {
+    if (c.status === "Finalizado") return false;
+    const d = daysSince(c.ultimo_contato);
+    return d !== null && d > 30;
+  });
 
   const meses: Array<{ mes: string; receita: number }> = [];
   for (let i = 5; i >= 0; i--) {
@@ -146,23 +138,29 @@ function DashboardHome() {
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <KpiCard
-          label="Faturamento do Mês"
-          value={formatCurrency(faturamentoMes)}
+          label="Faturamento Real (Confirmado)"
+          value={faturamentoRealFormatado}
           tone="success"
+          hint="Todo o histórico acumulado"
         />
         <KpiCard
           label="Orçamentos Pendentes"
-          value={orcamentosPendentes}
+          value={orcamentosPendentesTexto}
           tone="pending"
+          hint="Aguardando Conta Azul"
         />
         <KpiCard
           label="Taxa de Conversão"
           value={`${taxaConversao.toFixed(1)}%`}
+          hint="Convertidos / Total Clientes"
         />
-        <KpiCard label="Ticket Médio" value={formatCurrency(ticketMedio)} />
+        <KpiCard
+          label="Ticket Médio"
+          value={ticketMedioFormatado}
+        />
         <KpiCard
           label="Clientes em Risco"
-          value={emRisco.length}
+          value={emRiscoCount}
           tone="danger"
           hint="Sem contato há mais de 30 dias"
         />
@@ -179,7 +177,7 @@ function DashboardHome() {
           <CardTitle className="text-base">Alertas e Lembretes</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {emRisco.slice(0, 5).map((c) => (
+          {emRiscoClientes.slice(0, 5).map((c: Cliente) => (
             <Link
               key={c.id}
               to="/dashboard/clientes/$id"

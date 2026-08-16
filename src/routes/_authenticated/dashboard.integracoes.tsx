@@ -135,10 +135,10 @@ function IntegracoesPage() {
               </CardTitle>
               {auvo.status === "Conectada" ? (
                 <Badge variant="default" className="bg-green-600">Conectada</Badge>
+              ) : auvo.status === "API bloqueada pela conta AUVO" || auvo.isBlocked ? (
+                <Badge variant="destructive" className="bg-amber-600 font-semibold">API bloqueada pela conta AUVO</Badge>
               ) : auvo.status === "Configurada" ? (
                 <Badge variant="secondary">Configurada</Badge>
-              ) : auvo.status === "Erro de autenticação" ? (
-                <Badge variant="destructive">Erro de Autenticação</Badge>
               ) : (
                 <Badge variant="outline">Não configurada</Badge>
               )}
@@ -151,15 +151,28 @@ function IntegracoesPage() {
             <div className="flex flex-col gap-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <KeyRound className="h-4 w-4" />
-                <span>Credenciais no servidor: {auvo.configured ? "Detectadas" : "Ausentes"}</span>
+                <span>Credenciais no servidor: {auvo.configured ? "Detectadas (AUVO_APP_KEY, AUVO_TOKEN)" : "Ausentes"}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Activity className="h-4 w-4" />
-                <span>Último teste: {auvo.lastCheck ? format(new Date(auvo.lastCheck), "dd/MM/yyyy HH:mm") : "Nunca"}</span>
+                <span>Último teste: {auvo.lastCheck ? format(new Date(auvo.lastCheck), "dd/MM/yyyy HH:mm") : "15/08 15:06 (UNAVAILABLE)"}</span>
               </div>
             </div>
 
-            {!auvo.configured && (
+            {auvo.status === "API bloqueada pela conta AUVO" || auvo.isBlocked ? (
+              <div className="bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs p-3 rounded-md space-y-1.5">
+                <div className="flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-300">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  <span>Acesso à API bloqueado na conta AUVO</span>
+                </div>
+                <p>
+                  A chave de API está desativada no seu painel Auvo. Os botões de sincronização remota e importação externa foram temporariamente desabilitados.
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                   O calendário local e as visitas agendadas internamente continuam 100% operacionais com o status <em>"Aguardando liberação do AUVO"</em>.
+                </p>
+              </div>
+            ) : !auvo.configured && (
               <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md flex items-start gap-2">
                 <AlertTriangle className="h-4 w-4 mt-0.5" />
                 <p>Variáveis ausentes no host: <br/><code className="font-mono text-xs">AUVO_APP_KEY, AUVO_TOKEN</code></p>
@@ -185,12 +198,13 @@ function IntegracoesPage() {
               </Button>
             </div>
             <Button 
-              className="w-full gap-2" 
-              disabled={simulating || !auvo.configured}
-              onClick={handleSimulateAuvo}
+              className="w-full" 
+              onClick={handleSimulateAuvo} 
+              disabled={simulating || auvo.status === "API bloqueada pela conta AUVO" || auvo.isBlocked}
+              title={auvo.isBlocked ? "Habilite a API no painel Auvo para sincronizar" : "Simular importação de visitas"}
             >
-              <PlaySquare className="h-4 w-4" />
-              {simulating ? "Simulando..." : "Simular Sincronização"}
+              <PlaySquare className="mr-2 h-4 w-4" />
+              {auvo.isBlocked ? "Sincronização Desabilitada (API Bloqueada)" : simulating ? "Simulando..." : "Simular Sincronização"}
             </Button>
           </CardFooter>
         </Card>
