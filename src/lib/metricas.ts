@@ -187,6 +187,7 @@ export function calcularMetricasOficiais({
 
     clientesSemInformacaoContato: contagemSemInformacaoContato,
     totalClientesBase: totalBase,
+    totalClientesValidos: clientesValidos.length,
     convertidosQtd: convertidos,
     totalGastos: totalGastosValor,
   };

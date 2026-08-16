@@ -46,6 +46,12 @@ import {
 } from "@/hooks/use-crm";
 import { EquipamentoDialog } from "@/components/crm/EquipamentoDialog";
 import { EquipamentoDetalhesDialog } from "@/components/crm/EquipamentoDetalhesDialog";
+import { arquivarCliente, restaurarCliente } from "@/lib/clientes-arquivamento";
+import { Archive, RotateCcw, Clock, History, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/dashboard/clientes/$id")({
   validateSearch: (search: Record<string, unknown>): { revisao?: boolean } => {
@@ -109,15 +115,113 @@ function ClienteDetalhe() {
   const [equipamentoDetalhesOpen, setEquipamentoDetalhesOpen] = useState(false);
   const [equipamentoSelecionado, setEquipamentoSelecionado] = useState<Equipamento | null>(null);
 
+// ...
+  const [modalArquivarOpen, setModalArquivarOpen] = useState(false);
+  const [motivoArquivamentoInput, setMotivoArquivamentoInput] = useState("");
+  const [processandoArquivamento, setProcessandoArquivamento] = useState(false);
+
   if (isLoading) return <Loading />;
   const cliente = clientes.find((c) => c.id === id);
   if (!cliente)
     return (
       <EmptyState
         title="Cliente não encontrado"
-        description="Talvez ele tenha sido excluído."
+        description="Verifique se o cliente existe ou foi arquivado."
       />
     );
+
+  const isArquivado = (cliente as any).arquivado === true;
+
+  const handleArquivar = async () => {
+    if (!motivoArquivamentoInput || motivoArquivamentoInput.trim().length < 5) {
+      toast.error("Por favor, informe o motivo do arquivamento (mínimo 5 caracteres).");
+      return;
+    }
+    setProcessandoArquivamento(true);
+    try {
+      await arquivarCliente({
+        clienteId: cliente.id,
+        motivo: motivoArquivamentoInput,
+        usuarioEmail: "admin@jansol.com.br",
+      });
+      toast.success("Cliente arquivado com sucesso! Dados preservados.");
+      setModalArquivarOpen(false);
+      navigate({ to: "/dashboard/clientes" });
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao arquivar cliente.");
+    } finally {
+      setProcessandoArquivamento(false);
+    }
+  };
+
+  const handleRestaurar = async () => {
+    setProcessandoArquivamento(true);
+    try {
+      await restaurarCliente({
+        clienteId: cliente.id,
+        usuarioEmail: "admin@jansol.com.br",
+      });
+      toast.success("Cliente restaurado com sucesso!");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao restaurar cliente.");
+    } finally {
+      setProcessandoArquivamento(false);
+    }
+  };
+
+  // Linha do Tempo Consolidada (Sem duplicar registros no banco)
+  const eventosLinhaTempo = [
+    ...ordensServico
+      .filter((os) => os.cliente_id === id)
+      .map((os) => ({
+        id: `os-${os.id}`,
+        data: os.data_prevista || os.created_at,
+        tipo: "Ordem de Serviço",
+        titulo: `OS ${(os as any).codigo_legivel || os.id}: ${os.tipo_atendimento}`,
+        detalhes: os.descricao_problema,
+        badge: os.status,
+      })),
+    ...manutencoes
+      .filter((m) => m.cliente_id === id)
+      .map((m) => ({
+        id: `manut-${m.id}`,
+        data: m.data_manutencao || m.created_at,
+        tipo: "Manutenção",
+        titulo: `Manutenção ${m.tipo}`,
+        detalhes: m.observacoes || "Sem observações",
+        badge: m.status,
+      })),
+    ...interacoes
+      .filter((i) => i.cliente_id === id)
+      .map((i) => ({
+        id: `inter-${i.id}`,
+        data: i.data_interacao || i.created_at,
+        tipo: "Interação",
+        titulo: `${i.tipo} por ${i.usuario || "Atendente"}`,
+        detalhes: i.descricao,
+        badge: "Contato",
+      })),
+    ...gastos
+      .filter((g) => g.cliente_id === id)
+      .map((g) => ({
+        id: `gasto-${g.id}`,
+        data: g.data || g.created_at,
+        tipo: "Gasto",
+        titulo: `Lançamento: ${g.categoria} (R$ ${g.valor})`,
+        detalhes: g.descricao || "Gasto atrelado ao cliente",
+        badge: g.tipo,
+      })),
+    ...equipamentos
+      .filter((eq) => eq.cliente_id === id)
+      .map((eq) => ({
+        id: `eq-${eq.id}`,
+        data: eq.data_instalacao || eq.created_at,
+        tipo: "Equipamento",
+        titulo: `Instalação: ${eq.marca} ${eq.modelo} (${eq.categoria})`,
+        detalhes: `Local: ${eq.local_instalacao || "Não informado"}`,
+        badge: eq.estado,
+      })),
+  ].sort((a, b) => new Date(b.data || 0).getTime() - new Date(a.data || 0).getTime());
 
   const tecnico = tecnicos.find((t) => t.id === cliente.tecnico_id);
   const ms = manutencoes.filter((m) => m.cliente_id === id);

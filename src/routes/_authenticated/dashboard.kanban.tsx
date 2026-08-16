@@ -42,9 +42,11 @@ const COLUMN_STYLE: Record<string, string> = {
   Finalizado: "bg-success text-success-foreground",
 };
 
+import { fetchKanbanCardsServer } from "@/lib/kanban.server";
+import { useEffect } from "react";
+
 function KanbanPage() {
   const navigate = useNavigate();
-  const { data: clientes = [], isLoading } = useClientes();
   const { data: tecnicos = [] } = useTecnicos();
   const updateStatus = useUpdateStatusCliente();
   const [dialog, setDialog] = useState(false);
@@ -53,58 +55,67 @@ function KanbanPage() {
   const [fTecnico, setFTecnico] = useState("todos");
   const [fSistema, setFSistema] = useState("todos");
 
-  const [limitePorColuna, setLimitePorColuna] = useState<Record<string, number>>({});
+  const [colunasState, setColunasState] = useState<Record<string, { cards: Cliente[]; total: number; page: number; hasMore: boolean }>>({});
+  const [loadingKanban, setLoadingKanban] = useState(true);
   const [atualizandoId, setAtualizandoId] = useState<string | null>(null);
 
-  // 1. Deduplicação Estrita por ID do Cliente
-  const clientesDeduplicados = useMemo(() => {
-    const map = new Map<string, Cliente>();
-    for (const c of clientes) {
-      if (c && c.id && !map.has(c.id)) {
-        map.set(c.id, c);
-      }
+  const carregarColuna = async (status: string, pageNum = 1) => {
+    try {
+      const res = await (fetchKanbanCardsServer as any)({
+        data: {
+          status,
+          page: pageNum,
+          limit: 50,
+          cidade: fCidade,
+          tecnicoId: fTecnico,
+          tipoSistema: fSistema,
+        },
+      });
+
+      setColunasState((prev) => {
+        const cartoesAntigos = pageNum > 1 ? prev[status]?.cards || [] : [];
+        const map = new Map<string, Cliente>();
+        [...cartoesAntigos, ...res.cards].forEach((c: any) => map.set(c.id, c));
+
+        return {
+          ...prev,
+          [status]: {
+            cards: Array.from(map.values()),
+            total: res.totalCount,
+            page: pageNum,
+            hasMore: res.hasMore,
+          },
+        };
+      });
+    } catch (err) {
+      console.error(`Erro ao carregar coluna ${status}:`, err);
     }
-    return Array.from(map.values());
-  }, [clientes]);
+  };
 
-  const cidades = Array.from(
-    new Set(clientesDeduplicados.map((c: Cliente) => c.cidade).filter(Boolean) as string[]),
-  ).sort();
-
-  const filtrados = clientesDeduplicados.filter(
-    (c: Cliente) =>
-      (fCidade === "todas" || c.cidade === fCidade) &&
-      (fTecnico === "todos" || c.tecnico_id === fTecnico) &&
-      (fSistema === "todos" || c.tipo_sistema === fSistema),
-  );
-
-  const nomeTecnico = (id: string | null) =>
-    tecnicos.find((t) => t.id === id)?.nome ?? null;
+  useEffect(() => {
+    setLoadingKanban(true);
+    Promise.all(STATUS_CLIENTE.map((status) => carregarColuna(status, 1))).finally(() =>
+      setLoadingKanban(false),
+    );
+  }, [fCidade, fTecnico, fSistema]);
 
   const drop = (status: string) => {
     if (!dragId || atualizandoId === dragId) return;
-    const cliente = clientesDeduplicados.find((c) => c.id === dragId);
+    const clienteId = dragId;
     setDragId(null);
-    if (!cliente || cliente.status === status) return;
-    setAtualizandoId(cliente.id);
+    setAtualizandoId(clienteId);
     updateStatus.mutate(
-      { id: cliente.id, status },
+      { id: clienteId, status },
       {
-        onSettled: () => setAtualizandoId(null),
+        onSettled: () => {
+          setAtualizandoId(null);
+          Promise.all(STATUS_CLIENTE.map((s) => carregarColuna(s, 1)));
+        },
       },
     );
   };
 
-  const getLimite = (status: string) => limitePorColuna[status] || 50;
-
-  const carregarMais = (status: string) => {
-    setLimitePorColuna((prev) => ({
-      ...prev,
-      [status]: (prev[status] || 50) + 50,
-    }));
-  };
-
-  if (isLoading) return <Loading />;
+  if (loadingKanban) return <Loading />;
 
   return (
     <div>
@@ -127,7 +138,7 @@ function KanbanPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="todas">Todas as cidades</SelectItem>
-            {cidades.map((c) => (
+            {["Resende", "Itatiaia", "Porto Real", "Barra Mansa", "Volta Redonda"].map((c: string) => (
               <SelectItem key={c} value={c}>
                 {c}
               </SelectItem>
@@ -164,10 +175,9 @@ function KanbanPage() {
 
       <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-5">
         {STATUS_CLIENTE.map((status) => {
-          const todosCardsColuna = filtrados.filter((c: Cliente) => c.status === status);
-          const limiteAtual = getLimite(status);
-          const cardsExibidos = todosCardsColuna.slice(0, limiteAtual);
-          const possuiMais = todosCardsColuna.length > cardsExibidos.length;
+          const colData = colunasState[status] || { cards: [], total: 0, page: 1, hasMore: false };
+          const cardsExibidos = colData.cards;
+          const possuiMais = colData.hasMore;
 
           return (
             <div
@@ -183,15 +193,14 @@ function KanbanPage() {
                 )}
               >
                 <span>{status}</span>
-                <span className="rounded-full bg-black/15 px-2 text-xs" title="Carregados de Total">
-                  {cardsExibidos.length} de {todosCardsColuna.length}
+                <span className="rounded-full bg-black/15 px-2 text-xs" title="Carregados do total no servidor">
+                  {cardsExibidos.length} de {colData.total}
                 </span>
               </div>
               <div className="flex-1 space-y-2 p-2">
-                {cardsExibidos.map((c: Cliente) => (
-                  <button
+                {cardsExibidos.map((c) => (
+                  <div
                     key={c.id}
-                    type="button"
                     draggable
                     onDragStart={() => setDragId(c.id)}
                     onClick={() =>
@@ -201,40 +210,36 @@ function KanbanPage() {
                       })
                     }
                     className={cn(
-                      "w-full cursor-grab rounded-md border bg-background p-2.5 text-left text-sm shadow-sm transition hover:border-accent active:cursor-grabbing",
-                      atualizandoId === c.id && "opacity-50 pointer-events-none",
+                      "cursor-grab rounded-md border bg-background p-3 text-sm shadow-xs transition hover:border-primary/50 hover:shadow-md active:cursor-grabbing",
+                      dragId === c.id && "opacity-40",
+                      atualizandoId === c.id && "pointer-events-none opacity-50 animate-pulse",
                     )}
                   >
-                    <p className="font-semibold text-primary">{c.nome}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {c.cidade ?? "—"} · {c.tipo_sistema}
-                    </p>
-                    <p className="mt-1 text-xs font-medium text-accent">
-                      {formatCurrency(c.valor_orcamento)}
-                    </p>
-                    {nomeTecnico(c.tecnico_id) && (
-                      <p className="text-xs text-muted-foreground">
-                        Téc.: {nomeTecnico(c.tecnico_id)}
+                    <p className="font-semibold text-foreground">{c.nome}</p>
+                    <p className="text-xs text-muted-foreground">{c.cidade || "—"}</p>
+                    {c.valor_orcamento !== undefined && (
+                      <p className="mt-2 text-xs font-bold text-accent">
+                        {formatCurrency(c.valor_orcamento)}
                       </p>
                     )}
-                  </button>
+                  </div>
                 ))}
+
+                {cardsExibidos.length === 0 && !loadingKanban && (
+                  <p className="p-4 text-center text-xs text-muted-foreground">
+                    Nenhum cliente
+                  </p>
+                )}
 
                 {possuiMais && (
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    onClick={() => carregarMais(status)}
-                    className="w-full text-xs text-slate-600 mt-2"
+                    className="w-full text-xs text-primary font-semibold border border-dashed mt-2"
+                    onClick={() => carregarColuna(status, colData.page + 1)}
                   >
                     Carregar mais (+50)
                   </Button>
-                )}
-
-                {todosCardsColuna.length === 0 && (
-                  <p className="py-6 text-center text-xs text-muted-foreground">
-                    Nenhum cliente
-                  </p>
                 )}
               </div>
             </div>
