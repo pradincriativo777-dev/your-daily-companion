@@ -23,6 +23,7 @@ import {
   calcularSaldosEstoque,
   validarSaldoDisponivel,
 } from "@/lib/estoque";
+import { PacoteTecnicoModal } from "@/components/crm/PacoteTecnicoModal";
 import {
   Dialog,
   DialogContent,
@@ -132,6 +133,9 @@ export function OrdemServicoDetalhesDialog({
   const [pecaQuantidade, setPecaQuantidade] = useState(1);
   const [pecaEquipamentoId, setPecaEquipamentoId] = useState("");
   const [processandoPeca, setProcessandoPeca] = useState(false);
+
+  // Modal do Pacote do Técnico
+  const [modalPacoteOpen, setModalPacoteOpen] = useState(false);
 
   // Modal de Adição de Gasto
   const [modalGastoOpen, setModalGastoOpen] = useState(false);
@@ -351,7 +355,8 @@ export function OrdemServicoDetalhesDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto">
         <DialogHeader className="border-b pb-3">
           <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -364,7 +369,17 @@ export function OrdemServicoDetalhesDialog({
               </DialogTitle>
             </div>
 
-            <div className="flex items-center gap-2">
+              {/* Botão Gerar Pacote do Técnico */}
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setModalPacoteOpen(true)}
+                className="h-8 bg-[#100D3F] text-white hover:bg-[#1A165C] text-xs font-bold px-3 gap-1.5 rounded-lg shadow-sm"
+              >
+                <FileText className="h-3.5 w-3.5 text-[#E2B321]" />
+                Gerar pacote do técnico
+              </Button>
+
               {/* Dropdown de Mudança de Status */}
               <Select
                 value={ordem.status}
@@ -382,7 +397,6 @@ export function OrdemServicoDetalhesDialog({
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
           <DialogDescription className="text-xs flex items-center gap-3 pt-1 text-slate-500">
             <span>Criado em: {new Date(ordem.created_at).toLocaleDateString("pt-BR")}</span>
@@ -796,6 +810,7 @@ export function OrdemServicoDetalhesDialog({
           </TabsContent>
         </Tabs>
       </DialogContent>
+    </Dialog>
 
       {/* MODAL DE MOTIVO DE CANCELAMENTO */}
       <Dialog open={modalCancelamentoOpen} onOpenChange={setModalCancelamentoOpen}>
@@ -963,6 +978,22 @@ export function OrdemServicoDetalhesDialog({
           </form>
         </DialogContent>
       </Dialog>
-    </Dialog>
+
+      {/* Modal do Pacote do Técnico */}
+      <PacoteTecnicoModal
+        open={modalPacoteOpen}
+        onOpenChange={setModalPacoteOpen}
+        ordemServico={
+          ordem
+            ? {
+                ...ordem,
+                cliente_nome: cliente?.nome,
+                cliente_telefone: (cliente as any)?.telefone || cliente?.whatsapp,
+                tecnico_nome: tecnico?.nome,
+              }
+            : null
+        }
+      />
+    </>
   );
 }

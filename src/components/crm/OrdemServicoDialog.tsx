@@ -58,6 +58,14 @@ export function OrdemServicoDialog({
   const [observacoesInternas, setObservacoesInternas] = useState("");
   const [status, setStatus] = useState<OrdemStatus>("Aguardando agendamento");
 
+  // Campos específicos para Orientações do Técnico (PDF Pacote do Técnico)
+  const [objetivoAtendimento, setObjetivoAtendimento] = useState("");
+  const [escopoTecnico, setEscopoTecnico] = useState("");
+  const [itensInclusos, setItensInclusos] = useState("");
+  const [itensNaoInclusos, setItensNaoInclusos] = useState("");
+  const [cuidadosSeguranca, setCuidadosSeguranca] = useState("");
+  const [contatoSuporteInterno, setContatoSuporteInterno] = useState("");
+
   useEffect(() => {
     if (ordemParaEditar) {
       setClienteId(ordemParaEditar.cliente_id || "");
@@ -75,6 +83,13 @@ export function OrdemServicoDialog({
       setOrigemSolicitacao(ordemParaEditar.origem_solicitacao || "WhatsApp");
       setObservacoesInternas(ordemParaEditar.observacoes_internas || "");
       setStatus((ordemParaEditar.status as OrdemStatus) || "Aguardando agendamento");
+
+      setObjetivoAtendimento((ordemParaEditar as any).objetivo_atendimento || "");
+      setEscopoTecnico((ordemParaEditar as any).escopo_tecnico || "");
+      setItensInclusos((ordemParaEditar as any).itens_inclusos || "");
+      setItensNaoInclusos((ordemParaEditar as any).itens_nao_inclusos || "");
+      setCuidadosSeguranca((ordemParaEditar as any).cuidados_seguranca || "");
+      setContatoSuporteInterno((ordemParaEditar as any).contato_suporte_interno || "");
     } else {
       setClienteId("");
       setTecnicoId("");
@@ -89,6 +104,13 @@ export function OrdemServicoDialog({
       setOrigemSolicitacao("WhatsApp");
       setObservacoesInternas("");
       setStatus("Aguardando agendamento");
+
+      setObjetivoAtendimento("");
+      setEscopoTecnico("");
+      setItensInclusos("");
+      setItensNaoInclusos("");
+      setCuidadosSeguranca("");
+      setContatoSuporteInterno("Plantão Engenharia JANSOL - (19) 3210-9876");
     }
   }, [ordemParaEditar, open]);
 
@@ -122,23 +144,33 @@ export function OrdemServicoDialog({
 
     try {
       setSubmitting(true);
-      await onSave({
-        ...(ordemParaEditar ? { id: ordemParaEditar.id } : {}),
+      const payload: Record<string, any> = {
         cliente_id: clienteId,
         tecnico_id: tecnicoId || null,
         tipo_atendimento: tipoAtendimento,
         prioridade,
-        descricao_problema: descricaoProblema,
-        servico_solicitado: servicoSolicitado || null,
-        endereco_visita: enderecoVisita,
+        descricao_problema: descricaoProblema.trim(),
+        servico_solicitado: servicoSolicitado.trim() || null,
+        endereco_visita: enderecoVisita.trim(),
         data_prevista: dataPrevista,
-        horario_inicio: horarioInicio,
+        horario_inicio: horarioInicio || null,
         duracao_estimada_min: Number(duracaoEstimadaMin) || 60,
         origem_solicitacao: origemSolicitacao,
-        observacoes_internas: observacoesInternas || null,
+        observacoes_internas: observacoesInternas.trim() || null,
         status,
-        version: ordemParaEditar ? ordemParaEditar.version : 1,
-      });
+        objetivo_atendimento: objetivoAtendimento.trim() || null,
+        escopo_tecnico: escopoTecnico.trim() || null,
+        itens_inclusos: itensInclusos.trim() || null,
+        itens_nao_inclusos: itensNaoInclusos.trim() || null,
+        cuidados_seguranca: cuidadosSeguranca.trim() || null,
+        contato_suporte_interno: contatoSuporteInterno.trim() || null,
+      };
+
+      if (ordemParaEditar) {
+        payload["id"] = ordemParaEditar.id;
+      }
+
+      await onSave(payload);
       onOpenChange(false);
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar Ordem de Serviço.");
@@ -332,12 +364,87 @@ export function OrdemServicoDialog({
             </div>
           </div>
 
-          {/* Observações Internas */}
+          {/* SEÇÃO ORIENTAÇÕES PARA EXECUÇÃO DO TÉCNICO */}
+          <div className="rounded-xl border border-[#E2DDD0] bg-[#FAF5E8]/40 p-4 space-y-4">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-[#100D3F] flex items-center gap-1.5">
+              Orientações para Execução do Técnico (PDF Pacote do Técnico)
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="objetivoAtendimento">Objetivo do Atendimento</Label>
+                <Input
+                  id="objetivoAtendimento"
+                  placeholder="Ex: Garantir estanqueidade e fluxo do fluido solar..."
+                  value={objetivoAtendimento}
+                  onChange={(e) => setObjetivoAtendimento(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="contatoSuporteInterno">Contato para Dúvidas do Técnico</Label>
+                <Input
+                  id="contatoSuporteInterno"
+                  placeholder="Ex: Plantão Engenharia - (19) 3210-9876"
+                  value={contatoSuporteInterno}
+                  onChange={(e) => setContatoSuporteInterno(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="escopoTecnico">Escopo Técnico Detalhado</Label>
+              <Textarea
+                id="escopoTecnico"
+                placeholder="Descreva as etapas técnicas detalhadas para o técnico em campo..."
+                rows={2}
+                value={escopoTecnico}
+                onChange={(e) => setEscopoTecnico(e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="itensInclusos">Itens / Serviços Inclusos</Label>
+                <Textarea
+                  id="itensInclusos"
+                  placeholder="Ex: Fluidos, vedantes e teste de termocâmera..."
+                  rows={2}
+                  value={itensInclusos}
+                  onChange={(e) => setItensInclusos(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="itensNaoInclusos">Itens NÃO Inclusos</Label>
+                <Textarea
+                  id="itensNaoInclusos"
+                  placeholder="Ex: Substituição completa do reservatório..."
+                  rows={2}
+                  value={itensNaoInclusos}
+                  onChange={(e) => setItensNaoInclusos(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="cuidadosSeguranca">Cuidados & Instruções de Segurança (EPIs)</Label>
+              <Textarea
+                id="cuidadosSeguranca"
+                placeholder="Ex: Cinto de segurança em altura, óculos de proteção..."
+                rows={2}
+                value={cuidadosSeguranca}
+                onChange={(e) => setCuidadosSeguranca(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Observações Internas Administrativas (MANTIDAS FORA DO PDF) */}
           <div className="space-y-1.5">
-            <Label htmlFor="observacoesInternas">Observações Internas</Label>
+            <Label htmlFor="observacoesInternas">Observações Internas (Administrativas — NÃO vão para o técnico)</Label>
             <Textarea
               id="observacoesInternas"
-              placeholder="Instruções para o técnico, pontos de atenção ou notas de apoio..."
+              placeholder="Notas restritas ao escritório e administração..."
               rows={2}
               value={observacoesInternas}
               onChange={(e) => setObservacoesInternas(e.target.value)}

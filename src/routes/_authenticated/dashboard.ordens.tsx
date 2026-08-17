@@ -19,6 +19,7 @@ import {
 import { OrdensKanbanView } from "@/components/crm/OrdensKanbanView";
 import { OrdemServicoDialog } from "@/components/crm/OrdemServicoDialog";
 import { OrdemServicoDetalhesDialog } from "@/components/crm/OrdemServicoDetalhesDialog";
+import { PacoteTecnicoModal } from "@/components/crm/PacoteTecnicoModal";
 import { OrdensFinanceiroDashboard } from "@/components/crm/OrdensFinanceiroDashboard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,6 +54,7 @@ import {
   Wrench,
   AlertTriangle,
   RefreshCw,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -83,6 +85,9 @@ function OrdensPage() {
 
   const [dialogDetalhesOpen, setDialogDetalhesOpen] = useState(false);
   const [ordemSelecionada, setOrdemSelecionada] = useState<OrdemServico | null>(null);
+
+  const [modalPacoteOpen, setModalPacoteOpen] = useState(false);
+  const [ordemParaPacote, setOrdemParaPacote] = useState<OrdemServico | null>(null);
 
   const clienteMap = new Map(clientes.map((c) => [c.id, c.nome]));
   const tecnicoMap = new Map(tecnicos.map((t) => [t.id, t.nome]));
@@ -453,7 +458,20 @@ function OrdensPage() {
                           {formatCurrency(ordem.valor_aprovado)}
                         </TableCell>
 
-                        <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                        <TableCell className="text-center flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-xs font-semibold text-[#100D3F] hover:bg-[#FAF5E8] gap-1"
+                            title="Gerar pacote do técnico em PDF"
+                            onClick={() => {
+                              setOrdemParaPacote(ordem);
+                              setModalPacoteOpen(true);
+                            }}
+                          >
+                            <FileText className="h-3.5 w-3.5 text-[#E2B321]" />
+                            Pacote
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -501,6 +519,21 @@ function OrdensPage() {
         }}
         onUpdateStatus={handleUpdateStatus}
         onUpdateFinanceiro={handleUpdateFinanceiro}
+      />
+      {/* Modal do Pacote do Técnico */}
+      <PacoteTecnicoModal
+        open={modalPacoteOpen}
+        onOpenChange={setModalPacoteOpen}
+        ordemServico={
+          ordemParaPacote
+            ? {
+                ...ordemParaPacote,
+                cliente_nome: clienteMap.get(ordemParaPacote.cliente_id),
+                cliente_telefone: (clientes.find((c) => c.id === ordemParaPacote.cliente_id) as any)?.telefone || clientes.find((c) => c.id === ordemParaPacote.cliente_id)?.whatsapp,
+                tecnico_nome: ordemParaPacote.tecnico_id ? tecnicoMap.get(ordemParaPacote.tecnico_id) : undefined,
+              }
+            : null
+        }
       />
     </div>
   );
