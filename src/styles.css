@@ -1,17 +1,16 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600;1,700&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 22px;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -34,102 +33,83 @@
   --color-ring-offset-background: var(--background);
   --color-gold: var(--gold);
   --color-gold-foreground: var(--gold-foreground);
-  --color-gold-soft: var(--gold-soft);
-  --color-turquoise: var(--turquoise);
-  --color-[#55D6C2]: #55D6C2;
-  --color-[#100D3F]: #100D3F;
-  --color-[#09072A]: #09072A;
-  --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
-  --color-warning: var(--warning);
-  --color-warning-foreground: var(--warning-foreground);
-  --color-pending: var(--pending);
-  --color-pending-foreground: var(--pending-foreground);
-  --color-info: var(--info);
-  --color-info-foreground: var(--info-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+  --color-copper: var(--copper);
 }
 
 :root {
-  /* ── Paleta JANSOL OS (Inspirada na clareza e inovação do Kommo) ── */
-  --jansol-navy: #100D3F;
-  --jansol-navy-dark: #09072A;
-  --jansol-bg-light: #F7F7FA;
+  /* ── Fusão Visual Final: JANSOL OS + Institucional jansol.com.br ── */
+  --jansol-charcoal: #1D1C19;
+  --jansol-charcoal-dark: #11110F;
+  --jansol-charcoal-sec: #292722;
+  --jansol-warm-white: #F8F6F1;
+  --jansol-editorial-bg: #F2EFE8;
   --jansol-white: #FFFFFF;
-  --jansol-gold: #E2B321;
-  --jansol-yellow: #FFD95A;
-  --jansol-turquoise: #55D6C2;
-  --jansol-turquoise-light: #8DE3C9;
-  --jansol-blue-soft: #A9DDF5;
-  --jansol-purple-soft: #C8C2FF;
-  --jansol-text-main: #17152B;
-  --jansol-text-secondary: #6F6C80;
-  --jansol-border: #E7E5EE;
+  --jansol-gold: #E3B94F;
+  --jansol-gold-light: #F1D47D;
+  --jansol-copper: #C8794A;
+  --jansol-bronze: #91623E;
+  --jansol-text-main: #24231F;
+  --jansol-text-secondary: #706D65;
+  --jansol-border: #DDD8CE;
 
-  /* Gradiente JANSOL Sol & Água */
-  --jansol-gradient: linear-gradient(110deg, #FFD95A 0%, #8DE3C9 100%);
-  --jansol-gradient-hover: linear-gradient(110deg, #F5CC47 0%, #76D6BA 100%);
-  --jansol-gradient-navy: linear-gradient(135deg, #100D3F 0%, #09072A 100%);
+  /* Gradiente JANSOL Cobre/Dourado/Sol */
+  --jansol-gradient: linear-gradient(110deg, #C8794A 0%, #E3B94F 52%, #F1D47D 100%);
+  --jansol-gradient-hover: linear-gradient(110deg, #B86B3E 0%, #D4A942 52%, #E5C770 100%);
+  --jansol-gradient-charcoal: linear-gradient(135deg, #1D1C19 0%, #11110F 100%);
 
-  /* Radii Kommo (18px a 24px) */
-  --radius: 1.125rem; /* 18px */
+  /* Radii Específicos */
+  --radius-card: 18px;
+  --radius-subcard: 14px;
+  --radius-btn: 10px;
 
-  --background: #F7F7FA;
-  --foreground: #17152B;
+  --background: #F8F6F1;
+  --foreground: #24231F;
 
   --card: #FFFFFF;
-  --card-foreground: #17152B;
+  --card-foreground: #24231F;
   --popover: #FFFFFF;
-  --popover-foreground: #17152B;
+  --popover-foreground: #24231F;
 
-  --primary: #100D3F;
-  --primary-foreground: #FFFFFF;
+  --primary: #1D1C19;
+  --primary-foreground: #F8F6F1;
 
-  --secondary: #F0EFF5;
-  --secondary-foreground: #17152B;
+  --secondary: #F2EFE8;
+  --secondary-foreground: #24231F;
 
-  --muted: #F0EFF5;
-  --muted-foreground: #6F6C80;
+  --muted: #F2EFE8;
+  --muted-foreground: #706D65;
 
-  --accent: #EBF8F5;
-  --accent-foreground: #100D3F;
+  --accent: #FAF5E8;
+  --accent-foreground: #1D1C19;
 
-  --gold: #E2B321;
-  --gold-foreground: #100D3F;
-  --gold-soft: #FFF9E6;
-  --turquoise: #55D6C2;
+  --gold: #E3B94F;
+  --gold-foreground: #1D1C19;
+  --copper: #C8794A;
 
   --success: #2E7D32;
   --success-foreground: #FFFFFF;
-  --warning: #ED6C02;
+  --warning: #D97706;
   --warning-foreground: #FFFFFF;
-  --pending: #E65100;
+  --pending: #C8794A;
   --pending-foreground: #FFFFFF;
-  --info: #0288D1;
+  --info: #2563EB;
   --info-foreground: #FFFFFF;
 
-  --destructive: #D32F2F;
+  --destructive: #C53030;
   --destructive-foreground: #FFFFFF;
 
-  --border: #E7E5EE;
-  --input: #E7E5EE;
-  --ring: #55D6C2;
+  --border: #DDD8CE;
+  --input: #DDD8CE;
+  --ring: #E3B94F;
 
-  --sidebar: #100D3F;
-  --sidebar-foreground: #E7E5EE;
-  --sidebar-primary: #55D6C2;
-  --sidebar-primary-foreground: #100D3F;
-  --sidebar-accent: #1C1854;
+  --sidebar: #1D1C19;
+  --sidebar-foreground: #F8F6F1;
+  --sidebar-primary: #E3B94F;
+  --sidebar-primary-foreground: #1D1C19;
+  --sidebar-accent: #292722;
   --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: #1F1B5C;
-  --sidebar-ring: #55D6C2;
+  --sidebar-border: #2B2924;
+  --sidebar-ring: #E3B94F;
 
   /* Safe Area Insets para iPhone */
   --sat: env(safe-area-inset-top, 0px);
@@ -139,22 +119,22 @@
 }
 
 .dark {
-  --background: #09072A;
-  --foreground: #F7F7FA;
-  --card: #100D3F;
-  --card-foreground: #F7F7FA;
-  --popover: #100D3F;
-  --popover-foreground: #F7F7FA;
-  --primary: #55D6C2;
-  --primary-foreground: #09072A;
-  --secondary: #1F1B5C;
-  --secondary-foreground: #F7F7FA;
-  --muted: #1F1B5C;
-  --muted-foreground: #A09E97;
-  --accent: #1C1854;
-  --accent-foreground: #55D6C2;
-  --border: #1F1B5C;
-  --input: #1F1B5C;
+  --background: #11110F;
+  --foreground: #F8F6F1;
+  --card: #1D1C19;
+  --card-foreground: #F8F6F1;
+  --popover: #1D1C19;
+  --popover-foreground: #F8F6F1;
+  --primary: #E3B94F;
+  --primary-foreground: #11110F;
+  --secondary: #292722;
+  --secondary-foreground: #F8F6F1;
+  --muted: #292722;
+  --muted-foreground: #99958C;
+  --accent: #292722;
+  --accent-foreground: #E3B94F;
+  --border: #38352F;
+  --input: #38352F;
 }
 
 @layer base {
@@ -165,14 +145,17 @@
   html, body {
     background-color: var(--background);
     color: var(--foreground);
-    font-family: Inter, -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", sans-serif;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     overflow-x: hidden;
   }
 
-  /* Suporte a prefers-reduced-motion */
+  /* Fonte Serifada Editorial JANSOL */
+  .font-serif-editorial {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *, ::before, ::after {
       animation-duration: 0.01ms !important;
@@ -183,53 +166,50 @@
   }
 }
 
-/* Kommo-inspired Bento Cards & Pill Buttons */
+/* JANSOL OS Cards & Custom Styling */
 .jansol-bento-card {
   background-color: #FFFFFF;
-  border: 1px solid #E7E5EE;
-  border-radius: 1.25rem; /* 20px */
-  box-shadow: 0 2px 10px rgba(16, 13, 63, 0.03), 0 1px 3px rgba(16, 13, 63, 0.02);
+  border: 1px solid #DDD8CE;
+  border-radius: 18px; /* 18px conforme guia oficial */
+  box-shadow: 0 2px 8px rgba(29, 28, 25, 0.03), 0 1px 2px rgba(29, 28, 25, 0.02);
   transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1), border-color 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .jansol-bento-card:hover {
-  border-color: #D5D2E2;
-  box-shadow: 0 8px 24px rgba(16, 13, 63, 0.06);
-}
-
-.jansol-[#100D3F] {
-  background-color: #100D3F;
+  border-color: #C8BFA5;
+  box-shadow: 0 6px 20px rgba(29, 28, 25, 0.05);
 }
 
 .jansol-gradient-btn {
-  background: linear-gradient(110deg, #FFD95A 0%, #8DE3C9 100%);
-  color: #100D3F;
+  background: linear-gradient(110deg, #C8794A 0%, #E3B94F 52%, #F1D47D 100%);
+  color: #1D1C19;
   font-weight: 700;
   border: none;
-  border-radius: 9999px; /* Pill format Kommo */
+  border-radius: 10px; /* 10px botões */
   transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .jansol-gradient-btn:hover {
-  background: linear-gradient(110deg, #F5CC47 0%, #76D6BA 100%);
-  box-shadow: 0 4px 14px rgba(85, 214, 194, 0.35);
+  background: linear-gradient(110deg, #B86B3E 0%, #D4A942 52%, #E5C770 100%);
+  box-shadow: 0 4px 14px rgba(227, 185, 79, 0.3);
   transform: translateY(-1px);
 }
 
-.jansol-pill-input {
+.jansol-editorial-search {
   border-radius: 9999px; /* Pill format */
-  border: 1px solid #E7E5EE;
-  background-color: #FFFFFF;
+  border: 1px solid #DDD8CE;
+  background-color: #F2EFE8;
+  color: #24231F;
   transition: all 180ms ease;
 }
 
-.jansol-pill-input:focus-within {
-  border-color: #55D6C2;
-  box-shadow: 0 0 0 3px rgba(85, 214, 194, 0.2);
+.jansol-editorial-search:focus-within {
+  border-color: #E3B94F;
+  background-color: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(227, 185, 79, 0.2);
 }
 
-/* Foco acessível visível por teclado */
 :focus-visible {
-  outline: 2px solid #55D6C2;
+  outline: 2px solid #E3B94F;
   outline-offset: 2px;
 }

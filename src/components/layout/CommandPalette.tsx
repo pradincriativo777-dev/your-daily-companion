@@ -185,7 +185,7 @@ export function CommandPalette({
         onValueChange={setSearch}
       />
       <CommandList className="max-h-[65vh] overflow-y-auto p-2 scrollbar-thin">
-        <CommandEmpty className="py-8 text-center text-sm text-[#6E6D68]">
+        <CommandEmpty className="py-8 text-center text-sm text-[#706D65]">
           Nenhum resultado encontrado para "{search}".
         </CommandEmpty>
 
@@ -194,52 +194,52 @@ export function CommandPalette({
           <CommandGroup heading="Criação & Ações Rápidas">
             <CommandItem
               onSelect={() => handleAction("novo_cliente")}
-              className="flex items-center justify-between py-2.5 rounded-xl cursor-pointer"
+              className="flex items-center justify-between py-2.5 rounded-xl cursor-pointer hover:bg-[#FAF5E8]"
             >
               <div className="flex items-center gap-2.5">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FAF3D6] text-[#D9A514]">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FAF5E8] text-[#E3B94F]">
                   <Plus className="h-4 w-4" />
                 </div>
-                <span className="font-semibold text-[#0B0B0C]">Cadastrar Novo Cliente</span>
+                <span className="font-semibold text-[#24231F]">Cadastrar Novo Cliente</span>
               </div>
               <CommandShortcut>Novo Lead</CommandShortcut>
             </CommandItem>
 
             <CommandItem
               onSelect={() => handleAction("nova_ordem")}
-              className="flex items-center justify-between py-2.5 rounded-xl cursor-pointer"
+              className="flex items-center justify-between py-2.5 rounded-xl cursor-pointer hover:bg-[#FAF5E8]"
             >
               <div className="flex items-center gap-2.5">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#0B0B0C] text-white">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#1D1C19] text-white">
                   <FileText className="h-4 w-4" />
                 </div>
-                <span className="font-semibold text-[#0B0B0C]">Criar Ordem de Serviço</span>
+                <span className="font-semibold text-[#24231F]">Criar Ordem de Serviço</span>
               </div>
               <CommandShortcut>OS Técnica</CommandShortcut>
             </CommandItem>
 
             <CommandItem
               onSelect={() => handleAction("agendar_visita")}
-              className="flex items-center justify-between py-2.5 rounded-xl cursor-pointer"
+              className="flex items-center justify-between py-2.5 rounded-xl cursor-pointer hover:bg-[#FAF5E8]"
             >
               <div className="flex items-center gap-2.5">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-100 text-amber-800">
                   <Calendar className="h-4 w-4" />
                 </div>
-                <span className="font-semibold text-[#0B0B0C]">Agendar Visita Técnica</span>
+                <span className="font-semibold text-[#24231F]">Agendar Visita Técnica</span>
               </div>
-              <CommandShortcut>Agenda AUVO</CommandShortcut>
+              <CommandShortcut>Agenda Visitas</CommandShortcut>
             </CommandItem>
 
             <CommandItem
               onSelect={() => handleAction("nova_tarefa")}
-              className="flex items-center justify-between py-2.5 rounded-xl cursor-pointer"
+              className="flex items-center justify-between py-2.5 rounded-xl cursor-pointer hover:bg-[#FAF5E8]"
             >
               <div className="flex items-center gap-2.5">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800">
                   <CheckSquare className="h-4 w-4" />
                 </div>
-                <span className="font-semibold text-[#0B0B0C]">Registrar Nova Tarefa</span>
+                <span className="font-semibold text-[#24231F]">Registrar Nova Tarefa</span>
               </div>
               <CommandShortcut>Pendência</CommandShortcut>
             </CommandItem>
