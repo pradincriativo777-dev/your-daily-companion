@@ -249,8 +249,10 @@ function DashboardHome() {
             value={faturamentoRealFormatado}
             icon={DollarSign}
             tone="success"
-            hint="Histórico acumulado de pagamentos"
+            hint="Todo o histórico acumulado"
             fonte="Tabela public.clientes (valor_pago)"
+            onClick={() => navigate({ to: "/dashboard/relatorios" })}
+            tooltip="Clique para abrir o relatório financeiro detalhado"
           />
           <MetricCard
             label="Taxa de Conversão"
@@ -259,6 +261,8 @@ function DashboardHome() {
             tone="default"
             hint="Aprovados / Total Geral (819)"
             fonte="Fórmula Oficial Global JANSOL"
+            onClick={() => navigate({ to: "/dashboard/clientes" })}
+            tooltip="Clique para ver a listagem de clientes e funil de vendas"
           />
           <MetricCard
             label="Ticket Médio"
@@ -267,14 +271,17 @@ function DashboardHome() {
             tone="default"
             hint="Calculado por cliente faturado"
             fonte="Média de orçamentos pagos"
+            onClick={() => navigate({ to: "/dashboard/relatorios" })}
+            tooltip="Clique para ver o detalhamento do ticket médio por período"
           />
           <MetricCard
             label="Orçamentos Pendentes"
             value={orcamentosPendentesTexto}
             icon={Clock}
             tone="pending"
-            hint="Integração futura Conta Azul"
+            hint="Aguardando Conta Azul"
             fonte="Módulo Financeiro Oficial"
+            tooltip="Métrica oficial aguardando integração com Conta Azul / Módulo de Orçamentos. Status 'Orçamento' do cadastro não representa pendência real."
           />
           <MetricCard
             label="Clientes em Risco"
@@ -283,6 +290,8 @@ function DashboardHome() {
             tone="danger"
             hint="Sem contato há mais de 30 dias"
             fonte="Data de último contato"
+            onClick={() => navigate({ to: "/dashboard/clientes" })}
+            tooltip="Clique para abrir a lista de clientes sem contato recente"
           />
           <MetricCard
             label="Próximas Manutenções"
@@ -291,6 +300,8 @@ function DashboardHome() {
             tone="warning"
             hint="Vencimento nos próximos 7 dias"
             fonte="Agenda de Preventivas"
+            onClick={() => navigate({ to: "/dashboard/agenda" })}
+            tooltip="Clique para abrir a agenda de visitas e manutenções preventivas"
           />
         </div>
       </section>

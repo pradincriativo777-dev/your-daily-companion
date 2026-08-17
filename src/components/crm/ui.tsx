@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { statusClienteClass, statusManutencaoClass } from "@/lib/crm";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function PageHeader({
   title,
@@ -114,6 +115,8 @@ export function MetricCard({
   icon: Icon,
   tone = "default",
   fonte,
+  onClick,
+  tooltip,
 }: {
   label: string;
   value: string | number;
@@ -121,6 +124,8 @@ export function MetricCard({
   icon?: any;
   tone?: "default" | "success" | "warning" | "pending" | "danger";
   fonte?: string;
+  onClick?: () => void;
+  tooltip?: string;
 }) {
   const tones: Record<string, string> = {
     default: "text-[#0B0B0C]",
@@ -132,14 +137,27 @@ export function MetricCard({
 
   const isIndisponivel = String(value) === "Não disponível" || String(value) === "Sem informação";
 
-  return (
-    <div className="jansol-card flex flex-col justify-between p-5">
+  const content = (
+    <div
+      onClick={onClick}
+      className={cn(
+        "jansol-card flex flex-col justify-between p-5 transition-all duration-200",
+        onClick
+          ? "cursor-pointer hover:border-[#D9A514]/60 hover:bg-[#FAF3D6]/20 hover:shadow-md active:scale-[0.99]"
+          : "cursor-default"
+      )}
+    >
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-semibold uppercase tracking-wider text-[#6E6D68]">
           {label}
         </span>
         {Icon && (
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#F8F7F3] text-[#6E6D68]">
+          <div
+            className={cn(
+              "flex h-8 w-8 items-center justify-center rounded-lg bg-[#F8F7F3] text-[#6E6D68] transition-colors",
+              onClick && "group-hover:bg-[#D9A514] group-hover:text-white"
+            )}
+          >
             <Icon className="h-4 w-4" />
           </div>
         )}
@@ -160,14 +178,32 @@ export function MetricCard({
       </div>
 
       {fonte && (
-        <div className="mt-1 border-t border-[#F0EEE9] pt-2">
+        <div className="mt-1 border-t border-[#F0EEE9] pt-2 flex items-center justify-between">
           <span className="text-[11px] font-normal text-[#8E8D88]">
             {fonte}
           </span>
+          {onClick && (
+            <ArrowUpRight className="h-3.5 w-3.5 text-[#D9A514]" />
+          )}
         </div>
       )}
     </div>
   );
+
+  if (tooltip) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>{content}</TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs border-[#E7E5DF] bg-[#0B0B0C] p-3 text-xs text-white shadow-xl">
+            {tooltip}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return content;
 }
 
 export const KpiCard = MetricCard;
