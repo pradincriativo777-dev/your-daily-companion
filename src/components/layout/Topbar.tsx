@@ -17,7 +17,9 @@ import {
   DollarSign,
   MessageSquare,
   Bell,
+  ExternalLink,
 } from "lucide-react";
+import { AUVO_CHAT_URL } from "@/lib/config";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -207,6 +209,27 @@ export function Topbar({
 
         {/* Lado Direito: Ações Secundárias em Ícones Neutros com Tooltips */}
         <div className="flex items-center gap-1.5">
+          {/* Atalho Auvo Chat em Nova Aba */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <a
+                  href={AUVO_CHAT_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Abrir Auvo Chat em uma nova aba"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#706D65] hover:bg-[#F2EFE8] hover:text-[#1D1C19] relative transition-colors"
+                >
+                  <MessageSquare className="h-4 w-4 text-[#C8794A]" />
+                  <ExternalLink className="absolute top-1.5 right-1.5 h-2.5 w-2.5 text-[#8E8C82]" />
+                </a>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="border-[#E2DDD0] bg-[#1D1C19] text-[11px] text-[#F8F6F1]">
+                Abrir Auvo Chat
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
           {/* Notificações Button */}
           <TooltipProvider>
             <Tooltip>

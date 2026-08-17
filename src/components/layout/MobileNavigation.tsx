@@ -7,7 +7,10 @@ import {
   Search,
   Sun,
   X,
+  MessageSquare,
+  ExternalLink,
 } from "lucide-react";
+import { AUVO_CHAT_URL } from "@/lib/config";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { NAV_GROUPS } from "./Sidebar";
 import { cn } from "@/lib/utils";
@@ -86,6 +89,22 @@ export function MobileDrawer({
                 </div>
               </div>
             ))}
+            {/* Atalho Auvo Chat para Mobile */}
+            <div className="pt-2 border-t border-white/10 space-y-1">
+              <a
+                href={AUVO_CHAT_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => onOpenChange(false)}
+                className="flex items-center justify-between rounded-xl px-3.5 py-3 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white min-h-[44px]"
+              >
+                <div className="flex items-center gap-3.5">
+                  <MessageSquare className="h-5 w-5 text-[#E3B94F]" />
+                  <span>Auvo Chat</span>
+                </div>
+                <ExternalLink className="h-4 w-4 text-white/50" />
+              </a>
+            </div>
           </div>
         </div>
       </SheetContent>

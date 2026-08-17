@@ -11,7 +11,10 @@ import {
   CheckCircle2,
   Sparkles,
   Info,
+  MessageSquare,
+  ExternalLink,
 } from "lucide-react";
+import { AUVO_CHAT_URL } from "@/lib/config";
 import {
   Sheet,
   SheetContent,
@@ -232,6 +235,32 @@ export function JansolAssistenteDrawer({
                     <span>Como usar esta página?</span>
                     <ChevronRight className="h-3.5 w-3.5 text-[#E3B94F]" />
                   </button>
+                </div>
+              )}
+
+              {/* ATALHO DIRETO PARA AUVO CHAT NAS AÇÕES RÁPIDAS */}
+              {!busca && !categoriaSelecionada && (
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-[#E2DDD0] bg-white p-3 shadow-2xs">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FAF5E8] text-[#C8794A]">
+                      <MessageSquare className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-[#24231F]">Auvo Chat</p>
+                      <p className="text-[11px] text-[#706D65]">Acesse o suporte e conversas da equipe Auvo</p>
+                    </div>
+                  </div>
+
+                  <a
+                    href={AUVO_CHAT_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Abrir Auvo Chat em uma nova aba"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#E2DDD0] bg-[#F8F6F1] px-3 py-1.5 text-xs font-bold text-[#1D1C19] hover:bg-[#FAF5E8] hover:border-[#E3B94F] transition-colors shrink-0"
+                  >
+                    <span>Abrir</span>
+                    <ExternalLink className="h-3 w-3 text-[#8E8C82]" />
+                  </a>
                 </div>
               )}
 
