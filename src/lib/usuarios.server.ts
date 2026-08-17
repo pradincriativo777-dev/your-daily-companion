@@ -30,14 +30,23 @@ export const fetchUsuariosServer = createServerFn({ method: "GET" })
 
     let list: UsuarioPerfilRow[] = perfis || [];
 
-    // 2. Garantir perfil Administrador para o usuário autenticado atual se a lista estiver vazia ou usuário não estiver cadastrado
+    // 2. Bootstrap Seguro via Variável de Ambiente CRM_BOOTSTRAP_ADMIN_USER_ID ou CRM_BOOTSTRAP_ADMIN_EMAIL
+    const bootstrapAdminId = process.env["CRM_BOOTSTRAP_ADMIN_USER_ID"] || process.env["VITE_CRM_BOOTSTRAP_ADMIN_USER_ID"];
+    const bootstrapAdminEmail = process.env["CRM_BOOTSTRAP_ADMIN_EMAIL"] || process.env["VITE_CRM_BOOTSTRAP_ADMIN_EMAIL"] || "admin@jansol.com.br";
+
     const userEmail = user?.email;
+    const userId = user?.id;
+
     if (user && userEmail) {
-      const existeUsuarioAtual = list.some((u) => u.email.toLowerCase() === userEmail.toLowerCase());
-      if (!existeUsuarioAtual) {
+      const eBootstrapAuthorized = (bootstrapAdminId && userId === bootstrapAdminId) ||
+        (bootstrapAdminEmail && userEmail.toLowerCase() === bootstrapAdminEmail.toLowerCase());
+
+      const existeUsuarioAtual = list.some((u) => u.email.toLowerCase() === userEmail.toLowerCase() || u.user_id === userId);
+
+      if (!existeUsuarioAtual && eBootstrapAuthorized) {
         const { data: novousuario, error: insertErr } = await (supabase.from as any)("perfis_usuarios")
           .upsert({
-            user_id: user.id,
+            user_id: userId,
             email: userEmail,
             nome: userEmail.split("@")[0] || "Administrador",
             perfil: "Administrador",

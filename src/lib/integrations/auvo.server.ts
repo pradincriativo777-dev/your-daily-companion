@@ -199,47 +199,15 @@ function mockAuvoResponse(endpoint: string, options: RequestInit = {}) {
       );
     }
 
-    const todayStr = new Date().toISOString().split("T")[0];
     return new Response(
-      JSON.stringify({
-        result: [
-          {
-            id: "AUVO-TASK-881201",
-            customerName: "João Silva",
-            customerOrientation: "000.000.000-00",
-            taskDate: `${todayStr}T09:00:00`,
-            orientation: "Manutenção preventiva em coletor solar",
-            address: "Rua das Flores, 123 - Centro",
-            taskTypeName: "Preventiva",
-            priority: "Média",
-          },
-          {
-            id: "AUVO-TASK-881202",
-            customerName: "Maria Oliveira",
-            customerOrientation: "111.111.111-11",
-            taskDate: `${todayStr}T14:30:00`,
-            orientation: "Vistoria técnica para orçamento de boiler",
-            address: "Av. Brasil, 456 - Jardim das Palmeiras",
-            taskTypeName: "Orçamento / Vistoria",
-            priority: "Alta",
-          },
-        ],
-      }),
+      JSON.stringify({ result: [] }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   }
 
-  // Simulando retornos de clientes
   if (endpoint.includes("/clientes")) {
     return new Response(
-      JSON.stringify({
-        result: [
-          { id: 101, name: "João Silva", email: "joao@email.com", orientation: "000.000.000-00", mobilePhone: "11999999999" },
-          { id: 102, name: "Maria Oliveira", email: "maria@email.com", orientation: "111.111.111-11", mobilePhone: "11888888888" },
-        ],
-        total: 2,
-        pages: 1,
-      }),
+      JSON.stringify({ result: [], total: 0, pages: 0 }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   }

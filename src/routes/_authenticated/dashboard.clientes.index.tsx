@@ -115,7 +115,11 @@ function ClientesPage() {
         return (av - bv) * dir;
       return String(av).localeCompare(String(bv), "pt-BR") * dir;
     });
-  }, [clientes, busca, fStatus, fCidade, fSistema, fMarca, fTecnico, fOrigem, sort]);
+  }, [clientes, busca, fStatus, fCidade, fSistema, fMarca, fTecnico, fOrigem, sort, verArquivados]);
+
+  const totalGeral = clientes.length;
+  const totalAtivos = clientes.filter((c: any) => c.arquivado !== true).length;
+  const totalArquivados = clientes.filter((c: any) => c.arquivado === true).length;
 
   const pageCount = Math.ceil(filtrados.length / PAGE_SIZE);
   const pageItems = filtrados.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -132,13 +136,16 @@ function ClientesPage() {
 
   return (
     <div>
-      <PageHeader title="Clientes" description={`${filtrados.length} cliente(s) listado(s)`}>
+      <PageHeader
+        title="Clientes"
+        description={`${filtrados.length} exibido(s) de ${verArquivados ? `${totalArquivados} arquivados` : `${totalAtivos} ativos`} (Total geral: ${totalGeral})`}
+      >
         <Button
           variant={verArquivados ? "default" : "outline"}
           onClick={() => { setVerArquivados(!verArquivados); setPage(1); }}
           className={verArquivados ? "bg-amber-600 text-white" : "border-amber-500 text-amber-600"}
         >
-          {verArquivados ? "Exibindo Arquivados" : "Ver Clientes Arquivados"}
+          {verArquivados ? `Exibindo Arquivados (${totalArquivados})` : `Ver Clientes Arquivados (${totalArquivados})`}
         </Button>
         <Button
           variant="outline"
