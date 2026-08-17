@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Download, Eye, MessageSquarePlus, Pencil, Plus, ShieldCheck, Trash2, List, Grid, Search, Filter } from "lucide-react";
+import { Download, Eye, MessageSquarePlus, Pencil, Plus, ShieldCheck, Trash2, List, Grid, Search, Filter, MessageSquare } from "lucide-react";
+import { toast } from "sonner";
+import { iniciarAtendimentoAuvoChat } from "@/lib/auvo-chat-assistant";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -285,6 +287,33 @@ function ClientesPage() {
                       <TableCell>{formatDate(c.ultimo_contato)}</TableCell>
                       <TableCell>
                         <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Atender no Auvo Chat"
+                            onClick={() => {
+                              iniciarAtendimentoAuvoChat(
+                                {
+                                  id: c.id,
+                                  nome: c.nome,
+                                  whatsapp: c.whatsapp,
+                                  telefone: (c as any).telefone,
+                                },
+                                "/dashboard/clientes",
+                                {
+                                  onNoPhone: () => {
+                                    toast.error(`O cliente ${c.nome} não possui telefone cadastrado.`);
+                                  },
+                                  onSuccess: (tel) => {
+                                    toast.success(`Telefone copiado (${tel}). Direcionando para o Auvo Chat...`);
+                                  },
+                                }
+                              );
+                            }}
+                            className="text-[#C8794A] hover:bg-[#FAF5E8]"
+                          >
+                            <MessageSquare className="h-4 w-4" />
+                          </Button>
                           <Button asChild variant="ghost" size="icon" title="Ver">
                             <Link to="/dashboard/clientes/$id" params={{ id: c.id }}>
                               <Eye className="h-4 w-4" />

@@ -10,6 +10,15 @@ import { OrdemServicoDialog } from "@/components/crm/OrdemServicoDialog";
 import { AgendarVisitaDialog } from "@/components/crm/AgendarVisitaDialog";
 import { JansolAssistenteButton } from "@/components/layout/JansolAssistenteButton";
 import { JansolAssistenteDrawer } from "@/components/layout/JansolAssistenteDrawer";
+import { AuvoChatPendingBanner } from "@/components/crm/AuvoChatPendingBanner";
+import { AuvoChatResultadoDialog } from "@/components/crm/AuvoChatResultadoDialog";
+import { AuvoChatSemTelefoneDialog } from "@/components/crm/AuvoChatSemTelefoneDialog";
+import {
+  getAtendimentoPendente,
+  limparAtendimentoPendente,
+  type AuvoChatAtendimentoState,
+  type ClienteLike,
+} from "@/lib/auvo-chat-assistant";
 import { useClientes, useTecnicos } from "@/hooks/use-crm";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -40,7 +49,37 @@ function DashboardLayout() {
   const [ordemModalOpen, setOrdemModalOpen] = useState(false);
   const [visitaModalOpen, setVisitaModalOpen] = useState(false);
 
+  // Estados para Atendimento Assistido no Auvo Chat
+  const [auvoAtendimentoPendente, setAuvoAtendimentoPendente] = useState<AuvoChatAtendimentoState | null>(null);
+  const [auvoResultadoOpen, setAuvoResultadoOpen] = useState(false);
+  const [auvoSemTelefoneOpen, setAuvoSemTelefoneOpen] = useState(false);
+  const [auvoSemTelefoneCliente, setAuvoSemTelefoneCliente] = useState<ClienteLike | null>(null);
+
   const user = Route.useRouteContext().user;
+
+  // Monitorar foco e visibilidade da aba para detectar retorno do Auvo Chat
+  useEffect(() => {
+    const checarAtendimentoPendente = () => {
+      const p = getAtendimentoPendente();
+      setAuvoAtendimentoPendente(p);
+    };
+
+    checarAtendimentoPendente();
+
+    const handleFocusOrVisibility = () => {
+      if (document.visibilityState === "visible") {
+        checarAtendimentoPendente();
+      }
+    };
+
+    window.addEventListener("focus", handleFocusOrVisibility);
+    document.addEventListener("visibilitychange", handleFocusOrVisibility);
+
+    return () => {
+      window.removeEventListener("focus", handleFocusOrVisibility);
+      document.removeEventListener("visibilitychange", handleFocusOrVisibility);
+    };
+  }, []);
 
   const toggleSidebar = () => {
     setCollapsed((prev) => {
@@ -208,6 +247,54 @@ function DashboardLayout() {
         open={assistenteOpen}
         onOpenChange={setAssistenteOpen}
         triggerRef={assistenteButtonRef}
+      />
+
+      {/* Aviso Flutuante de Atendimento Pendente do Auvo Chat */}
+      <AuvoChatPendingBanner
+        atendimento={auvoAtendimentoPendente}
+        onRegistrarResultado={() => setAuvoResultadoOpen(true)}
+        onContinuarDepois={() => setAuvoAtendimentoPendente(null)}
+        onCancelarAtendimento={() => {
+          limparAtendimentoPendente();
+          setAuvoAtendimentoPendente(null);
+        }}
+      />
+
+      {/* Dialog para Registrar Resultado do Auvo Chat */}
+      <AuvoChatResultadoDialog
+        open={auvoResultadoOpen}
+        onOpenChange={(op) => {
+          setAuvoResultadoOpen(op);
+          if (!op) {
+            setAuvoAtendimentoPendente(getAtendimentoPendente());
+          }
+        }}
+        atendimento={auvoAtendimentoPendente}
+        userEmail={user?.email}
+        onTriggerCriarTarefa={() => {
+          navigate({ to: "/dashboard/tarefas" });
+        }}
+        onTriggerCriarOS={() => {
+          setOrdemModalOpen(true);
+        }}
+        onTriggerAgendarVisita={() => {
+          setVisitaModalOpen(true);
+        }}
+        onNavegarFichaCliente={(clienteId) => {
+          navigate({ to: "/dashboard/clientes/$id", params: { id: clienteId } });
+        }}
+      />
+
+      {/* Dialog quando Cliente não possui Telefone Cadastrado */}
+      <AuvoChatSemTelefoneDialog
+        open={auvoSemTelefoneOpen}
+        onOpenChange={setAuvoSemTelefoneOpen}
+        clienteNome={auvoSemTelefoneCliente?.nome}
+        onEditarCadastro={() => {
+          if (auvoSemTelefoneCliente) {
+            navigate({ to: "/dashboard/clientes/$id", params: { id: auvoSemTelefoneCliente.id } });
+          }
+        }}
       />
 
       {/* Painel de Resumo Rápido Lateral */}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, CalendarClock, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, CalendarClock, Pencil, Plus, Trash2, MessageSquare, ExternalLink } from "lucide-react";
+import { iniciarAtendimentoAuvoChat } from "@/lib/auvo-chat-assistant";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -266,6 +267,38 @@ function ClienteDetalhe() {
               Revisar Cadastro (Inconsistência)
             </Button>
           )}
+          <Button
+            onClick={() => {
+              iniciarAtendimentoAuvoChat(
+                {
+                  id: cliente.id,
+                  nome: cliente.nome,
+                  whatsapp: cliente.whatsapp,
+                  telefone: (cliente as any).telefone,
+                },
+                `/dashboard/clientes/${cliente.id}`,
+                {
+                  onNoPhone: (c) => {
+                    toast.error("Este cliente não possui telefone cadastrado.", {
+                      action: {
+                        label: "Editar Cadastro",
+                        onClick: () => setEditar(true),
+                      },
+                    });
+                  },
+                  onSuccess: (tel) => {
+                    toast.success(`Telefone copiado (${tel}). Direcionando para o Auvo Chat...`);
+                  },
+                }
+              );
+            }}
+            variant="outline"
+            className="border-[#E2DDD0] bg-white text-[#1D1C19] hover:bg-[#FAF5E8] hover:border-[#E3B94F] font-bold text-xs shadow-2xs"
+          >
+            <MessageSquare className="mr-1.5 h-4 w-4 text-[#C8794A]" />
+            <ExternalLink className="mr-1.5 h-3 w-3 text-[#8E8C82]" />
+            Atender no Auvo Chat
+          </Button>
           <Button
             onClick={() => setAgendarVisitaOpen(true)}
             className="bg-primary text-primary-foreground hover:bg-primary/90"

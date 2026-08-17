@@ -37,6 +37,7 @@ import {
   CommandShortcut,
   CommandSeparator,
 } from "@/components/ui/command";
+import { AUVO_CHAT_URL } from "@/lib/config";
 import { useClientes } from "@/hooks/use-crm";
 
 export interface RecentItem {
@@ -242,6 +243,24 @@ export function CommandPalette({
                 <span className="font-semibold text-[#24231F]">Registrar Nova Tarefa</span>
               </div>
               <CommandShortcut>Pendência</CommandShortcut>
+            </CommandItem>
+
+            <CommandItem
+              onSelect={() => {
+                onOpenChange(false);
+                if (typeof window !== "undefined") {
+                  window.open(AUVO_CHAT_URL, "_blank", "noopener,noreferrer");
+                }
+              }}
+              className="flex items-center justify-between py-2.5 rounded-xl cursor-pointer hover:bg-[#FAF5E8]"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FAF5E8] text-[#C8794A]">
+                  <MessageSquare className="h-4 w-4" />
+                </div>
+                <span className="font-semibold text-[#24231F]">Abrir Auvo Chat</span>
+              </div>
+              <CommandShortcut>Suporte Web</CommandShortcut>
             </CommandItem>
           </CommandGroup>
         )}
