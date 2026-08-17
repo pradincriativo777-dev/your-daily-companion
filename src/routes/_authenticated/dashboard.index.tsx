@@ -94,6 +94,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 function DashboardHome() {
   const navigate = useNavigate();
+  const routeContext = Route.useRouteContext();
+  const user = routeContext?.user;
   const { data: clientes = [], isLoading: loadingClientes } = useClientes();
   const { data: manutencoes = [], isLoading: loadingManutencoes } = useManutencoes();
   const { data: gastos = [] } = useGastos();
@@ -105,7 +107,6 @@ function DashboardHome() {
 
   if (loadingClientes || loadingManutencoes) return <Loading label="Carregando JANSOL OS..." />;
 
-  const user = Route.useRouteContext().user;
   const userName = user?.email ? user.email.split("@")[0] : "Gestor";
 
   // Métricas Oficiais Centralizadas (Fórmula Única Global)
