@@ -34,6 +34,7 @@
   --color-ring-offset-background: var(--background);
   --color-gold: var(--gold);
   --color-gold-foreground: var(--gold-foreground);
+  --color-gold-soft: var(--gold-soft);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
@@ -42,11 +43,6 @@
   --color-pending-foreground: var(--pending-foreground);
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -58,90 +54,142 @@
 }
 
 :root {
-  --radius: 0.5rem;
+  /* ── Paleta JANSOL OS (Apple-Inspired Premium) ── */
+  --jansol-black: #0B0B0C;
+  --jansol-warm-white: #F8F7F3;
+  --jansol-white: #FFFFFF;
+  --jansol-border: #E7E5DF;
+  --jansol-border-subtle: #F0EEE9;
+  --jansol-text-main: #171716;
+  --jansol-text-secondary: #6E6D68;
+  --jansol-text-muted: #8E8D88;
 
-  --background: oklch(0.975 0.006 85);
-  --foreground: oklch(0.32 0 0);
+  /* ── Dourado Solar JANSOL (Acento Refinado) ── */
+  --jansol-gold: #D9A514;
+  --jansol-gold-hover: #C2930F;
+  --jansol-gold-soft: #FAF3D6;
+  --jansol-gold-subtle: rgba(217, 165, 20, 0.08);
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.32 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.32 0 0);
+  /* ── Mapeamento Base ── */
+  --radius: 0.875rem; /* 14px */
 
-  --primary: oklch(0.15 0 0);
-  --primary-foreground: oklch(0.98 0 0);
+  --background: #F8F7F3;
+  --foreground: #171716;
 
-  --secondary: oklch(0.95 0.008 85);
-  --secondary-foreground: oklch(0.25 0 0);
+  --card: #FFFFFF;
+  --card-foreground: #171716;
+  --popover: #FFFFFF;
+  --popover-foreground: #171716;
 
-  --muted: oklch(0.95 0.008 85);
-  --muted-foreground: oklch(0.52 0.01 85);
+  --primary: #0B0B0C;
+  --primary-foreground: #F8F7F3;
 
-  --accent: oklch(0.72 0.14 85);
-  --accent-foreground: oklch(0.15 0 0);
+  --secondary: #F0EEE9;
+  --secondary-foreground: #171716;
 
-  --gold: oklch(0.72 0.14 85);
-  --gold-foreground: oklch(0.15 0 0);
+  --muted: #F0EEE9;
+  --muted-foreground: #6E6D68;
 
-  --success: oklch(0.72 0.19 149);
-  --success-foreground: oklch(0.15 0 0);
-  --warning: oklch(0.79 0.16 86);
-  --warning-foreground: oklch(0.15 0 0);
-  --pending: oklch(0.7 0.19 42);
-  --pending-foreground: oklch(0.15 0 0);
-  --info: oklch(0.62 0.15 250);
-  --info-foreground: oklch(0.98 0 0);
+  --accent: #FAF3D6;
+  --accent-foreground: #0B0B0C;
 
-  --destructive: oklch(0.64 0.21 25);
-  --destructive-foreground: oklch(0.98 0 0);
+  --gold: #D9A514;
+  --gold-foreground: #0B0B0C;
+  --gold-soft: #FAF3D6;
 
-  --border: oklch(0.9 0.008 85);
-  --input: oklch(0.9 0.008 85);
-  --ring: oklch(0.72 0.14 85);
+  --success: #2E7D32;
+  --success-foreground: #FFFFFF;
+  --warning: #ED6C02;
+  --warning-foreground: #FFFFFF;
+  --pending: #E65100;
+  --pending-foreground: #FFFFFF;
+  --info: #0288D1;
+  --info-foreground: #FFFFFF;
 
-  --chart-1: oklch(0.72 0.14 85);
-  --chart-2: oklch(0.15 0 0);
-  --chart-3: oklch(0.72 0.19 149);
-  --chart-4: oklch(0.7 0.19 42);
-  --chart-5: oklch(0.62 0.15 250);
+  --destructive: #D32F2F;
+  --destructive-foreground: #FFFFFF;
 
-  --sidebar: oklch(0.15 0 0);
-  --sidebar-foreground: oklch(0.88 0 0);
-  --sidebar-primary: oklch(0.72 0.14 85);
-  --sidebar-primary-foreground: oklch(0.15 0 0);
-  --sidebar-accent: oklch(0.22 0 0);
-  --sidebar-accent-foreground: oklch(0.98 0 0);
-  --sidebar-border: oklch(0.28 0 0);
-  --sidebar-ring: oklch(0.72 0.14 85);
+  --border: #E7E5DF;
+  --input: #E7E5DF;
+  --ring: #D9A514;
+
+  --sidebar: #0B0B0C;
+  --sidebar-foreground: #E7E5DF;
+  --sidebar-primary: #D9A514;
+  --sidebar-primary-foreground: #0B0B0C;
+  --sidebar-accent: #171716;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #242426;
+  --sidebar-ring: #D9A514;
+
+  /* Safe Area Insets para iPhone */
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
 }
 
 .dark {
-  --background: oklch(0.15 0 0);
-  --foreground: oklch(0.95 0 0);
-  --card: oklch(0.2 0 0);
-  --card-foreground: oklch(0.95 0 0);
-  --popover: oklch(0.2 0 0);
-  --popover-foreground: oklch(0.95 0 0);
-  --primary: oklch(0.72 0.14 85);
-  --primary-foreground: oklch(0.15 0 0);
-  --secondary: oklch(0.25 0 0);
-  --secondary-foreground: oklch(0.95 0 0);
-  --muted: oklch(0.25 0 0);
-  --muted-foreground: oklch(0.7 0 0);
-  --accent: oklch(0.72 0.14 85);
-  --accent-foreground: oklch(0.15 0 0);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
+  --background: #0B0B0C;
+  --foreground: #F8F7F3;
+  --card: #141416;
+  --card-foreground: #F8F7F3;
+  --popover: #141416;
+  --popover-foreground: #F8F7F3;
+  --primary: #D9A514;
+  --primary-foreground: #0B0B0C;
+  --secondary: #1E1E20;
+  --secondary-foreground: #F8F7F3;
+  --muted: #1E1E20;
+  --muted-foreground: #A09E97;
+  --accent: #2A2412;
+  --accent-foreground: #FAF3D6;
+  --border: #242426;
+  --input: #242426;
 }
 
 @layer base {
   * {
     border-color: var(--border);
   }
-  body {
+
+  html, body {
     background-color: var(--background);
     color: var(--foreground);
-    font-family:
-      ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    overflow-x: hidden;
   }
+
+  /* Suporte a prefers-reduced-motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* Transições suaves e elevacões sutis de cartões */
+.jansol-card {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 1.125rem;
+  box-shadow: 0 1px 3px rgba(11, 11, 12, 0.03), 0 4px 12px rgba(11, 11, 12, 0.02);
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1), border-color 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.jansol-card:hover {
+  border-color: #D7D4CC;
+  box-shadow: 0 4px 16px rgba(11, 11, 12, 0.05);
+}
+
+/* Foco acessível visível por teclado */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }

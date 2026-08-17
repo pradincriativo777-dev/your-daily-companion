@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Loader2, Inbox } from "lucide-react";
+import { Loader2, Inbox, ArrowUpRight, CheckCircle2, AlertTriangle, AlertCircle, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,22 +21,33 @@ export function PageHeader({
   title,
   description,
   children,
+  badgeText,
 }: {
   title: string;
   description?: string;
   children?: ReactNode;
+  badgeText?: string;
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-primary">
-          {title}
-        </h1>
+    <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-[#E7E5DF]/60 pb-5">
+      <div className="space-y-1">
+        <div className="flex items-center gap-2.5">
+          <h1 className="text-2xl font-bold tracking-tight text-[#0B0B0C]">
+            {title}
+          </h1>
+          {badgeText && (
+            <span className="inline-flex items-center rounded-full bg-[#FAF3D6] px-2.5 py-0.5 text-xs font-semibold text-[#D9A514] border border-[#D9A514]/30">
+              {badgeText}
+            </span>
+          )}
+        </div>
         {description && (
-          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+          <p className="text-sm font-normal text-[#6E6D68]">{description}</p>
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-2">{children}</div>
+      {children && (
+        <div className="flex flex-wrap items-center gap-2.5">{children}</div>
+      )}
     </div>
   );
 }
@@ -52,17 +63,21 @@ export function StatusBadge({
   return (
     <Badge
       variant="outline"
-      className={cn("whitespace-nowrap font-medium", map[status] ?? "")}
+      className={cn(
+        "whitespace-nowrap rounded-md px-2.5 py-0.5 text-xs font-semibold transition-colors border",
+        map[status] ?? "bg-[#F0EEE9] text-[#171716] border-[#E7E5DF]"
+      )}
     >
       {status}
     </Badge>
   );
 }
 
-export function Loading({ label = "Carregando..." }: { label?: string }) {
+export function Loading({ label = "Carregando dados..." }: { label?: string }) {
   return (
-    <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
-      <Loader2 className="h-4 w-4 animate-spin" /> {label}
+    <div className="flex flex-col items-center justify-center gap-3 py-20 text-sm text-[#6E6D68]">
+      <Loader2 className="h-6 w-6 animate-spin text-[#D9A514]" />
+      <span className="font-medium tracking-wide">{label}</span>
     </div>
   );
 }
@@ -70,51 +85,233 @@ export function Loading({ label = "Carregando..." }: { label?: string }) {
 export function EmptyState({
   title,
   description,
+  action,
 }: {
   title: string;
   description?: string;
+  action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
-      <Inbox className="h-8 w-8 text-muted-foreground/50" />
-      <p className="font-medium text-foreground">{title}</p>
-      {description && (
-        <p className="max-w-sm text-sm text-muted-foreground">{description}</p>
+    <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[#E7E5DF] bg-white p-10 text-center shadow-xs">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#FAF3D6] text-[#D9A514]">
+        <Inbox className="h-6 w-6" />
+      </div>
+      <div className="space-y-1">
+        <h3 className="text-base font-semibold text-[#0B0B0C]">{title}</h3>
+        {description && (
+          <p className="max-w-sm text-sm text-[#6E6D68]">{description}</p>
+        )}
+      </div>
+      {action && <div className="mt-2">{action}</div>}
+    </div>
+  );
+}
+
+export function MetricCard({
+  label,
+  value,
+  hint,
+  icon: Icon,
+  tone = "default",
+  fonte,
+}: {
+  label: string;
+  value: string | number;
+  hint?: string;
+  icon?: any;
+  tone?: "default" | "success" | "warning" | "pending" | "danger";
+  fonte?: string;
+}) {
+  const tones: Record<string, string> = {
+    default: "text-[#0B0B0C]",
+    success: "text-[#2E7D32]",
+    warning: "text-[#ED6C02]",
+    pending: "text-[#E65100]",
+    danger: "text-[#D32F2F]",
+  };
+
+  const isIndisponivel = String(value) === "Não disponível" || String(value) === "Sem informação";
+
+  return (
+    <div className="jansol-card flex flex-col justify-between p-5">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-semibold uppercase tracking-wider text-[#6E6D68]">
+          {label}
+        </span>
+        {Icon && (
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#F8F7F3] text-[#6E6D68]">
+            <Icon className="h-4 w-4" />
+          </div>
+        )}
+      </div>
+
+      <div className="my-3 space-y-1">
+        <p
+          className={cn(
+            "text-2xl font-bold tracking-tight",
+            isIndisponivel ? "text-[#8E8D88] text-xl font-medium italic" : tones[tone]
+          )}
+        >
+          {value}
+        </p>
+        {hint && (
+          <p className="text-xs font-medium text-[#6E6D68]">{hint}</p>
+        )}
+      </div>
+
+      {fonte && (
+        <div className="mt-1 border-t border-[#F0EEE9] pt-2">
+          <span className="text-[11px] font-normal text-[#8E8D88]">
+            {fonte}
+          </span>
+        </div>
       )}
     </div>
   );
 }
 
-export function KpiCard({
+export const KpiCard = MetricCard;
+
+export function QuickAction({
   label,
-  value,
-  hint,
-  tone = "default",
+  description,
+  icon: Icon,
+  onClick,
+  variant = "default",
 }: {
   label: string;
-  value: string | number;
-  hint?: string;
-  tone?: "default" | "success" | "warning" | "pending" | "danger";
+  description?: string;
+  icon: any;
+  onClick: () => void;
+  variant?: "default" | "gold";
 }) {
-  const tones: Record<string, string> = {
-    default: "text-primary",
-    success: "text-success",
-    warning: "text-warning",
-    pending: "text-pending",
-    danger: "text-destructive",
-  };
   return (
-    <Card className="gap-0 py-4">
-      <CardHeader className="px-4 pb-1">
-        <CardTitle className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          {label}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="px-4">
-        <p className={cn("text-2xl font-bold", tones[tone])}>{value}</p>
-        {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
-      </CardContent>
-    </Card>
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "group flex items-center justify-between rounded-xl border p-4 text-left transition-all duration-200 min-h-[56px] w-full",
+        variant === "gold"
+          ? "border-[#D9A514]/40 bg-[#FAF3D6]/70 hover:bg-[#FAF3D6] hover:border-[#D9A514]"
+          : "border-[#E7E5DF] bg-white hover:border-[#D7D4CC] hover:bg-[#F8F7F3]"
+      )}
+    >
+      <div className="flex items-center gap-3">
+        <div
+          className={cn(
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-transform group-hover:scale-105",
+            variant === "gold"
+              ? "bg-[#D9A514] text-white"
+              : "bg-[#0B0B0C] text-white"
+          )}
+        >
+          <Icon className="h-4 w-4" />
+        </div>
+        <div>
+          <span className="block text-sm font-semibold text-[#0B0B0C]">
+            {label}
+          </span>
+          {description && (
+            <span className="block text-xs text-[#6E6D68]">{description}</span>
+          )}
+        </div>
+      </div>
+      <ArrowUpRight className="h-4 w-4 text-[#8E8D88] transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-[#0B0B0C]" />
+    </button>
+  );
+}
+
+export function AlertItem({
+  title,
+  subtitle,
+  time,
+  badgeText,
+  type = "warning",
+  actionText,
+  onAction,
+}: {
+  title: string;
+  subtitle?: string;
+  time?: string;
+  badgeText?: string;
+  type?: "warning" | "danger" | "info" | "success";
+  actionText?: string;
+  onAction?: () => void;
+}) {
+  const styles = {
+    warning: {
+      border: "border-amber-200 bg-amber-50/50",
+      iconBg: "bg-amber-100 text-amber-700",
+      Icon: AlertTriangle,
+    },
+    danger: {
+      border: "border-rose-200 bg-rose-50/50",
+      iconBg: "bg-rose-100 text-rose-700",
+      Icon: AlertCircle,
+    },
+    info: {
+      border: "border-sky-200 bg-sky-50/50",
+      iconBg: "bg-sky-100 text-sky-700",
+      Icon: Info,
+    },
+    success: {
+      border: "border-emerald-200 bg-emerald-50/50",
+      iconBg: "bg-emerald-100 text-emerald-700",
+      Icon: CheckCircle2,
+    },
+  }[type];
+
+  const IconComponent = styles.Icon;
+
+  return (
+    <div
+      className={cn(
+        "flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3.5 transition-colors",
+        styles.border
+      )}
+    >
+      <div className="flex items-center gap-3">
+        <div
+          className={cn(
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+            styles.iconBg
+          )}
+        >
+          <IconComponent className="h-4 w-4" />
+        </div>
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-[#0B0B0C]">
+              {title}
+            </span>
+            {badgeText && (
+              <span className="rounded-md bg-white px-2 py-0.5 text-[11px] font-semibold text-[#6E6D68] border border-[#E7E5DF]">
+                {badgeText}
+              </span>
+            )}
+          </div>
+          {subtitle && (
+            <p className="text-xs text-[#6E6D68]">{subtitle}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        {time && (
+          <span className="text-xs font-medium text-[#8E8D88]">{time}</span>
+        )}
+        {actionText && onAction && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onAction}
+            className="h-8 border-[#E7E5DF] text-xs font-semibold text-[#0B0B0C] hover:bg-white"
+          >
+            {actionText}
+          </Button>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -130,16 +327,22 @@ export function ConfirmDelete({
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
-      <AlertDialogContent>
+      <AlertDialogContent className="rounded-2xl border border-[#E7E5DF] bg-white p-6 shadow-xl">
         <AlertDialogHeader>
-          <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-          <AlertDialogDescription>{description}</AlertDialogDescription>
+          <AlertDialogTitle className="text-lg font-bold text-[#0B0B0C]">
+            Confirmar exclusão
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-sm text-[#6E6D68]">
+            {description}
+          </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+        <AlertDialogFooter className="mt-4">
+          <AlertDialogCancel className="rounded-xl border-[#E7E5DF] text-[#6E6D68]">
+            Cancelar
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            className="rounded-xl bg-[#D32F2F] text-white hover:bg-[#B71C1C]"
           >
             Excluir
           </AlertDialogAction>
@@ -162,8 +365,8 @@ export function Pagination({
 }) {
   if (total === 0) return null;
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 border-t px-4 py-3 text-sm">
-      <span className="text-muted-foreground">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#E7E5DF] px-4 py-3.5 text-sm bg-white rounded-b-2xl">
+      <span className="text-xs font-medium text-[#6E6D68]">
         {total} registro{total === 1 ? "" : "s"} · página {page} de{" "}
         {Math.max(pageCount, 1)}
       </span>
@@ -173,6 +376,7 @@ export function Pagination({
           size="sm"
           disabled={page <= 1}
           onClick={() => onPage(page - 1)}
+          className="h-8 rounded-lg border-[#E7E5DF] text-xs font-medium"
         >
           Anterior
         </Button>
@@ -181,6 +385,7 @@ export function Pagination({
           size="sm"
           disabled={page >= pageCount}
           onClick={() => onPage(page + 1)}
+          className="h-8 rounded-lg border-[#E7E5DF] text-xs font-medium"
         >
           Próxima
         </Button>
@@ -199,22 +404,22 @@ export function SortHeader({
   label: string;
   field: string;
   sort: { field: string; dir: "asc" | "desc" };
-  onSort: (f: string) => void;
+  onSort: (field: string) => void;
   className?: string;
 }) {
+  const active = sort.field === field;
   return (
     <button
       type="button"
       onClick={() => onSort(field)}
       className={cn(
-        "flex items-center gap-1 font-medium hover:text-accent",
-        className,
+        "flex items-center gap-1 font-semibold text-xs tracking-wider uppercase text-[#6E6D68] hover:text-[#0B0B0C]",
+        active && "text-[#0B0B0C]",
+        className
       )}
     >
       {label}
-      {sort.field === field && (
-        <span className="text-accent">{sort.dir === "asc" ? "▲" : "▼"}</span>
-      )}
+      {active && (sort.dir === "asc" ? " ↑" : " ↓")}
     </button>
   );
 }
