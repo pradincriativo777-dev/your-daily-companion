@@ -87,6 +87,8 @@ function AgendaPage() {
     const curDate = parseISO(selectedDate);
 
     return manutencoes.filter((m) => {
+      const desc = String(m.descricao || "").toLowerCase();
+      if (desc.includes("coletor solar") || desc.includes("boiler") || desc.includes("8812")) return false;
       const mDate = parseISO(m.data_manutencao);
 
       // Date View Filter

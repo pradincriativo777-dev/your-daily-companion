@@ -72,12 +72,44 @@ function ManutencoesPage() {
   const nomeTecnico = (id: string | null) =>
     tecnicos.find((t) => t.id === id)?.nome ?? "—";
 
+  const isRegistroDemonstrativo = (m: Manutencao) => {
+    const desc = String(m.descricao || "").toLowerCase();
+    const taskRef = String(m.auvo_task_id || "").toLowerCase();
+    const obs = String(m.observacoes || "").toLowerCase();
+    const idStr = String(m.id || "").toLowerCase();
+
+    const termosDemonstrativos = [
+      "auvo-task-881201",
+      "auvo-task-881202",
+      "881201",
+      "881202",
+      "manutenção preventiva em coletor solar",
+      "manutencao preventiva em coletor solar",
+      "vistoria técnica para orçamento de boiler",
+      "vistoria tecnica para orcamento de boiler",
+      "coletor solar",
+      "orcamento de boiler",
+      "orçamento de boiler",
+      "8812",
+    ];
+
+    return (
+      Boolean((m as any).is_test) ||
+      termosDemonstrativos.some(
+        (t) =>
+          desc.includes(t) ||
+          taskRef.includes(t) ||
+          obs.includes(t) ||
+          idStr.includes(t)
+      )
+    );
+  };
+
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
-    // Excluir registros de teste ou demonstrativos da listagem de produção
-    const reais = manutencoes.filter(
-      (m) => !(m as any).is_test && !m.auvo_task_id?.startsWith("AUVO-TASK-8812"),
-    );
+
+    // Exclusão visual explícita e temporária de registros demonstrativos existentes no banco
+    const reais = manutencoes.filter((m) => !isRegistroDemonstrativo(m));
 
     return reais.filter(
       (m) =>

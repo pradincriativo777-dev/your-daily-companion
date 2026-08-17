@@ -78,6 +78,8 @@ function DashboardHome() {
   const emRiscoCount = metricas.clientesEmRisco.valor;
 
   const proximasManutencoes = manutencoes.filter((m) => {
+    const desc = String(m.descricao || "").toLowerCase();
+    if (desc.includes("coletor solar") || desc.includes("boiler") || desc.includes("8812")) return false;
     const d = daysUntil(m.proxima_manutencao);
     return d !== null && d >= 0 && d <= 7;
   });
