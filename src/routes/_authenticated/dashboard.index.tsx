@@ -27,10 +27,9 @@ import {
   ArrowRight,
   ShieldCheck,
   Building2,
-  Sparkles,
   Plug,
-  Sun,
   Activity,
+  MoreHorizontal,
 } from "lucide-react";
 import {
   Table,
@@ -47,6 +46,12 @@ import {
   Loading,
   StatusBadge,
 } from "@/components/crm/ui";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ClienteDialog } from "@/components/crm/ClienteDialog";
 import { OrdemServicoDialog } from "@/components/crm/OrdemServicoDialog";
 import { AgendarVisitaDialog } from "@/components/crm/AgendarVisitaDialog";
@@ -71,7 +76,7 @@ import { JansolSunIcon } from "@/components/layout/JansolLogo";
 export const Route = createFileRoute("/_authenticated/dashboard/")({
   head: () => ({
     meta: [
-      { title: "Dashboard Executivo Bento · JANSOL OS" },
+      { title: "Dashboard Executivo · JANSOL OS" },
       { name: "description", content: "Central de inteligência operacional e financeira JANSOL OS." },
       { name: "robots", content: "noindex, nofollow" },
     ],
@@ -98,7 +103,7 @@ function DashboardHome() {
   const [ordemModalOpen, setOrdemModalOpen] = useState(false);
   const [visitaModalOpen, setVisitaModalOpen] = useState(false);
 
-  if (loadingClientes || loadingManutencoes) return <Loading label="Carregando JANSOL OS Editorial..." />;
+  if (loadingClientes || loadingManutencoes) return <Loading label="Carregando JANSOL OS..." />;
 
   const user = Route.useRouteContext().user;
   const userName = user?.email ? user.email.split("@")[0] : "Gestor";
@@ -171,342 +176,243 @@ function DashboardHome() {
   const ultimos = [...clientes].slice(0, 5);
 
   return (
-    <div className="space-y-6 animate-fadeIn">
-      {/* 1. Dashboard Header: Abertura Elegante e Compacta */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Card Principal de Abertura (Compacto, Carvão + Dourado) */}
-        <div className="lg:col-span-2 jansol-bento-card bg-[#1D1C19] p-5 text-[#F8F6F1] border border-[#2B2924] flex flex-col justify-between relative overflow-hidden">
-          <div className="space-y-2 relative z-10">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <JansolSunIcon className="h-4 w-4" />
-                <span className="text-xs font-semibold text-[#E3B94F]">JANSOL OS</span>
-              </div>
-              <span className="text-[11px] text-[#99958C] capitalize">{dataFormatadaHoje}</span>
-            </div>
+    <div className="space-y-8 animate-fadeIn max-w-7xl mx-auto">
+      {/* 1. HIERARQUIA PASSO 1: Saudação Compacta (Altura <= 140px, Sem ruído) */}
+      <div className="rounded-2xl bg-[#1D1C19] p-4 sm:p-5 text-[#F8F6F1] border border-[#2B2924] flex flex-col justify-between max-h-[140px]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <JansolSunIcon className="h-4 w-4" />
+            <span className="text-xs font-bold text-[#E3B94F]">JANSOL OS</span>
+          </div>
+          <span className="text-[11px] text-[#99958C] capitalize">{dataFormatadaHoje}</span>
+        </div>
 
-            {/* Título Editorial Playfair Display */}
-            <h1 className="font-serif-editorial text-2xl font-bold tracking-tight text-[#F8F6F1]">
+        <div className="my-1 flex items-baseline justify-between gap-4">
+          <div>
+            <h1 className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[#F8F6F1]">
               Bom dia, <span className="not-italic text-[#E3B94F]">{userName}</span>
             </h1>
-
-            <p className="text-xs text-[#DDD8CE] font-medium">
-              Operação planejada. Atendimento próximo. Base com <strong className="text-[#F8F6F1]">{clientes.length} clientes ativos</strong>.
+            <p className="text-xs text-[#DDD8CE]">
+              Operação planejada. Atendimento próximo. <strong className="text-[#F8F6F1] font-semibold">{clientes.length} clientes ativos</strong> na base.
             </p>
           </div>
 
-          <div className="mt-4 flex items-center justify-between pt-3 border-t border-[#2B2924] relative z-10">
-            <div className="flex items-center gap-2 text-xs text-[#DDD8CE]">
-              <Activity className="h-3.5 w-3.5 text-[#E3B94F]" />
-              <span>Prioridade: Acompanhar {emRiscoClientes.length} cliente(s) em risco</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => navigate({ to: "/dashboard/clientes" })}
-              className="text-xs font-bold text-[#E3B94F] hover:underline flex items-center gap-1"
-            >
-              Ver clientes <ArrowRight className="h-3 w-3" />
-            </button>
-          </div>
-        </div>
-
-        {/* Card Ações Rápidas Compacto */}
-        <div className="jansol-bento-card p-5 flex flex-col justify-between space-y-3 bg-white">
-          <div className="flex items-center justify-between border-b border-[#E0DCCE]/60 pb-2">
-            <h2 className="text-[11px] font-bold uppercase tracking-wider text-[#706D65]">
-              Ações Rápidas
-            </h2>
-            <Sparkles className="h-3.5 w-3.5 text-[#E3B94F]" />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setOrdemModalOpen(true)}
-              className="jansol-gradient-btn flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-bold shadow-2xs hover:scale-[1.01] transition-transform cursor-pointer"
-            >
-              <FileText className="h-3.5 w-3.5" />
-              <span>Nova OS</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setVisitaModalOpen(true)}
-              className="flex items-center justify-center gap-1.5 rounded-[10px] border border-[#E0DCCE] bg-[#F8F6F1] py-2 px-3 text-xs font-semibold text-[#1D1C19] hover:bg-[#FAF5E8] transition-all cursor-pointer"
-            >
-              <Calendar className="h-3.5 w-3.5 text-[#C8794A]" />
-              <span>Agendar</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setClienteModalOpen(true)}
-              className="flex items-center justify-center gap-1.5 rounded-[10px] border border-[#E0DCCE] bg-[#F8F6F1] py-2 px-3 text-xs font-semibold text-[#1D1C19] hover:bg-[#FAF5E8] transition-all cursor-pointer"
-            >
-              <UserPlus className="h-3.5 w-3.5 text-[#E3B94F]" />
-              <span>Cliente</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => navigate({ to: "/dashboard/tarefas" })}
-              className="flex items-center justify-center gap-1.5 rounded-[10px] border border-[#E0DCCE] bg-[#F8F6F1] py-2 px-3 text-xs font-semibold text-[#1D1C19] hover:bg-[#FAF5E8] transition-all cursor-pointer"
-            >
-              <CheckSquare className="h-3.5 w-3.5 text-emerald-700" />
-              <span>Tarefa</span>
-            </button>
+          <div className="hidden md:flex items-center gap-2 text-xs text-[#DDD8CE] bg-[#292722] px-3 py-1.5 rounded-lg border border-[#38352F]">
+            <Activity className="h-3.5 w-3.5 text-[#E3B94F]" />
+            <span>{emRiscoClientes.length} cliente(s) em risco de contato</span>
           </div>
         </div>
       </div>
 
-      {/* 2. Bento Grid Métricas Operacionais */}
+      {/* 2. HIERARQUIA PASSO 2: Principais 4 Indicadores na Primeira Linha */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-[#706D65]">
-            Métricas Oficiais Centralizadas
+          <h2 className="text-[11px] font-bold uppercase tracking-wider text-[#706D65]">
+            Indicadores Prioritários
           </h2>
-          <span className="text-xs font-medium text-[#706D65]">Fórmula Única Global JANSOL</span>
+          <span className="text-[11px] font-medium text-[#8E8C82]">Base Oficial Centralizada</span>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          {/* Faturamento Real */}
+        {/* 4 Indicadores Principais na Primeira Linha */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <MetricCard
             label="Faturamento Real"
             value={faturamentoRealFormatado}
-            icon={DollarSign}
             tone="success"
-            hint="Histórico acumulado de pagamentos"
+            hint="Histórico acumulado"
             fonte="Tabela public.clientes (valor_pago)"
             onClick={() => navigate({ to: "/dashboard/relatorios" })}
-            tooltip="Clique para abrir o relatório financeiro detalhado"
+            tooltip="Clique para ver relatórios detalhados"
           />
-          {/* Taxa de Conversão */}
           <MetricCard
             label="Taxa de Conversão"
             value={taxaConversaoFormatada}
-            icon={Percent}
             tone="default"
-            hint="Aprovados / Total Geral (819)"
+            hint="Aprovados / Total (819)"
             fonte="Fórmula Oficial Global JANSOL"
             onClick={() => navigate({ to: "/dashboard/clientes" })}
-            tooltip="Clique para ver a listagem de clientes e funil de vendas"
+            tooltip="Clique para ver o funil de vendas"
           />
-          {/* Ticket Médio */}
           <MetricCard
             label="Ticket Médio"
             value={ticketMedioFormatado}
-            icon={TrendingUp}
             tone="default"
-            hint="Calculado por cliente faturado"
+            hint="Média por faturamento"
             fonte="Média de orçamentos pagos"
             onClick={() => navigate({ to: "/dashboard/relatorios" })}
-            tooltip="Clique para ver o detalhamento do ticket médio por período"
+            tooltip="Clique para ver detalhamento do ticket médio"
           />
-          {/* Orçamentos Pendentes */}
           <MetricCard
             label="Orçamentos Pendentes"
             value={orcamentosPendentesTexto}
-            icon={Clock}
             tone="pending"
             hint="Aguardando Conta Azul"
             fonte="Módulo Financeiro Oficial"
-            tooltip="Métrica oficial aguardando integração com Conta Azul / Módulo de Orçamentos. Status 'Orçamento' do cadastro não representa pendência real."
+            tooltip="Métrica oficial aguardando integração com Conta Azul / Módulo de Orçamentos."
           />
-          {/* Clientes em Risco */}
+        </div>
+
+        {/* Indicadores Secundários (2 Linha Mais Discreta) */}
+        <div className="grid gap-4 sm:grid-cols-2 pt-1">
           <MetricCard
             label="Clientes em Risco"
             value={emRiscoCount}
-            icon={AlertTriangle}
             tone="danger"
-            hint="Sem contato há mais de 30 dias"
+            hint="Sem contato há +30 dias"
             fonte="Data de último contato"
             onClick={() => navigate({ to: "/dashboard/clientes" })}
-            tooltip="Clique para abrir a lista de clientes sem contato recente"
+            tooltip="Clique para ver clientes sem contato recente"
           />
-          {/* Próximas Manutenções */}
           <MetricCard
             label="Próximas Manutenções"
             value={proximasManutencoes.length}
-            icon={CalendarClock}
             tone="warning"
-            hint="Vencimento nos próximos 7 dias"
+            hint="Preventivas nos próximos 7 dias"
             fonte="Agenda de Preventivas"
             onClick={() => navigate({ to: "/dashboard/agenda" })}
-            tooltip="Clique para abrir a agenda de visitas e manutenções preventivas"
+            tooltip="Clique para abrir a agenda de manutenções"
           />
         </div>
       </section>
 
-      {/* 3. Bento Grid: Alertas & Situação das Integrações */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Alertas e Prioridades (Span-2) */}
-        <div className="lg:col-span-2 jansol-bento-card p-6 space-y-4 bg-white">
-          <div className="flex items-center justify-between border-b border-[#DDD8CE] pb-3">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-[#706D65]">
-              Central de Alertas & Prioridades Operacionais
+      {/* 3. HIERARQUIA PASSO 3: Área "Precisa da Sua Atenção" (Lista Unificada Limpa sem Cards Aninhados) */}
+      <section className="jansol-bento-card p-5 bg-white space-y-4">
+        <div className="flex items-center justify-between border-b border-[#E2DDD0]/80 pb-3">
+          <div>
+            <h2 className="text-sm font-bold text-[#24231F]">
+              Precisa da Sua Atenção
             </h2>
-            <span className="text-xs text-[#706D65] font-semibold">Painel Executivo</span>
+            <p className="text-xs text-[#706D65]">Pendências operacionais reais aguardando ação imediata</p>
           </div>
-
-          {emRiscoClientes.length === 0 && proximasManutencoes.length === 0 && orcamentosParados.length === 0 ? (
-            <div className="py-8 text-center text-sm text-[#706D65]">
-              Nenhum alerta ou pendência crítica registrada no momento.
-            </div>
-          ) : (
-            <div className="space-y-2.5">
-              {emRiscoClientes.slice(0, 3).map((c: Cliente) => (
-                <AlertItem
-                  key={c.id}
-                  type="danger"
-                  title={`Cliente ${c.nome} sem contato`}
-                  subtitle={`Última interação há ${daysSince(c.ultimo_contato) ?? "mais de 30"} dias`}
-                  badgeText="Em Risco"
-                  actionText="Ver Ficha 360°"
-                  onAction={() => navigate({ to: "/dashboard/clientes/$id", params: { id: c.id } })}
-                />
-              ))}
-
-              {proximasManutencoes.slice(0, 3).map((m) => (
-                <AlertItem
-                  key={m.id}
-                  type="warning"
-                  title={`Manutenção de ${nomeCliente(m.cliente_id)}`}
-                  subtitle={`Vencimento em ${daysUntil(m.proxima_manutencao)} dias (${formatDate(m.proxima_manutencao)})`}
-                  badgeText="Preventiva"
-                  actionText="Ver Agenda"
-                  onAction={() => navigate({ to: "/dashboard/agenda" })}
-                />
-              ))}
-
-              {orcamentosParados.slice(0, 3).map((c) => (
-                <AlertItem
-                  key={c.id}
-                  type="info"
-                  title={`Orçamento de ${c.nome} sem resposta`}
-                  subtitle={`Enviado há ${daysSince(c.created_at.slice(0, 10))} dias`}
-                  badgeText="Orçamento"
-                  actionText="Acompanhar"
-                  onAction={() => navigate({ to: "/dashboard/clientes/$id", params: { id: c.id } })}
-                />
-              ))}
-            </div>
-          )}
+          <span className="text-xs font-semibold text-[#C8794A]">
+            {emRiscoClientes.length + proximasManutencoes.length + orcamentosParados.length} itens requerem ação
+          </span>
         </div>
 
-        {/* Situação das Integrações Bento Card */}
-        <div className="jansol-bento-card p-6 space-y-4 bg-white flex flex-col justify-between">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between border-b border-[#DDD8CE] pb-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#706D65]">
-                Situação das Integrações
-              </h3>
-              <Plug className="h-4 w-4 text-[#E3B94F]" />
-            </div>
-
-            <div className="space-y-3">
-              <div className="rounded-[14px] border border-[#DDD8CE] bg-[#F8F6F1] p-3.5 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#1D1C19] text-white">
-                    <Plug className="h-4 w-4 text-[#E3B94F]" />
-                  </div>
-                  <div>
-                    <span className="block text-xs font-bold text-[#24231F]">Integração AUVO</span>
-                    <span className="block text-[11px] text-[#706D65]">Agenda Externa</span>
-                  </div>
-                </div>
-                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold text-amber-800 border border-amber-300">
-                  Bloqueado/Offline
-                </span>
-              </div>
-
-              <div className="rounded-[14px] border border-[#DDD8CE] bg-[#F8F6F1] p-3.5 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-200 text-stone-800">
-                    <Building2 className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <span className="block text-xs font-bold text-[#24231F]">Conta Azul</span>
-                    <span className="block text-[11px] text-[#706D65]">Orçamentos Financeiros</span>
-                  </div>
-                </div>
-                <span className="rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-bold text-blue-800 border border-blue-300">
-                  Planejada
-                </span>
-              </div>
-            </div>
+        {emRiscoClientes.length === 0 && proximasManutencoes.length === 0 && orcamentosParados.length === 0 ? (
+          <div className="py-6 text-center text-xs text-[#706D65]">
+            Nenhuma pendência crítica ou alerta ativo no momento.
           </div>
+        ) : (
+          <div className="divide-y divide-[#E2DDD0]/60">
+            {emRiscoClientes.slice(0, 3).map((c: Cliente) => (
+              <div key={c.id} className="py-3 flex items-center justify-between gap-4">
+                <div className="space-y-0.5 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-[#C53030]" />
+                    <span className="text-xs font-bold text-[#24231F] truncate">Cliente {c.nome} em risco de contato</span>
+                  </div>
+                  <p className="text-[11px] text-[#706D65] pl-4">
+                    Última interação há {daysSince(c.ultimo_contato) ?? "mais de 30"} dias · {c.cidade ?? "Sem cidade"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate({ to: "/dashboard/clientes/$id", params: { id: c.id } })}
+                  className="inline-flex items-center gap-1 text-xs font-bold text-[#1D1C19] hover:text-[#C8794A] shrink-0"
+                >
+                  <span>Abrir Ficha</span>
+                  <ArrowRight className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
 
-          <Link
-            to="/dashboard/integracoes"
-            className="flex items-center justify-center gap-1.5 w-full rounded-[10px] border border-[#DDD8CE] bg-[#F8F6F1] py-2.5 text-xs font-bold text-[#1D1C19] hover:bg-[#FAF5E8] transition-colors"
+            {proximasManutencoes.slice(0, 3).map((m) => (
+              <div key={m.id} className="py-3 flex items-center justify-between gap-4">
+                <div className="space-y-0.5 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-[#D97706]" />
+                    <span className="text-xs font-bold text-[#24231F] truncate">Manutenção Preventiva: {nomeCliente(m.cliente_id)}</span>
+                  </div>
+                  <p className="text-[11px] text-[#706D65] pl-4">
+                    Vencimento em {daysUntil(m.proxima_manutencao)} dias ({formatDate(m.proxima_manutencao)})
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate({ to: "/dashboard/agenda" })}
+                  className="inline-flex items-center gap-1 text-xs font-bold text-[#1D1C19] hover:text-[#C8794A] shrink-0"
+                >
+                  <span>Ver Agenda</span>
+                  <ArrowRight className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* 4. HIERARQUIA PASSO 4: Ações Rápidas em Linha Horizontal Compacta */}
+      <section className="jansol-bento-card p-4 bg-white flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-[#24231F]">Ações Rápidas:</span>
+          <span className="text-xs text-[#706D65]">Atalhos para fluxos diretos</span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setOrdemModalOpen(true)}
+            className="jansol-gradient-btn flex items-center gap-1.5 py-1.5 px-3 text-xs font-bold shadow-2xs"
           >
-            <span>Gerenciar Integrações</span>
-            <ArrowRight className="h-3.5 w-3.5 text-[#E3B94F]" />
-          </Link>
-        </div>
-      </div>
+            <FileText className="h-3.5 w-3.5" />
+            <span>Nova OS</span>
+          </button>
 
-      {/* 4. Bento Grid: Gráficos de Faturamento & Funil */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Gráfico Faturamento Mensal */}
-        <div className="jansol-bento-card p-6 bg-white space-y-4">
-          <div className="flex items-center justify-between border-b border-[#DDD8CE] pb-3">
-            <h3 className="text-sm font-bold text-[#24231F]">
-              Faturamento Mensal (Últimos 6 meses)
-            </h3>
-            <span className="text-xs text-[#706D65]">Receita instalada</span>
-          </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={meses}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F2EFE8" />
-                <XAxis dataKey="mes" fontSize={12} stroke="#706D65" />
-                <YAxis fontSize={12} stroke="#706D65" />
-                <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                <Bar dataKey="receita" fill="#E3B94F" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+          <button
+            type="button"
+            onClick={() => setVisitaModalOpen(true)}
+            className="flex items-center gap-1.5 rounded-md border border-[#E2DDD0] bg-[#F8F6F1] py-1.5 px-3 text-xs font-semibold text-[#24231F] hover:bg-[#FAF5E8]"
+          >
+            <Calendar className="h-3.5 w-3.5 text-[#C8794A]" />
+            <span>Agendar Visita</span>
+          </button>
 
-        {/* Gráfico Funil por Status */}
-        <div className="jansol-bento-card p-6 bg-white space-y-4">
-          <div className="flex items-center justify-between border-b border-[#DDD8CE] pb-3">
-            <h3 className="text-sm font-bold text-[#24231F]">
-              Distribuição do Funil por Status
-            </h3>
-            <span className="text-xs text-[#706D65]">Base Ativa</span>
-          </div>
-          <div className="h-64">
-            {porStatus.length === 0 ? (
-              <EmptyState title="Sem dados de status" />
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={porStatus}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={50}
-                    outerRadius={85}
-                    paddingAngle={3}
-                  >
-                    {porStatus.map((s) => (
-                      <Cell
-                        key={s.name}
-                        fill={STATUS_COLORS[s.name] ?? "#1D1C19"}
-                      />
-                    ))}
-                  </Pie>
-                  <Legend />
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </div>
-      </div>
+          <button
+            type="button"
+            onClick={() => setClienteModalOpen(true)}
+            className="flex items-center gap-1.5 rounded-md border border-[#E2DDD0] bg-[#F8F6F1] py-1.5 px-3 text-xs font-semibold text-[#24231F] hover:bg-[#FAF5E8]"
+          >
+            <UserPlus className="h-3.5 w-3.5 text-[#E3B94F]" />
+            <span>Novo Cliente</span>
+          </button>
 
-      {/* 5. Bento Grid: Tabela de Últimos Clientes */}
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/dashboard/tarefas" })}
+            className="flex items-center gap-1.5 rounded-md border border-[#E2DDD0] bg-[#F8F6F1] py-1.5 px-3 text-xs font-semibold text-[#24231F] hover:bg-[#FAF5E8]"
+          >
+            <CheckSquare className="h-3.5 w-3.5 text-emerald-700" />
+            <span>Nova Tarefa</span>
+          </button>
+
+          {/* Menu "Mais Ações" */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="flex items-center gap-1 rounded-md border border-[#E2DDD0] bg-[#F8F6F1] py-1.5 px-2.5 text-xs font-medium text-[#706D65] hover:text-[#24231F]"
+              >
+                <span>Mais Ações</span>
+                <MoreHorizontal className="h-3.5 w-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 rounded-xl border border-[#E2DDD0] bg-white p-1">
+              <DropdownMenuItem onClick={() => navigate({ to: "/dashboard/manutencoes" })} className="text-xs font-medium py-2">
+                Nova Manutenção
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate({ to: "/dashboard/gastos" })} className="text-xs font-medium py-2">
+                Novo Gasto / Despesa
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate({ to: "/dashboard/interacoes" })} className="text-xs font-medium py-2">
+                Nova Interação
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </section>
+
+      {/* 5. HIERARQUIA PASSO 5: Atividade Recente (Tabela de Últimos Clientes) */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-bold uppercase tracking-wider text-[#706D65]">
@@ -514,7 +420,7 @@ function DashboardHome() {
           </h2>
           <Link
             to="/dashboard/clientes"
-            className="flex items-center gap-1 text-xs font-bold text-[#C8794A] hover:underline"
+            className="flex items-center gap-1 text-xs font-bold text-[#1D1C19] hover:text-[#C8794A]"
           >
             Ver todos os {clientes.length} clientes <ArrowRight className="h-3.5 w-3.5" />
           </Link>
@@ -530,7 +436,7 @@ function DashboardHome() {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader className="bg-[#F8F6F1] sticky top-0 z-10">
-                  <TableRow className="border-b border-[#DDD8CE]">
+                  <TableRow className="border-b border-[#E2DDD0]">
                     <TableHead className="font-bold text-[#24231F]">Nome do Cliente</TableHead>
                     <TableHead className="font-bold text-[#24231F]">Cidade</TableHead>
                     <TableHead className="font-bold text-[#24231F]">Sistema</TableHead>
@@ -541,7 +447,7 @@ function DashboardHome() {
                 </TableHeader>
                 <TableBody>
                   {ultimos.map((c) => (
-                    <TableRow key={c.id} className="hover:bg-[#FAF5E8]/60 transition-colors border-b border-[#DDD8CE]">
+                    <TableRow key={c.id} className="hover:bg-[#FAF5E8]/60 transition-colors border-b border-[#E2DDD0]">
                       <TableCell>
                         <Link
                           to="/dashboard/clientes/$id"
@@ -561,7 +467,7 @@ function DashboardHome() {
                         <Link
                           to="/dashboard/clientes/$id"
                           params={{ id: c.id }}
-                          className="inline-flex items-center gap-1 rounded-[10px] border border-[#DDD8CE] bg-[#F8F6F1] px-3 py-1 text-xs font-bold text-[#1D1C19] hover:bg-[#FAF5E8] transition-colors"
+                          className="inline-flex items-center gap-1 rounded-md border border-[#E2DDD0] bg-[#F8F6F1] px-2.5 py-1 text-xs font-bold text-[#1D1C19] hover:bg-[#FAF5E8]"
                         >
                           Ficha 360°
                         </Link>
