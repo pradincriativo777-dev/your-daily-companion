@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, CalendarClock, Pencil, Plus, Trash2, MessageSquare, ExternalLink } from "lucide-react";
+import { ArrowLeft, CalendarClock, Pencil, Plus, Trash2, MessageSquare, ExternalLink, FileText, UserPlus, CheckSquare, DollarSign, MessageSquarePlus } from "lucide-react";
 import { iniciarAtendimentoAuvoChat } from "@/lib/auvo-chat-assistant";
+import { ProximoPassoCard } from "@/components/ui/progressive-disclosure/ProximoPassoCard";
+import { AcoesContextuaisMenu } from "@/components/ui/progressive-disclosure/AcoesContextuaisMenu";
+import { OpcoesAvancadasCollapsible } from "@/components/ui/progressive-disclosure/OpcoesAvancadasCollapsible";
+import { ViewModeToggle } from "@/components/ui/progressive-disclosure/ViewModeToggle";
+import { useViewMode } from "@/hooks/use-view-mode";
+import { calcularProximaAcaoCliente } from "@/lib/proxima-acao-engine";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -235,9 +241,48 @@ function ClienteDetalhe() {
   const pago = num(cliente.valor_pago);
   const margem = pago - totalGastos;
   const margemPct = pago > 0 ? (margem / pago) * 100 : 0;
+  const { data: ordensAll = [] } = useOrdensServico();
+  const ordensCliente = ordensAll.filter((o) => o.cliente_id === cliente.id);
+
+  const { mode, toggleViewMode } = useViewMode();
+  const proximaAcaoCliente = calcularProximaAcaoCliente({
+    id: cliente.id,
+    nome: cliente.nome,
+    telefone: (cliente as any).telefone,
+    whatsapp: cliente.whatsapp,
+    ultimo_contato: cliente.ultimo_contato,
+    ordens_abertas_count: ordensCliente.filter((o) => o.status !== "Concluída" && o.status !== "Cancelada").length,
+  });
+
+  const handleExecuteProximaAcao = (key: string) => {
+    switch (key) {
+      case "editar_cadastro":
+        setEditar(true);
+        break;
+      case "registrar_contato":
+        setNovaInter(true);
+        break;
+      case "criar_os":
+        navigate({ to: "/dashboard/ordens" as any });
+        break;
+      case "ver_os_andamento":
+        navigate({ to: "/dashboard/ordens" as any });
+        break;
+      default:
+        setEditar(true);
+    }
+  };
 
   return (
     <div className="space-y-6">
+      {/* Banner de Próxima Ação Recomendada */}
+      <ProximoPassoCard
+        acao={proximaAcaoCliente}
+        onExecuteAction={handleExecuteProximaAcao}
+        onToggleViewMode={toggleViewMode}
+        isSimples={mode === "simples"}
+      />
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Button asChild variant="ghost" size="icon">
@@ -246,29 +291,23 @@ function ClienteDetalhe() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-primary">{cliente.nome}</h1>
+            <h1 className="text-2xl font-bold text-[#100D3F]">{cliente.nome}</h1>
             <div className="mt-1 flex items-center gap-2">
               <StatusBadge status={cliente.status} />
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-[#706D65]">
                 {cliente.cidade ?? "—"}
               </span>
             </div>
           </div>
         </div>
-        <Badge variant={(cliente as any).revisao ? "destructive" : "secondary"}>
-          {(cliente as any).revisao ? "Pendente" : "Correto"}
-        </Badge>
-        <div className="flex gap-2">
-          {(cliente as any).revisao && (
-            <Button
-              onClick={() => setRevisao(true)}
-              className="bg-info text-info-foreground hover:bg-info/90"
-            >
-              Revisar Cadastro (Inconsistência)
-            </Button>
-          )}
-          <Button
-            onClick={() => {
+
+        {/* Menu Contextualizado de Ações */}
+        <AcoesContextuaisMenu
+          acaoPrincipal={{
+            key: "auvo_chat",
+            label: "Atender no Auvo Chat",
+            icon: <MessageSquare className="h-4 w-4 text-[#C8794A]" />,
+            onClick: () => {
               iniciarAtendimentoAuvoChat(
                 {
                   id: cliente.id,
@@ -278,57 +317,49 @@ function ClienteDetalhe() {
                 },
                 `/dashboard/clientes/${cliente.id}`,
                 {
-                  onNoPhone: (c) => {
-                    toast.error("Este cliente não possui telefone cadastrado.", {
-                      action: {
-                        label: "Editar Cadastro",
-                        onClick: () => setEditar(true),
-                      },
-                    });
-                  },
-                  onSuccess: (tel) => {
-                    toast.success(`Telefone copiado (${tel}). Direcionando para o Auvo Chat...`);
-                  },
+                  onNoPhone: () => setEditar(true),
+                  onSuccess: (tel) => toast.success(`Telefone copiado (${tel}). Direcionando...`),
                 }
               );
-            }}
-            variant="outline"
-            className="border-[#E2DDD0] bg-white text-[#1D1C19] hover:bg-[#FAF5E8] hover:border-[#E3B94F] font-bold text-xs shadow-2xs"
-          >
-            <MessageSquare className="mr-1.5 h-4 w-4 text-[#C8794A]" />
-            <ExternalLink className="mr-1.5 h-3 w-3 text-[#8E8C82]" />
-            Atender no Auvo Chat
-          </Button>
-          <Button
-            onClick={() => setAgendarVisitaOpen(true)}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <CalendarClock className="mr-1.5 h-4 w-4" /> Agendar visita
-          </Button>
-          <Button
-            onClick={() => setEditar(true)}
-            className="bg-accent text-accent-foreground hover:bg-accent/90"
-          >
-            <Pencil className="mr-1.5 h-4 w-4" /> Editar
-          </Button>
-          {isArquivado ? (
-            <Button
-              onClick={handleRestaurar}
-              disabled={processandoArquivamento}
-              className="bg-emerald-600 text-white hover:bg-emerald-700"
-            >
-              <RotateCcw className="mr-1.5 h-4 w-4" /> Restaurar Cliente
-            </Button>
-          ) : (
-            <Button
-              onClick={() => setModalArquivarOpen(true)}
-              variant="outline"
-              className="border-amber-500 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950"
-            >
-              <Archive className="mr-1.5 h-4 w-4" /> Arquivar Cliente
-            </Button>
-          )}
-        </div>
+            },
+          }}
+          acoesSecundarias={[
+            {
+              key: "agendar_visita",
+              label: "Agendar Visita",
+              icon: <CalendarClock className="h-4 w-4" />,
+              onClick: () => setAgendarVisitaOpen(true),
+            },
+            {
+              key: "nova_interacao",
+              label: "Interação",
+              icon: <MessageSquarePlus className="h-4 w-4" />,
+              onClick: () => setNovaInter(true),
+            },
+            {
+              key: "novo_gasto",
+              label: "Gasto",
+              icon: <DollarSign className="h-4 w-4" />,
+              onClick: () => setNovoGasto(true),
+            },
+          ]}
+          maisAcoes={[
+            {
+              key: "editar",
+              label: "Editar Cadastro",
+              icon: <Pencil className="h-4 w-4" />,
+              onClick: () => setEditar(true),
+            },
+          ]}
+          acoesDestrutivas={[
+            {
+              key: "arquivar",
+              label: isArquivado ? "Restaurar Cliente" : "Arquivar Cliente",
+              icon: isArquivado ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />,
+              onClick: () => setModalArquivarOpen(true),
+            },
+          ]}
+        />
       </div>
 
       {isArquivado && (

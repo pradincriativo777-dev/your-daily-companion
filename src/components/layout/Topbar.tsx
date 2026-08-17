@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -52,6 +52,33 @@ export function Topbar({
   const qc = useQueryClient();
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [createMenuOpen, setCreateMenuOpen] = useState(false);
+
+  // Keyboard shortcut 'C' for + Criar
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.key.toLowerCase() === "c" &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey
+      ) {
+        const target = e.target as HTMLElement | null;
+        const isInput =
+          target &&
+          (target.tagName === "INPUT" ||
+            target.tagName === "TEXTAREA" ||
+            target.isContentEditable);
+        if (!isInput) {
+          e.preventDefault();
+          setCreateMenuOpen((prev) => !prev);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const sair = async () => {
     await qc.cancelQueries();
@@ -116,8 +143,8 @@ export function Topbar({
 
         {/* Centro: Busca Ampla Editorial + Único Botão Dourado (+ Criar) */}
         <div className="flex flex-1 items-center justify-center px-4 max-w-lg gap-2.5">
-          {/* Botão + Criar: O ÚNICO BOTÃO DOURADO PRINCIPAL NO TOPO */}
-          <DropdownMenu>
+          {/* Botão + Criar: O ÚNICO BOTÃO DOURADO PRINCIPAL NO TOPO (Atalho 'C') */}
+          <DropdownMenu open={createMenuOpen} onOpenChange={setCreateMenuOpen}>
             <DropdownMenuTrigger asChild>
               <Button
                 size="sm"

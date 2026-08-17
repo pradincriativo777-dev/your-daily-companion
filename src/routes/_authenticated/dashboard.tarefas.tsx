@@ -11,6 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ClienteComboboxAsync } from "@/components/crm/ClienteComboboxAsync";
+import { ProximoPassoCard } from "@/components/ui/progressive-disclosure/ProximoPassoCard";
+import { useViewMode } from "@/hooks/use-view-mode";
+import { calcularProximaAcaoTarefa } from "@/lib/proxima-acao-engine";
 import { fetchTarefasServer, upsertTarefaServer } from "@/lib/tarefas.server";
 import { useTecnicos } from "@/hooks/use-crm";
 import { toast } from "sonner";
@@ -137,8 +140,28 @@ function TarefasPage() {
     }
   };
 
+  const { mode, toggleViewMode } = useViewMode();
+  const primeiraPendente = tarefas.find((t) => t.status !== "Concluída") || tarefas[0];
+  const proximaAcao = primeiraPendente
+    ? calcularProximaAcaoTarefa({
+        id: primeiraPendente.id,
+        titulo: primeiraPendente.titulo,
+        status: primeiraPendente.status,
+        data_vencimento: primeiraPendente.prazo,
+      })
+    : null;
+
   return (
     <div className="space-y-6">
+      {proximaAcao && (
+        <ProximoPassoCard
+          acao={proximaAcao}
+          onExecuteAction={() => handleOpenCreate()}
+          onToggleViewMode={toggleViewMode}
+          isSimples={mode === "simples"}
+        />
+      )}
+
       <PageHeader
         title="Central de Tarefas & Pendências"
         description="Acompanhamento operacional de pendências de ordens, visitas e manutenções."
