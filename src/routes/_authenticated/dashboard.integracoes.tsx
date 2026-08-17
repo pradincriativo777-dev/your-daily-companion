@@ -117,8 +117,8 @@ function IntegracoesPage() {
     <div className="flex flex-col h-full gap-4 p-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Central de Integrações</h2>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-bold tracking-tight text-primary">Central de Integrações</h1>
+          <p className="text-muted-foreground text-sm">
             Gerencie conexões de leitura e sincronização com plataformas externas.
           </p>
         </div>
@@ -183,11 +183,12 @@ function IntegracoesPage() {
             <div className="flex gap-2">
               <Button 
                 variant="outline" 
-                className="flex-1" 
+                className="flex-1 opacity-60 cursor-not-allowed" 
                 onClick={handleTestAuvo} 
-                disabled={testing}
+                disabled={true}
+                title="Conexão bloqueada no painel AUVO."
               >
-                {testing ? "Testando..." : "Testar Conexão"}
+                Testar Conexão (Bloqueado)
               </Button>
               <Button 
                 variant="outline" 

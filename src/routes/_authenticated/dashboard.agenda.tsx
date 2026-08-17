@@ -140,20 +140,21 @@ function AgendaPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Agenda Operacional</h2>
-          <p className="text-muted-foreground">
-            Visão de compromissos, visitas técnicas e sincronização direta com o AUVO.
+          <h1 className="text-3xl font-bold tracking-tight text-primary">Agenda Operacional</h1>
+          <p className="text-muted-foreground text-sm">
+            Visão de compromissos, visitas técnicas e agendamentos locais.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           <Button
             variant="outline"
             onClick={handleImportSchedule}
-            disabled={importingSchedule}
-            className="gap-2"
+            disabled={true}
+            title="API bloqueada pela conta AUVO. Sincronização remota desabilitada."
+            className="gap-2 opacity-60 cursor-not-allowed"
           >
-            <DownloadCloud className={`h-4 w-4 ${importingSchedule ? "animate-bounce" : ""}`} />
-            {importingSchedule ? "Puxando..." : "Puxar Agenda do AUVO"}
+            <DownloadCloud className="h-4 w-4 text-amber-500" />
+            Puxar Agenda (API Bloqueada)
           </Button>
           <Button onClick={() => setAgendarOpen(true)} size="default" className="gap-2">
             <Plus className="h-5 w-5" /> Nova Visita Técnica

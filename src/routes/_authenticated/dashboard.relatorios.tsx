@@ -162,9 +162,7 @@ function RelatoriosPage() {
   })).filter((s) => s.value > 0);
 
   const totalClientes = clientes.length;
-  const finalizados = clientes.filter((c) => c.status === "Finalizado").length;
-  const taxaConversao =
-    totalClientes > 0 ? (finalizados / totalClientes) * 100 : 0;
+  const taxaConversao = metricasOficiais.taxaConversao.valor ?? 0;
 
   const porOrigem = useMemo(() => {
     const map = new Map<string, number>();

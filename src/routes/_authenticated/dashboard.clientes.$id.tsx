@@ -278,117 +278,133 @@ function ClienteDetalhe() {
           >
             <Pencil className="mr-1.5 h-4 w-4" /> Editar
           </Button>
-          <ConfirmDelete
-            onConfirm={() =>
-              removeCliente.mutate(cliente.id, {
-                onSuccess: () => navigate({ to: "/dashboard/clientes" }),
-              })
-            }
-            description={`O cliente "${cliente.nome}" e seus registros vinculados serão excluídos.`}
-            trigger={
-              <Button variant="destructive">
-                <Trash2 className="mr-1.5 h-4 w-4" /> Excluir Cliente
-              </Button>
-            }
-          />
+          {isArquivado ? (
+            <Button
+              onClick={handleRestaurar}
+              disabled={processandoArquivamento}
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+            >
+              <RotateCcw className="mr-1.5 h-4 w-4" /> Restaurar Cliente
+            </Button>
+          ) : (
+            <Button
+              onClick={() => setModalArquivarOpen(true)}
+              variant="outline"
+              className="border-amber-500 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950"
+            >
+              <Archive className="mr-1.5 h-4 w-4" /> Arquivar Cliente
+            </Button>
+          )}
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Dados Pessoais</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
-            <Info label="Nome" value={cliente.nome} />
-            <Info label="Tipo" value={cliente.tipo} />
-            <Info label="CPF/CNPJ" value={cliente.cpf_cnpj} />
-            <Info
-              label="WhatsApp"
-              value={
-                cliente.whatsapp ? (
-                  <a
-                    href={`https://wa.me/55${cliente.whatsapp.replace(/\D/g, "")}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-accent hover:underline"
-                  >
-                    {cliente.whatsapp}
-                  </a>
-                ) : (
-                  "—"
-                )
-              }
-            />
-            <Info label="E-mail" value={cliente.email} />
-            <Info label="Origem do Lead" value={cliente.origem_lead} />
-          </CardContent>
+      {isArquivado && (
+        <Card className="border-amber-500 bg-amber-500/10 p-4">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600" />
+            <div>
+              <p className="font-semibold text-amber-700 dark:text-amber-400">Cliente Arquivado</p>
+              <p className="text-xs text-muted-foreground">
+                Motivo: {(cliente as any).motivo_arquivamento || "Arquivamento registrado"}
+              </p>
+            </div>
+          </div>
         </Card>
+      )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Endereço</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
-            <Info label="Endereço" value={cliente.endereco} />
-            <Info label="Cidade" value={cliente.cidade} />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Sistema</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <Info label="Tipo de Sistema" value={cliente.tipo_sistema} />
-            <Info label="Telhado" value={cliente.tipo_telhado} />
-            <Info label="Pessoas" value={cliente.qtd_pessoas} />
-            <Info label="Banheiros" value={cliente.qtd_banheiros} />
-            <Info label="Piscina (m²)" value={cliente.tamanho_piscina_m2} />
-            <Info label="Marca" value={cliente.marca_equipamento} />
-            <Info label="Coletores" value={cliente.qtd_coletores} />
-            <Info label="Reservatório" value={cliente.modelo_reservatorio} />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Instalação</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <Info label="Data" value={formatDate(cliente.data_instalacao)} />
-            <Info label="Técnico" value={tecnico?.nome ?? "—"} />
-            <Info label="Status" value={cliente.status} />
-            <Info
-              label="Valor Orçamento"
-              value={formatCurrency(cliente.valor_orcamento)}
-            />
-            <Info label="Valor Pago" value={formatCurrency(cliente.valor_pago)} />
-            <Info
-              label="Último Contato"
-              value={formatDate(cliente.ultimo_contato)}
-            />
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Observações</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm whitespace-pre-wrap">
-          {cliente.observacoes || "Nenhuma observação registrada."}
-        </CardContent>
-      </Card>
-
-      <Tabs defaultValue="manutencoes">
-        <TabsList>
-          <TabsTrigger value="manutencoes">Manutenções</TabsTrigger>
+      <Tabs defaultValue="linha_tempo">
+        <TabsList className="flex flex-wrap h-auto gap-1 bg-muted p-1">
+          <TabsTrigger value="linha_tempo">Linha do Tempo</TabsTrigger>
+          <TabsTrigger value="ordens">Ordens de Serviço</TabsTrigger>
+          <TabsTrigger value="agenda">Agenda & Visitas</TabsTrigger>
           <TabsTrigger value="equipamentos">Equipamentos</TabsTrigger>
+          <TabsTrigger value="garantias">Garantias</TabsTrigger>
+          <TabsTrigger value="manutencoes">Manutenções</TabsTrigger>
           <TabsTrigger value="gastos">Gastos</TabsTrigger>
           <TabsTrigger value="interacoes">Interações</TabsTrigger>
           <TabsTrigger value="financeiro">Resumo Financeiro</TabsTrigger>
+          <TabsTrigger value="pendencias">Pendências</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="linha_tempo">
+          <Card className="p-4 space-y-3">
+            <h3 className="font-semibold text-sm flex items-center gap-2">
+              <History className="h-4 w-4 text-primary" /> Linha do Tempo Consolidada
+            </h3>
+            {eventosLinhaTempo.length === 0 ? (
+              <EmptyState title="Nenhum evento registrado na linha do tempo." />
+            ) : (
+              <div className="relative border-l border-border pl-4 space-y-4">
+                {eventosLinhaTempo.map((ev) => (
+                  <div key={ev.id} className="relative">
+                    <div className="absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full bg-primary" />
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-muted-foreground">{formatDate(ev.data)}</span>
+                      <Badge variant="outline" className="text-[10px]">{ev.tipo}</Badge>
+                      {ev.badge && <Badge variant="secondary" className="text-[10px]">{ev.badge}</Badge>}
+                    </div>
+                    <p className="font-semibold text-sm mt-0.5">{ev.titulo}</p>
+                    <p className="text-xs text-muted-foreground">{ev.detalhes || "—"}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="ordens">
+          <Card className="p-4">
+            <h3 className="font-semibold text-sm mb-3">Ordens de Serviço do Cliente</h3>
+            {ordensServico.filter((os) => os.cliente_id === id).length === 0 ? (
+              <EmptyState title="Nenhuma ordem de serviço vinculada" />
+            ) : (
+              <div className="space-y-2">
+                {ordensServico.filter((os) => os.cliente_id === id).map((os) => (
+                  <div key={os.id} className="flex justify-between items-center p-2 rounded border">
+                    <div>
+                      <p className="font-semibold text-sm">OS {(os as any).codigo_legivel || os.id}: {os.tipo_atendimento}</p>
+                      <p className="text-xs text-muted-foreground">{os.descricao_problema}</p>
+                    </div>
+                    <Badge variant="outline">{os.status}</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="agenda">
+          <Card className="p-4">
+            <h3 className="font-semibold text-sm mb-2">Visitas & Agendamentos Locais</h3>
+            <p className="text-xs text-muted-foreground mb-3">Integração externa: <Badge variant="outline">Integração pendente (AUVO offline)</Badge></p>
+            <Button size="sm" onClick={() => setAgendarVisitaOpen(true)} className="mb-3">
+              <Plus className="mr-1 h-3.5 w-3.5" /> Nova Visita
+            </Button>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="garantias">
+          <Card className="p-4">
+            <h3 className="font-semibold text-sm mb-3">Garantias dos Equipamentos</h3>
+            {garantias.filter((g: any) => g.cliente_id === id).length === 0 ? (
+              <EmptyState title="Nenhuma garantia registrada para este cliente" />
+            ) : (
+              <p className="text-xs text-muted-foreground">Garantias ativas listadas.</p>
+            )}
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="pendencias">
+          <Card className="p-4 space-y-2">
+            <h3 className="font-semibold text-sm">Pendências & Status das Integrações</h3>
+            <div className="p-3 rounded border bg-amber-500/10 border-amber-500/30 text-xs text-amber-700 dark:text-amber-400">
+              <strong>Integração AUVO:</strong> Integração pendente (API bloqueada na conta). Agendamentos são mantidos localmente.
+            </div>
+            <div className="p-3 rounded border bg-blue-500/10 border-blue-500/30 text-xs text-blue-700 dark:text-blue-400">
+              <strong>Integração Conta Azul:</strong> Integração pendente (Aguardando módulo financeiro).
+            </div>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="manutencoes">
           <Card className="overflow-hidden py-0">
@@ -742,6 +758,41 @@ function ClienteDetalhe() {
         }}
         cliente={cliente}
       />
+
+      <Dialog open={modalArquivarOpen} onOpenChange={setModalArquivarOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-600">
+              <Archive className="h-5 w-5" /> Arquivar Cliente
+            </DialogTitle>
+            <DialogDescription>
+              O cliente "{cliente.nome}" será movido para o arquivo. Nenhum dado será excluído.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 py-2">
+            <Label className="text-xs font-semibold">Motivo do Arquivamento *</Label>
+            <Textarea
+              placeholder="Descreva o motivo (mínimo 5 caracteres)..."
+              value={motivoArquivamentoInput}
+              onChange={(e) => setMotivoArquivamentoInput(e.target.value)}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalArquivarOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleArquivar}
+              disabled={processandoArquivamento}
+              className="bg-amber-600 text-white hover:bg-amber-700"
+            >
+              Confirmar Arquivamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

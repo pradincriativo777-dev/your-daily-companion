@@ -23,6 +23,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/configuracoes")(
 function ConfiguracoesPage() {
   const [diasAlerta, setDiasAlerta] = useState<number>(7);
   const [limiteKanban, setLimiteKanban] = useState<number>(50);
+  const [permitirOffline, setPermitirOffline] = useState<boolean>(true);
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
 
@@ -34,6 +35,7 @@ function ConfiguracoesPage() {
         data.forEach((item: any) => {
           if (item.chave === "dias_alerta_manutencao") setDiasAlerta(Number(item.valor) || 7);
           if (item.chave === "limite_kanban_coluna") setLimiteKanban(Number(item.valor) || 50);
+          if (item.chave === "permitir_agendamento_offline") setPermitirOffline(item.valor === "true" || item.valor === true);
         });
       }
     } catch (err) {
@@ -53,6 +55,7 @@ function ConfiguracoesPage() {
       await (supabase.from as any)("configuracoes_sistema").upsert([
         { chave: "dias_alerta_manutencao", valor: JSON.stringify(diasAlerta), updated_at: new Date().toISOString() },
         { chave: "limite_kanban_coluna", valor: JSON.stringify(limiteKanban), updated_at: new Date().toISOString() },
+        { chave: "permitir_agendamento_offline", valor: JSON.stringify(permitirOffline), updated_at: new Date().toISOString() },
       ]);
       toast.success("Configurações salvas no servidor com sucesso!");
     } catch (err) {
@@ -100,13 +103,26 @@ function ConfiguracoesPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-foreground">Limite Padrão por Coluna no Kanban</label>
+                <label className="text-xs font-semibold text-foreground">Limite de Registros por Coluna do Kanban</label>
                 <Input
                   type="number"
                   value={limiteKanban}
                   onChange={(e) => setLimiteKanban(Number(e.target.value))}
                   min={10}
                   max={200}
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded border bg-card">
+                <div>
+                  <p className="font-semibold text-xs text-foreground">Permitir Agendamentos Offline (Modo Local)</p>
+                  <p className="text-xs text-muted-foreground">Permite agendar visitas locais enquanto a API do AUVO estiver bloqueada.</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={permitirOffline}
+                  onChange={(e) => setPermitirOffline(e.target.checked)}
+                  className="h-4 w-4 text-primary rounded"
                 />
               </div>
             </CardContent>

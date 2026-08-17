@@ -63,6 +63,7 @@ function ClientesPage() {
   const { data: tecnicos = [] } = useTecnicos();
   const remove = useRemove("clientes");
 
+  const [verArquivados, setVerArquivados] = useState(false);
   const [busca, setBusca] = useState("");
   const [fStatus, setFStatus] = useState("todos");
   const [fCidade, setFCidade] = useState("todas");
@@ -91,6 +92,7 @@ function ClientesPage() {
     const q = busca.trim().toLowerCase();
     const list = clientes.filter(
       (c) =>
+        (verArquivados ? (c as any).arquivado === true : !(c as any).arquivado) &&
         (!q ||
           c.nome.toLowerCase().includes(q) ||
           (c.cidade ?? "").toLowerCase().includes(q) ||
@@ -131,6 +133,13 @@ function ClientesPage() {
   return (
     <div>
       <PageHeader title="Clientes" description={`${filtrados.length} cliente(s) listado(s)`}>
+        <Button
+          variant={verArquivados ? "default" : "outline"}
+          onClick={() => { setVerArquivados(!verArquivados); setPage(1); }}
+          className={verArquivados ? "bg-amber-600 text-white" : "border-amber-500 text-amber-600"}
+        >
+          {verArquivados ? "Exibindo Arquivados" : "Ver Clientes Arquivados"}
+        </Button>
         <Button
           variant="outline"
           onClick={() => exportClientsToXlsx(filtrados, "clientes_filtrados.xlsx")}
