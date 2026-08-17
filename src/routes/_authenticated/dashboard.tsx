@@ -8,6 +8,8 @@ import { QuickPreviewDrawer, type QuickPreviewItem } from "@/components/crm/Quic
 import { ClienteDialog } from "@/components/crm/ClienteDialog";
 import { OrdemServicoDialog } from "@/components/crm/OrdemServicoDialog";
 import { AgendarVisitaDialog } from "@/components/crm/AgendarVisitaDialog";
+import { JansolAssistenteButton } from "@/components/layout/JansolAssistenteButton";
+import { JansolAssistenteDrawer } from "@/components/layout/JansolAssistenteDrawer";
 import { useClientes, useTecnicos } from "@/hooks/use-crm";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -28,7 +30,10 @@ function DashboardLayout() {
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [assistenteOpen, setAssistenteOpen] = useState(false);
   const [previewItem, setPreviewItem] = useState<QuickPreviewItem | null>(null);
+
+  const assistenteButtonRef = useRef<HTMLButtonElement>(null);
 
   // Modais acionados pelo + Criar do cabeçalho
   const [clienteModalOpen, setClienteModalOpen] = useState(false);
@@ -75,7 +80,7 @@ function DashboardLayout() {
     }
   };
 
-  // Suporte a Atalhos de Teclado (G then D, G then C, G then A, G then O, /, Ctrl+\, Cmd+K)
+  // Suporte a Atalhos de Teclado (G then D, G then C, G then A, G then O, /, Ctrl+\, Cmd+K, Cmd+J)
   const lastGKeyTime = useRef<number>(0);
 
   useEffect(() => {
@@ -96,7 +101,14 @@ function DashboardLayout() {
         return;
       }
 
-      // 2. Toggle Sidebar: Ctrl+\
+      // 2. JANSOL Assistente: ⌘J / Ctrl+J
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "j") {
+        e.preventDefault();
+        setAssistenteOpen((prev) => !prev);
+        return;
+      }
+
+      // 3. Toggle Sidebar: Ctrl+\
       if ((e.ctrlKey || e.metaKey) && e.key === "\\") {
         e.preventDefault();
         toggleSidebar();
@@ -105,14 +117,14 @@ function DashboardLayout() {
 
       if (isTyping) return;
 
-      // 3. Focar busca: /
+      // 4. Focar busca: /
       if (e.key === "/") {
         e.preventDefault();
         setCommandPaletteOpen(true);
         return;
       }
 
-      // 4. Sequência G + Tecla (Navigation Chords)
+      // 5. Sequência G + Tecla (Navigation Chords)
       const now = Date.now();
       const keyUpper = e.key.toUpperCase();
 
@@ -122,20 +134,21 @@ function DashboardLayout() {
       }
 
       if (now - lastGKeyTime.current < 1000) {
-        if (keyUpper === "D") {
-          e.preventDefault();
-          navigate({ to: "/dashboard" });
-        } else if (keyUpper === "C") {
-          e.preventDefault();
-          navigate({ to: "/dashboard/clientes" });
-        } else if (keyUpper === "A") {
-          e.preventDefault();
-          navigate({ to: "/dashboard/agenda" });
-        } else if (keyUpper === "O") {
-          e.preventDefault();
-          navigate({ to: "/dashboard/ordens" });
-        }
         lastGKeyTime.current = 0;
+        switch (keyUpper) {
+          case "D":
+            navigate({ to: "/dashboard" });
+            break;
+          case "C":
+            navigate({ to: "/dashboard/clientes" });
+            break;
+          case "A":
+            navigate({ to: "/dashboard/agenda" });
+            break;
+          case "O":
+            navigate({ to: "/dashboard/ordens" });
+            break;
+        }
       }
     };
 
@@ -144,8 +157,8 @@ function DashboardLayout() {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-[#F8F7F3] text-[#171716] flex flex-col selection:bg-[#FAF3D6] selection:text-[#0B0B0C]">
-      {/* Cabeçalho Topbar */}
+    <div className="min-h-screen bg-[#F8F6F1] text-[#24231F]">
+      {/* Cabeçalho Fixo Superior */}
       <Topbar
         collapsed={collapsed}
         onToggleSidebar={toggleSidebar}
@@ -154,8 +167,8 @@ function DashboardLayout() {
         onQuickAction={handleQuickAction}
       />
 
-      {/* Corpo Principal */}
-      <div className="flex flex-1 min-h-[calc(100vh-3.75rem)]">
+      {/* Corpo Principal (Sidebar + Main Content) */}
+      <div className="flex">
         {/* Sidebar Desktop */}
         <Sidebar
           collapsed={collapsed}
@@ -184,6 +197,17 @@ function DashboardLayout() {
         open={commandPaletteOpen}
         onOpenChange={setCommandPaletteOpen}
         onTriggerQuickAction={handleQuickAction}
+      />
+
+      {/* JANSOL Assistente — Botão Flutuante Global & Drawer Lateral */}
+      <JansolAssistenteButton
+        ref={assistenteButtonRef}
+        onClick={() => setAssistenteOpen(true)}
+      />
+      <JansolAssistenteDrawer
+        open={assistenteOpen}
+        onOpenChange={setAssistenteOpen}
+        triggerRef={assistenteButtonRef}
       />
 
       {/* Painel de Resumo Rápido Lateral */}
