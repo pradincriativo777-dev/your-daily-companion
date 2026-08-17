@@ -196,32 +196,33 @@ function DashboardLayout() {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-[#F8F6F1] text-[#24231F]">
-      {/* Cabeçalho Fixo Superior */}
-      <Topbar
+    <div className="flex h-screen w-full bg-[#F8F6F1] text-[#24231F] overflow-hidden">
+      {/* Sidebar Desktop */}
+      <Sidebar
         collapsed={collapsed}
-        onToggleSidebar={toggleSidebar}
-        onOpenMobileNav={() => setMobileOpen(true)}
+        onToggleCollapse={toggleSidebar}
         userEmail={user?.email}
-        onQuickAction={handleQuickAction}
       />
 
-      {/* Corpo Principal (Sidebar + Main Content) */}
-      <div className="flex">
-        {/* Sidebar Desktop */}
-        <Sidebar
-          collapsed={collapsed}
-          onToggleCollapse={toggleSidebar}
-        />
+      {/* Drawer Mobile */}
+      <MobileDrawer
+        open={mobileOpen}
+        onOpenChange={setMobileOpen}
+      />
 
-        {/* Drawer Mobile */}
-        <MobileDrawer
-          open={mobileOpen}
-          onOpenChange={setMobileOpen}
+      {/* Corpo Principal (Topbar + Main Content) */}
+      <div className="flex flex-1 flex-col min-w-0 h-screen overflow-hidden">
+        {/* Cabeçalho Fixo Superior */}
+        <Topbar
+          collapsed={collapsed}
+          onToggleSidebar={toggleSidebar}
+          onOpenMobileNav={() => setMobileOpen(true)}
+          userEmail={user?.email}
+          onQuickAction={handleQuickAction}
         />
 
         {/* Área de Conteúdo */}
-        <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 md:pb-8">
           <div className="mx-auto max-w-7xl">
             <Outlet />
           </div>

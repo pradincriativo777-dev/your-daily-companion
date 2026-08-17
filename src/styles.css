@@ -34,6 +34,19 @@
   --color-gold: var(--gold);
   --color-gold-foreground: var(--gold-foreground);
   --color-copper: var(--copper);
+  --color-jansol-charcoal: #1D1C19;
+  --color-jansol-charcoal-dark: #11110F;
+  --color-jansol-charcoal-sec: #292722;
+  --color-jansol-warm-white: #F8F6F1;
+  --color-jansol-editorial-bg: #F2EFE8;
+  --color-jansol-white: #FFFFFF;
+  --color-jansol-gold: #E3B94F;
+  --color-jansol-gold-light: #F1D47D;
+  --color-jansol-copper: #C8794A;
+  --color-jansol-bronze: #91623E;
+  --color-jansol-text-main: #24231F;
+  --color-jansol-text-secondary: #706D65;
+  --color-jansol-border: #E2DDD0;
 }
 
 :root {

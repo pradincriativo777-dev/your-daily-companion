@@ -132,10 +132,10 @@ function EquipamentosCentralPage() {
       {/* Header Principal */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b pb-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+          <h1 className="text-2xl font-bold tracking-tight text-[#100D3F]">
             Central de Equipamentos Instalados
           </h1>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-[#706D65]">
             Gerencie o parque de equipamentos por cliente, números de série e estado operacional.
           </p>
         </div>
@@ -152,9 +152,9 @@ function EquipamentosCentralPage() {
       </div>
 
       {/* Barra de Filtros */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 bg-white p-3 rounded-xl border border-[#E2DDD0] shadow-sm">
         <div className="relative md:col-span-1">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#706D65]" />
           <Input
             placeholder="Buscar por marca, modelo, série ou cliente..."
             className="pl-9 h-9 text-xs"
@@ -213,11 +213,11 @@ function EquipamentosCentralPage() {
       </div>
 
       {/* Tabela de Equipamentos */}
-      <Card className="border-slate-200 dark:border-slate-800">
+      <Card className="border-0 shadow-none overflow-hidden bg-transparent">
         <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-slate-50 dark:bg-slate-900/80 text-xs">
+              <TableRow className="bg-[#F8F6F1] text-xs border-b border-[#E2DDD0]">
                 <TableHead className="font-bold">Cliente</TableHead>
                 <TableHead className="font-bold">Categoria</TableHead>
                 <TableHead className="font-bold">Equipamento (Marca / Modelo)</TableHead>
@@ -241,13 +241,13 @@ function EquipamentosCentralPage() {
                   return (
                     <TableRow
                       key={eq.id}
-                      className="hover:bg-slate-50 dark:hover:bg-slate-900/50 cursor-pointer text-xs"
+                      className="hover:bg-[#FAF5E8]/60 cursor-pointer text-xs border-b border-[#E2DDD0]"
                       onClick={() => {
                         setEquipamentoSelecionado(eq);
                         setDialogDetalhesOpen(true);
                       }}
                     >
-                      <TableCell className="font-semibold text-slate-900 dark:text-slate-100">
+                      <TableCell className="font-semibold text-[#1D1C19]">
                         {nomeCliente}
                       </TableCell>
 
@@ -257,15 +257,15 @@ function EquipamentosCentralPage() {
                         </Badge>
                       </TableCell>
 
-                      <TableCell className="font-bold text-slate-800 dark:text-slate-200">
+                      <TableCell className="font-bold text-[#1D1C19]">
                         {eq.marca} {eq.modelo}
                       </TableCell>
 
-                      <TableCell className="font-mono text-slate-600 dark:text-slate-400">
+                      <TableCell className="font-mono text-[#706D65]">
                         {eq.numero_serie || "—"}
                       </TableCell>
 
-                      <TableCell className="text-slate-600 dark:text-slate-400">
+                      <TableCell className="text-[#706D65]">
                         {eq.data_instalacao
                           ? new Date(eq.data_instalacao + "T00:00:00").toLocaleDateString("pt-BR")
                           : "—"}

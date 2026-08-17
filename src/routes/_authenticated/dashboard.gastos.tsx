@@ -163,12 +163,12 @@ function GastosPage() {
 
       <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-6">
         <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">De</Label>
-          <Input type="date" value={de} onChange={(e) => setDe(e.target.value)} className="bg-card" />
+          <Label className="text-xs text-[#706D65]">De</Label>
+          <Input type="date" value={de} onChange={(e) => setDe(e.target.value)} className="bg-white border-[#E2DDD0]" />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Até</Label>
-          <Input type="date" value={ate} onChange={(e) => setAte(e.target.value)} className="bg-card" />
+          <Label className="text-xs text-[#706D65]">Até</Label>
+          <Input type="date" value={ate} onChange={(e) => setAte(e.target.value)} className="bg-white border-[#E2DDD0]" />
         </div>
         <div className="flex items-end">
           <FilterSelect value={fCategoria} onChange={setFCategoria} all="todas" label="Categoria" options={[...CATEGORIAS_GASTO]} />
@@ -189,7 +189,7 @@ function GastosPage() {
         <KpiCard label="Receita no Período" value={formatCurrency(receita)} tone="success" />
         <KpiCard label="Lucro no Período" value={formatCurrency(lucro)} tone={lucro >= 0 ? "success" : "danger"} />
         <KpiCard label="Margem %" value={`${margem.toFixed(1)}%`} tone={margem >= 0 ? "success" : "danger"} />
-        <Card className="gap-0 py-4">
+        <Card className="gap-0 py-4 border-[#E2DDD0] shadow-sm bg-white">
           <CardHeader className="px-4 pb-1">
             <CardTitle className="text-xs tracking-wide text-muted-foreground uppercase">
               Gasto por Categoria
@@ -208,7 +208,7 @@ function GastosPage() {
             )}
           </CardContent>
         </Card>
-        <Card className="gap-0 py-4">
+        <Card className="gap-0 py-4 border-[#E2DDD0] shadow-sm bg-white">
           <CardHeader className="px-4 pb-1">
             <CardTitle className="text-xs tracking-wide text-muted-foreground uppercase">
               Gasto por Técnico
@@ -229,7 +229,7 @@ function GastosPage() {
         </Card>
       </div>
 
-      <Card className="overflow-hidden py-0">
+      <Card className="border-0 shadow-none overflow-hidden bg-transparent">
         {filtrados.length === 0 ? (
           <EmptyState title="Nenhum gasto no período" description="Ajuste o período ou registre um novo gasto." />
         ) : (
@@ -237,7 +237,7 @@ function GastosPage() {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="bg-[#F8F6F1] text-xs border-b border-[#E2DDD0]">
                     <TableHead>Data</TableHead>
                     <TableHead>Categoria</TableHead>
                     <TableHead>Descrição</TableHead>
@@ -250,7 +250,7 @@ function GastosPage() {
                 </TableHeader>
                 <TableBody>
                   {pageItems.map((g) => (
-                    <TableRow key={g.id}>
+                    <TableRow key={g.id} className="hover:bg-[#FAF5E8]/60 text-xs border-b border-[#E2DDD0]">
                       <TableCell>{formatDate(g.data)}</TableCell>
                       <TableCell>{g.categoria}</TableCell>
                       <TableCell>{g.descricao}</TableCell>

@@ -278,7 +278,7 @@ function DashboardHome() {
       </section>
 
       {/* 3. HIERARQUIA PASSO 3: Área "Precisa da Sua Atenção" (Lista Unificada Limpa sem Cards Aninhados) */}
-      <section className="jansol-bento-card p-5 bg-white space-y-4">
+      <section className="space-y-4 pt-4">
         <div className="flex items-center justify-between border-b border-[#E2DDD0]/80 pb-3">
           <div>
             <h2 className="text-sm font-bold text-[#24231F]">
@@ -345,7 +345,7 @@ function DashboardHome() {
       </section>
 
       {/* 4. HIERARQUIA PASSO 4: Ações Rápidas em Linha Horizontal Compacta */}
-      <section className="jansol-bento-card p-4 bg-white flex flex-wrap items-center justify-between gap-3">
+      <section className="pt-6 pb-2 flex flex-wrap items-center justify-between gap-3 border-y border-[#E2DDD0]/40">
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-[#24231F]">Ações Rápidas:</span>
           <span className="text-xs text-[#706D65]">Atalhos para fluxos diretos</span>
@@ -428,7 +428,7 @@ function DashboardHome() {
           </Link>
         </div>
 
-        <div className="jansol-bento-card overflow-hidden bg-white">
+        <div className="overflow-hidden">
           {ultimos.length === 0 ? (
             <EmptyState
               title="Nenhum cliente cadastrado"

@@ -141,10 +141,10 @@ export function MetricCard({
     <div
       onClick={onClick}
       className={cn(
-        "jansol-bento-card flex flex-col justify-between p-4 transition-all duration-180",
+        "flex flex-col justify-between p-4 border-l-2 transition-all duration-180",
         onClick
-          ? "cursor-pointer hover:border-[#C8BFA5] hover:bg-[#FAF5E8]/40 active:scale-[0.99]"
-          : "cursor-default"
+          ? "cursor-pointer border-[#E2DDD0] hover:border-[#C8BFA5] hover:bg-[#F2EFE8]/50 active:scale-[0.99]"
+          : "cursor-default border-[#E2DDD0]"
       )}
     >
       <div className="flex items-center justify-between gap-2">

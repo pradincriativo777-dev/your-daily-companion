@@ -111,34 +111,12 @@ export function Topbar({
             <Menu className="h-4 w-4" />
           </Button>
 
-          {/* Toggle Sidebar Desktop */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={collapsed ? "Expandir Menu" : "Recolher Menu"}
-                  className="hidden text-[#706D65] hover:bg-[#F2EFE8] hover:text-[#1D1C19] md:flex h-8 w-8 rounded-lg"
-                  onClick={onToggleSidebar}
-                >
-                  {collapsed ? (
-                    <PanelLeftOpen className="h-4 w-4 text-[#E3B94F]" />
-                  ) : (
-                    <PanelLeftClose className="h-4 w-4" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="border-[#E2DDD0] bg-[#1D1C19] text-[11px] text-[#F8F6F1]">
-                {collapsed ? "Expandir (Ctrl+\\)" : "Recolher (Ctrl+\\)"}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          {/* Logotipo Oficial JANSOL OS */}
-          <Link to="/dashboard">
-            <JansolLogo collapsed={collapsed} darkBackground={false} />
-          </Link>
+          {/* Logotipo Oficial JANSOL OS (Apenas Mobile) */}
+          <div className="md:hidden">
+            <Link to="/dashboard">
+              <JansolLogo collapsed={collapsed} darkBackground={false} />
+            </Link>
+          </div>
         </div>
 
         {/* Centro: Busca Ampla Editorial + Único Botão Dourado (+ Criar) */}

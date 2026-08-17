@@ -150,10 +150,10 @@ function EstoqueCentralPage() {
       {/* Header Principal */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b pb-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+          <h1 className="text-2xl font-bold tracking-tight text-[#100D3F]">
             Central de Estoque & Peças
           </h1>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-[#706D65]">
             Gestão imutável de saldo físico, reservas para ordens de serviço e movimentações auditadas.
           </p>
         </div>
@@ -181,36 +181,36 @@ function EstoqueCentralPage() {
 
       {/* Cards de Métricas do Estoque */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Card className="bg-white dark:bg-slate-950 border">
+        <Card className="bg-white border-[#E2DDD0] shadow-sm">
           <CardContent className="p-3.5">
-            <span className="text-xs text-slate-500 block font-medium">Valor Estimado do Estoque</span>
+            <span className="text-xs text-[#706D65] block font-medium">Valor Estimado do Estoque</span>
             <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
               R$ {valorTotalEstoque.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
             </span>
           </CardContent>
         </Card>
 
-        <Card className="bg-white dark:bg-slate-950 border">
+        <Card className="bg-white border-[#E2DDD0] shadow-sm">
           <CardContent className="p-3.5">
-            <span className="text-xs text-slate-500 block font-medium">Abaixo do Estoque Mínimo</span>
+            <span className="text-xs text-[#706D65] block font-medium">Abaixo do Estoque Mínimo</span>
             <span className="text-xl font-bold text-amber-600 dark:text-amber-400">
               {totalAbaixoMinimo} itens
             </span>
           </CardContent>
         </Card>
 
-        <Card className="bg-white dark:bg-slate-950 border">
+        <Card className="bg-white border-[#E2DDD0] shadow-sm">
           <CardContent className="p-3.5">
-            <span className="text-xs text-slate-500 block font-medium">Itens Zerados</span>
+            <span className="text-xs text-[#706D65] block font-medium">Itens Zerados</span>
             <span className="text-xl font-bold text-rose-600 dark:text-rose-400">
               {totalZerados} itens
             </span>
           </CardContent>
         </Card>
 
-        <Card className="bg-white dark:bg-slate-950 border">
+        <Card className="bg-white border-[#E2DDD0] shadow-sm">
           <CardContent className="p-3.5">
-            <span className="text-xs text-slate-500 block font-medium">Com Reservas Ativas</span>
+            <span className="text-xs text-[#706D65] block font-medium">Com Reservas Ativas</span>
             <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
               {totalReservados} itens
             </span>
@@ -234,9 +234,9 @@ function EstoqueCentralPage() {
 
         {/* TAB 1: ITENS E SALDO */}
         <TabsContent value="itens" className="space-y-4 pt-3">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white p-3 rounded-xl border border-[#E2DDD0] shadow-sm">
             <div className="relative sm:col-span-2">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#706D65]" />
               <Input
                 placeholder="Buscar por SKU, nome do produto, marca ou modelo..."
                 className="pl-9 h-9 text-xs"
@@ -262,11 +262,11 @@ function EstoqueCentralPage() {
             </div>
           </div>
 
-          <Card className="border-slate-200 dark:border-slate-800">
+          <Card className="border-0 shadow-none overflow-hidden bg-transparent">
             <CardContent className="p-0 overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-slate-50 dark:bg-slate-900/80 text-xs">
+                  <TableRow className="bg-[#F8F6F1] text-xs border-b border-[#E2DDD0]">
                     <TableHead className="font-bold">SKU</TableHead>
                     <TableHead className="font-bold">Item / Especificação</TableHead>
                     <TableHead className="font-bold">Categoria</TableHead>
@@ -291,8 +291,8 @@ function EstoqueCentralPage() {
                       const isAbaixoMin = saldos.saldoFisico <= item.estoque_minimo && !isZerado;
 
                       return (
-                        <TableRow key={item.id} className="text-xs">
-                          <TableCell className="font-mono font-bold text-slate-900 dark:text-slate-100">
+                        <TableRow key={item.id} className="text-xs hover:bg-[#FAF5E8]/60 border-b border-[#E2DDD0]">
+                          <TableCell className="font-mono font-bold text-[#1D1C19]">
                             {item.sku}
                           </TableCell>
 

@@ -185,7 +185,7 @@ function ManutencoesPage() {
         />
       </div>
 
-      <Card className="overflow-hidden py-0">
+      <Card className="border-0 shadow-none overflow-hidden bg-transparent">
         {filtrados.length === 0 ? (
           <EmptyState
             title="Nenhuma manutenção encontrada"
@@ -196,7 +196,7 @@ function ManutencoesPage() {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="bg-[#F8F6F1] text-xs border-b border-[#E2DDD0]">
                     <TableHead>Cliente</TableHead>
                     <TableHead>Data</TableHead>
                     <TableHead>Tipo</TableHead>
@@ -210,7 +210,7 @@ function ManutencoesPage() {
                 </TableHeader>
                 <TableBody>
                   {pageItems.map((m) => (
-                    <TableRow key={m.id}>
+                    <TableRow key={m.id} className="hover:bg-[#FAF5E8]/60 cursor-pointer text-xs border-b border-[#E2DDD0]">
                       <TableCell>
                         <Link
                           to="/dashboard/clientes/$id"

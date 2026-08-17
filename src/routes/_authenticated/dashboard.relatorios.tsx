@@ -250,17 +250,17 @@ function RelatoriosPage() {
 
       <div className="grid gap-2 sm:grid-cols-2 lg:w-1/2">
         <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">De</Label>
-          <Input type="date" value={de} onChange={(e) => setDe(e.target.value)} className="bg-card" />
+          <Label className="text-xs text-[#706D65]">De</Label>
+          <Input type="date" value={de} onChange={(e) => setDe(e.target.value)} className="bg-white border-[#E2DDD0]" />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Até</Label>
-          <Input type="date" value={ate} onChange={(e) => setAte(e.target.value)} className="bg-card" />
+          <Label className="text-xs text-[#706D65]">Até</Label>
+          <Input type="date" value={ate} onChange={(e) => setAte(e.target.value)} className="bg-white border-[#E2DDD0]" />
         </div>
       </div>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-primary">Relatório Financeiro</h2>
+        <h2 className="text-lg font-semibold text-[#100D3F]">Relatório Financeiro</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <KpiCard label="Receita Total" value={formatCurrency(receitaTotal)} tone="success" />
           <KpiCard label="Custo Total" value={formatCurrency(custoTotal)} tone="danger" />
@@ -269,7 +269,7 @@ function RelatoriosPage() {
           <KpiCard label="Ticket Médio" value={formatCurrency(ticket)} tone="default" />
           <KpiCard label="Receita de Manutenções" value={formatCurrency(receitaManutencoes)} />
         </div>
-        <Card>
+        <Card className="bg-white border-[#E2DDD0] shadow-sm">
           <CardHeader>
             <CardTitle className="text-base">Receita x Custo x Lucro por Mês</CardTitle>
           </CardHeader>
@@ -291,9 +291,9 @@ function RelatoriosPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-primary">Relatório Comercial</h2>
+        <h2 className="text-lg font-semibold text-[#100D3F]">Relatório Comercial</h2>
         <div className="grid gap-3 lg:grid-cols-2">
-          <Card>
+          <Card className="bg-white border-[#E2DDD0] shadow-sm">
             <CardHeader>
               <CardTitle className="text-base">
                 Funil de Vendas · Conversão {taxaConversao.toFixed(1)}%
@@ -341,7 +341,7 @@ function RelatoriosPage() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="bg-[#F8F6F1] text-xs border-b border-[#E2DDD0]">
                   <TableHead>Cidade</TableHead>
                   <TableHead className="text-right">Clientes</TableHead>
                   <TableHead className="text-right">Receita</TableHead>
@@ -349,7 +349,7 @@ function RelatoriosPage() {
               </TableHeader>
               <TableBody>
                 {porCidade.map((c) => (
-                  <TableRow key={c.cidade}>
+                  <TableRow key={c.cidade} className="hover:bg-[#FAF5E8]/60 text-xs border-b border-[#E2DDD0]">
                     <TableCell className="font-medium">{c.cidade}</TableCell>
                     <TableCell className="text-right">{c.qtd}</TableCell>
                     <TableCell className="text-right">{formatCurrency(c.receita)}</TableCell>
@@ -362,9 +362,9 @@ function RelatoriosPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-primary">Relatório Operacional</h2>
+        <h2 className="text-lg font-semibold text-[#100D3F]">Relatório Operacional</h2>
         <div className="grid gap-3 lg:grid-cols-2">
-          <Card>
+          <Card className="bg-white border-[#E2DDD0] shadow-sm">
             <CardHeader>
               <CardTitle className="text-base">Instalações por Tipo de Sistema</CardTitle>
             </CardHeader>
@@ -406,7 +406,7 @@ function RelatoriosPage() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="bg-[#F8F6F1] text-xs border-b border-[#E2DDD0]">
                   <TableHead>Técnico</TableHead>
                   <TableHead className="text-right">Instalações</TableHead>
                   <TableHead className="text-right">Manutenções</TableHead>
@@ -417,7 +417,7 @@ function RelatoriosPage() {
               </TableHeader>
               <TableBody>
                 {produtividade.map((p) => (
-                  <TableRow key={p.nome}>
+                  <TableRow key={p.nome} className="hover:bg-[#FAF5E8]/60 text-xs border-b border-[#E2DDD0]">
                     <TableCell className="font-medium">{p.nome}</TableCell>
                     <TableCell className="text-right">{p.instalacoes}</TableCell>
                     <TableCell className="text-right">{p.manutencoes}</TableCell>

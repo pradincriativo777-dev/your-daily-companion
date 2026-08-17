@@ -59,7 +59,7 @@ export function MobileDrawer({
                   {group.title}
                 </h3>
                 <div className="space-y-1">
-                  {group.items.map((item) => {
+                  {group.items.map((item: any) => {
                     const active = item.exact
                       ? pathname === item.to || pathname === `${item.to}/`
                       : pathname.startsWith(item.to);

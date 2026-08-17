@@ -506,7 +506,7 @@ function DataQualityPage() {
               description="Nenhum registro corresponde aos filtros selecionados."
             />
           ) : (
-            <Card>
+            <Card className="bg-white border-[#E2DDD0] shadow-sm overflow-hidden">
               <CardContent className="p-0">
                 <Table>
                   <TableHeader>
@@ -584,7 +584,7 @@ function DataQualityPage() {
         {/* ========================================================= */}
         <TabsContent value="diagnostico" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
-            <Card>
+            <Card className="bg-white border-[#E2DDD0] shadow-sm overflow-hidden">
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <ShieldCheck className="h-4 w-4 text-accent" /> Critérios de Detecção de
@@ -631,7 +631,7 @@ function DataQualityPage() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-white border-[#E2DDD0] shadow-sm overflow-hidden">
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-warning" /> Principais Inconsistências
@@ -1253,18 +1253,18 @@ function MergeAssistantView({ group }: { group: DuplicateGroup }) {
           <CardContent className="p-0 text-sm">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/30">
-                  <TableHead className="h-8">Campo</TableHead>
-                  <TableHead className="h-8">Situação</TableHead>
+                <TableRow className="border-b border-[#E2DDD0] hover:bg-transparent">
+                  <TableHead className="h-8 text-xs font-bold uppercase text-[#8C8578]">Campo</TableHead>
+                  <TableHead className="h-8 text-xs font-bold uppercase text-[#8C8578]">Situação</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {preview.impactAnalysis.map((item, idx) => (
-                  <TableRow key={idx}>
+                  <TableRow key={idx} className="border-b border-[#E2DDD0] hover:bg-[#FAF5E8]/60">
                     <TableCell className="py-2 font-medium">{item.label}</TableCell>
                     <TableCell className="py-2">
                       {item.action === "manter_principal" && (
-                        <span className="text-muted-foreground text-xs">Mantém o principal</span>
+                        <span className="text-[#8C8578] text-xs uppercase">Mantém principal</span>
                       )}
                       {item.action === "adicionar_secundario" && (
                         <div className="text-xs text-accent-foreground font-medium">

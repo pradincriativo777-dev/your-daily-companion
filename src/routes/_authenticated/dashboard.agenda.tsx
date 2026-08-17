@@ -142,8 +142,8 @@ function AgendaPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-primary">Agenda Operacional</h1>
-          <p className="text-muted-foreground text-sm">
+          <h1 className="text-3xl font-bold tracking-tight text-[#100D3F]">Agenda Operacional</h1>
+          <p className="text-[#706D65] text-sm mt-1">
             Visão de compromissos, visitas técnicas e agendamentos locais.
           </p>
         </div>
@@ -165,11 +165,11 @@ function AgendaPage() {
       </div>
 
       {/* Bar Controls: Mode, Date & Quick Filters */}
-      <Card>
+      <Card className="border-[#E2DDD0] shadow-sm bg-white">
         <CardContent className="p-4 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             {/* View Mode Buttons */}
-            <div className="flex items-center gap-1 bg-muted p-1 rounded-lg">
+            <div className="flex items-center gap-1 bg-[#F2EFE8] border border-[#E2DDD0] p-1 rounded-lg">
               <Button
                 variant={viewMode === "dia" ? "default" : "ghost"}
                 size="sm"
@@ -278,9 +278,9 @@ function AgendaPage() {
         </div>
 
         {filteredManutencoes.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="p-8 text-center text-muted-foreground space-y-3">
-              <CalendarIcon className="h-10 w-10 mx-auto opacity-50" />
+          <Card className="border-dashed border-[#E2DDD0] bg-transparent">
+            <CardContent className="p-8 text-center text-[#706D65] space-y-3">
+              <CalendarIcon className="h-10 w-10 mx-auto opacity-50 text-[#C8794A]" />
               <p className="font-medium">Nenhum agendamento encontrado para este período ou filtro.</p>
               <Button variant="outline" size="sm" onClick={() => setAgendarOpen(true)}>
                 <Plus className="mr-1 h-4 w-4" /> Agendar Nova Visita
@@ -299,7 +299,7 @@ function AgendaPage() {
               return (
                 <Card
                   key={m.id}
-                  className={`transition-all border-l-4 ${
+                  className={`transition-all bg-white border-[#E2DDD0] shadow-sm border-l-4 ${
                     isSyncOk
                       ? "border-l-green-500 hover:shadow-md"
                       : isSyncErr

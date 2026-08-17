@@ -247,17 +247,17 @@ function OrdensPage() {
       {/* Header Principal */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b pb-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+          <h1 className="text-2xl font-bold tracking-tight text-[#100D3F]">
             Central de Ordens de Serviço
           </h1>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-[#706D65]">
             Gerencie atendimentos, visões em Lista e Kanban e resultado financeiro consolidado.
           </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           {/* Modos de Exibição */}
-          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
+          <div className="flex items-center bg-[#F2EFE8] p-1 rounded-lg border border-[#E2DDD0]">
             <Button
               variant={viewMode === "lista" ? "secondary" : "ghost"}
               size="sm"
@@ -290,6 +290,7 @@ function OrdensPage() {
               setOrdemParaEditar(null);
               setDialogCriarOpen(true);
             }}
+            className="bg-accent text-accent-foreground hover:bg-accent/90"
           >
             <Plus className="h-4 w-4 mr-1.5" /> Nova Ordem
           </Button>
@@ -297,10 +298,10 @@ function OrdensPage() {
       </div>
 
       {/* Barra de Busca e Filtros */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 bg-white p-3 rounded-xl border border-[#E2DDD0] shadow-sm">
         {/* Busca por Texto */}
         <div className="relative md:col-span-2">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#706D65]" />
           <Input
             placeholder="Buscar por código, cliente, técnico ou endereço..."
             className="pl-9 h-9 text-xs"
@@ -386,11 +387,11 @@ function OrdensPage() {
         />
       ) : (
         /* VISUALIZAÇÃO EM LISTA (TABELA) */
-        <Card className="border-slate-200 dark:border-slate-800">
+        <Card className="border-0 shadow-none overflow-hidden bg-transparent">
           <CardContent className="p-0 overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50 dark:bg-slate-900/80 text-xs">
+                <TableRow className="bg-[#F8F6F1] text-xs border-b border-[#E2DDD0]">
                   <TableHead className="w-28 font-bold">Código</TableHead>
                   <TableHead className="font-bold">Cliente</TableHead>
                   <TableHead className="font-bold">Técnico</TableHead>
@@ -418,25 +419,25 @@ function OrdensPage() {
                     return (
                       <TableRow
                         key={ordem.id}
-                        className="hover:bg-slate-50 dark:hover:bg-slate-900/50 cursor-pointer text-xs"
+                        className="hover:bg-[#FAF5E8]/60 cursor-pointer text-xs border-b border-[#E2DDD0]"
                         onClick={() => {
                           setOrdemSelecionada(ordem);
                           setDialogDetalhesOpen(true);
                         }}
                       >
-                        <TableCell className="font-mono font-bold text-blue-600 dark:text-blue-400">
+                        <TableCell className="font-mono font-bold text-[#1D1C19]">
                           {ordem.codigo}
                         </TableCell>
 
-                        <TableCell className="font-semibold text-slate-900 dark:text-slate-100">
+                        <TableCell className="font-semibold text-[#1D1C19]">
                           {nomeCliente}
                         </TableCell>
 
-                        <TableCell className="text-slate-600 dark:text-slate-400">
+                        <TableCell className="text-[#706D65]">
                           {nomeTecnico}
                         </TableCell>
 
-                        <TableCell className="text-slate-600 dark:text-slate-400">
+                        <TableCell className="text-[#706D65]">
                           {new Date(ordem.data_prevista + "T00:00:00").toLocaleDateString(
                             "pt-BR",
                           )}
@@ -449,12 +450,12 @@ function OrdensPage() {
                         </TableCell>
 
                         <TableCell>
-                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-900">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
                             <Clock className="h-3 w-3" /> Integração pendente
                           </span>
                         </TableCell>
 
-                        <TableCell className="text-right font-bold text-slate-900 dark:text-slate-100">
+                        <TableCell className="text-right font-bold text-[#24231F]">
                           {formatCurrency(ordem.valor_aprovado)}
                         </TableCell>
 

@@ -77,7 +77,7 @@ function ClientesPage() {
   const [fTecnico, setFTecnico] = useState("todos");
   const [fOrigem, setFOrigem] = useState("todas");
   const [page, setPage] = useState(1);
-  const [viewMode, setViewMode] = useState<"lista" | "planilha">("lista");
+  const [mode, setMode] = useState<"lista" | "planilha">("lista");
   const [sort, setSort] = useState<{ field: string; dir: "asc" | "desc" }>({
     field: "nome",
     dir: "asc",
@@ -205,24 +205,8 @@ function ClientesPage() {
       </div>
 
       <div className="mb-4 flex items-center justify-end gap-2">
-          <div className="flex items-center border rounded-md p-0.5 bg-muted/50">
-            <Button 
-              variant={viewMode === "lista" ? "secondary" : "ghost"} 
-              size="sm" 
-              className="h-8 px-3 text-xs"
-              onClick={() => setViewMode("lista")}
-            >
-              <List className="mr-1.5 h-3.5 w-3.5" /> Lista
-            </Button>
-            <Button 
-              variant={viewMode === "planilha" ? "secondary" : "ghost"} 
-              size="sm" 
-              className="h-8 px-3 text-xs"
-              onClick={() => setViewMode("planilha")}
-            >
-              <Grid className="mr-1.5 h-3.5 w-3.5" /> Planilha
-            </Button>
-          </div>
+        <Button variant={mode === "lista" ? "default" : "outline"} onClick={() => setMode("lista")} size="sm" className="h-8">Lista</Button>
+        <Button variant={mode === "planilha" ? "default" : "outline"} onClick={() => setMode("planilha")} size="sm" className="h-8">Planilha</Button>
       </div>
 
       <Card className="overflow-hidden py-0">
@@ -231,7 +215,7 @@ function ClientesPage() {
             title="Nenhum cliente encontrado"
             description="Ajuste os filtros ou cadastre um novo cliente."
           />
-        ) : viewMode === "planilha" ? (
+        ) : mode === "planilha" ? (
           <SpreadsheetView clientes={filtrados} />
         ) : (
           <>

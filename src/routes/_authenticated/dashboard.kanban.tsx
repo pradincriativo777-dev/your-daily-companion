@@ -35,11 +35,11 @@ export const Route = createFileRoute("/_authenticated/dashboard/kanban")({
 });
 
 const COLUMN_STYLE: Record<string, string> = {
-  "Orçamento": "bg-pending text-pending-foreground",
-  Aprovado: "bg-warning text-warning-foreground",
-  Instalado: "bg-success text-success-foreground",
-  "Em Manutenção": "bg-warning text-warning-foreground",
-  Finalizado: "bg-success text-success-foreground",
+  "Orçamento": "bg-[#F2EFE8] text-[#706D65] border-b border-[#E2DDD0]",
+  Aprovado: "bg-[#FAF5E8] text-[#C8794A] border-b border-[#F2D7A5]",
+  Instalado: "bg-[#EAF3EA] text-[#2F6B2F] border-b border-[#C2DEC2]",
+  "Em Manutenção": "bg-[#FAF5E8] text-[#C8794A] border-b border-[#F2D7A5]",
+  Finalizado: "bg-[#EAF3EA] text-[#2F6B2F] border-b border-[#C2DEC2]",
 };
 
 import { fetchKanbanCardsServer } from "@/lib/kanban.server";
@@ -184,7 +184,7 @@ function KanbanPage() {
               key={status}
               onDragOver={(e) => e.preventDefault()}
               onDrop={() => drop(status)}
-              className="flex min-h-64 flex-col rounded-lg border bg-card"
+              className="flex min-h-64 flex-col rounded-lg border border-[#E2DDD0] bg-[#F8F6F1]"
             >
               <div
                 className={cn(
@@ -210,15 +210,15 @@ function KanbanPage() {
                       })
                     }
                     className={cn(
-                      "cursor-grab rounded-md border bg-background p-3 text-sm shadow-xs transition hover:border-primary/50 hover:shadow-md active:cursor-grabbing",
+                      "cursor-grab rounded-md border border-[#E2DDD0] bg-white p-3 text-sm shadow-sm transition hover:border-[#C8794A] hover:shadow-md active:cursor-grabbing",
                       dragId === c.id && "opacity-40",
                       atualizandoId === c.id && "pointer-events-none opacity-50 animate-pulse",
                     )}
                   >
-                    <p className="font-semibold text-foreground">{c.nome}</p>
-                    <p className="text-xs text-muted-foreground">{c.cidade || "—"}</p>
+                    <p className="font-semibold text-[#100D3F]">{c.nome}</p>
+                    <p className="text-xs text-[#706D65]">{c.cidade || "—"}</p>
                     {c.valor_orcamento !== undefined && (
-                      <p className="mt-2 text-xs font-bold text-accent">
+                      <p className="mt-2 text-xs font-bold text-[#1D1C19]">
                         {formatCurrency(c.valor_orcamento)}
                       </p>
                     )}

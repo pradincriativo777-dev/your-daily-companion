@@ -174,19 +174,19 @@ function TarefasPage() {
       {loading ? (
         <Loading />
       ) : (
-        <Card>
+        <Card className="border-[#E2DDD0] shadow-sm bg-white">
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
+            <CardTitle className="text-base flex items-center gap-2 text-[#100D3F]">
               <CheckSquare className="h-5 w-5 text-primary" />
               Pendências Operacionais
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-[#706D65]">
               Tarefas reais registradas na base do CRM JANSOL.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {tarefas.map((t) => (
-              <div key={t.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded border bg-card gap-3">
+              <div key={t.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg border border-[#E2DDD0] bg-[#F8F6F1] gap-3 hover:border-[#C8794A]/50 transition-colors">
                 <div className="flex items-start gap-3">
                   <Button
                     variant="ghost"
@@ -202,10 +202,10 @@ function TarefasPage() {
                     )}
                   </Button>
                   <div>
-                    <p className={`font-semibold text-sm ${t.status === "Concluída" ? "line-through text-muted-foreground" : ""}`}>
+                    <p className={`font-semibold text-sm ${t.status === "Concluída" ? "line-through text-[#706D65]" : "text-[#1D1C19]"}`}>
                       {t.titulo}
                     </p>
-                    <p className="text-xs text-muted-foreground">{t.descricao || "Sem descrição."}</p>
+                    <p className="text-xs text-[#706D65]">{t.descricao || "Sem descrição."}</p>
                     {t.prazo && (
                       <span className="text-[11px] text-amber-600 flex items-center gap-1 mt-1">
                         <Calendar className="h-3 w-3" /> Prazo: {new Date(t.prazo).toLocaleDateString("pt-BR")}
