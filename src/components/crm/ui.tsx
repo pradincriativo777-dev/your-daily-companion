@@ -128,11 +128,11 @@ export function MetricCard({
   tooltip?: string;
 }) {
   const tones: Record<string, string> = {
-    default: "text-[#0B0B0C]",
+    default: "text-[#24231F]",
     success: "text-[#2E7D32]",
-    warning: "text-[#ED6C02]",
-    pending: "text-[#E65100]",
-    danger: "text-[#D32F2F]",
+    warning: "text-[#D97706]",
+    pending: "text-[#C8794A]",
+    danger: "text-[#C53030]",
   };
 
   const isIndisponivel = String(value) === "Não disponível" || String(value) === "Sem informação";
@@ -141,50 +141,40 @@ export function MetricCard({
     <div
       onClick={onClick}
       className={cn(
-        "jansol-card flex flex-col justify-between p-5 transition-all duration-200",
+        "jansol-bento-card flex flex-col justify-between p-4 transition-all duration-180",
         onClick
-          ? "cursor-pointer hover:border-[#D9A514]/60 hover:bg-[#FAF3D6]/20 hover:shadow-md active:scale-[0.99]"
+          ? "cursor-pointer hover:border-[#C8BFA5] hover:bg-[#FAF5E8]/40 active:scale-[0.99]"
           : "cursor-default"
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wider text-[#6E6D68]">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-[#706D65]">
           {label}
         </span>
-        {Icon && (
-          <div
-            className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-lg bg-[#F8F7F3] text-[#6E6D68] transition-colors",
-              onClick && "group-hover:bg-[#D9A514] group-hover:text-white"
-            )}
-          >
-            <Icon className="h-4 w-4" />
-          </div>
+        {onClick && (
+          <ArrowUpRight className="h-3.5 w-3.5 text-[#E3B94F] shrink-0" />
         )}
       </div>
 
-      <div className="my-3 space-y-1">
+      <div className="my-2.5 space-y-0.5">
         <p
           className={cn(
-            "text-2xl font-bold tracking-tight",
-            isIndisponivel ? "text-[#8E8D88] text-xl font-medium italic" : tones[tone]
+            "text-2xl font-black tracking-tight",
+            isIndisponivel ? "text-[#99958C] text-lg font-medium italic" : tones[tone]
           )}
         >
           {value}
         </p>
         {hint && (
-          <p className="text-xs font-medium text-[#6E6D68]">{hint}</p>
+          <p className="text-[11px] font-medium text-[#706D65]">{hint}</p>
         )}
       </div>
 
       {fonte && (
-        <div className="mt-1 border-t border-[#F0EEE9] pt-2 flex items-center justify-between">
-          <span className="text-[11px] font-normal text-[#8E8D88]">
+        <div className="mt-1 border-t border-[#E0DCCE]/60 pt-1.5 flex items-center justify-between">
+          <span className="text-[10px] font-normal text-[#8E8C82] truncate">
             {fonte}
           </span>
-          {onClick && (
-            <ArrowUpRight className="h-3.5 w-3.5 text-[#D9A514]" />
-          )}
         </div>
       )}
     </div>
@@ -195,7 +185,7 @@ export function MetricCard({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>{content}</TooltipTrigger>
-          <TooltipContent side="top" className="max-w-xs border-[#E7E5DF] bg-[#0B0B0C] p-3 text-xs text-white shadow-xl">
+          <TooltipContent side="top" className="max-w-xs border-[#E0DCCE] bg-[#1D1C19] p-2.5 text-xs text-[#F8F6F1] shadow-md">
             {tooltip}
           </TooltipContent>
         </Tooltip>

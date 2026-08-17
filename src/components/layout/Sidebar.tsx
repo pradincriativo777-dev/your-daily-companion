@@ -142,10 +142,10 @@ export function Sidebar({
                       to={item.to}
                       onClick={onNavigate}
                       className={cn(
-                        "group flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all duration-150 relative",
+                        "group flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-150 relative",
                         active
-                          ? "bg-[#292722] text-[#F8F6F1] font-bold border-l-2 border-[#E3B94F]"
-                          : "text-[#F8F6F1]/80 hover:bg-[#292722]/60 hover:text-[#F8F6F1]"
+                          ? "bg-[#292722] text-[#F8F6F1] font-semibold border-l-2 border-[#E3B94F]"
+                          : "text-[#99958C] hover:bg-[#292722]/50 hover:text-[#F8F6F1]"
                       )}
                     >
                       <item.icon
@@ -153,14 +153,11 @@ export function Sidebar({
                           "h-4 w-4 shrink-0 transition-colors",
                           active
                             ? "text-[#E3B94F]"
-                            : "text-[#99958C] group-hover:text-[#F8F6F1]"
+                            : "text-[#8E8C82] group-hover:text-[#F8F6F1]"
                         )}
                       />
                       {!collapsed && (
                         <span className="truncate flex-1">{item.label}</span>
-                      )}
-                      {active && !collapsed && (
-                        <span className="h-1.5 w-1.5 rounded-full bg-[#E3B94F]" />
                       )}
                     </Link>
                   );
