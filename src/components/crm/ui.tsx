@@ -180,20 +180,18 @@ export function MetricCard({
     </div>
   );
 
-  if (tooltip) {
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>{content}</TooltipTrigger>
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>{content}</TooltipTrigger>
+        {tooltip ? (
           <TooltipContent side="top" className="max-w-xs border-[#E0DCCE] bg-[#1D1C19] p-2.5 text-xs text-[#F8F6F1] shadow-md">
             {tooltip}
           </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
-
-  return content;
+        ) : null}
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
 
 export const KpiCard = MetricCard;

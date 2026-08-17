@@ -127,7 +127,8 @@ function DashboardHome() {
   });
 
   const orcamentosParados = clientes.filter((c) => {
-    const d = daysSince(c.created_at.slice(0, 10));
+    if (!c.created_at) return false;
+    const d = daysSince(String(c.created_at).slice(0, 10));
     return c.status === "Orçamento" && d !== null && d > 7;
   });
 
