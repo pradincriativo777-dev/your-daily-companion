@@ -119,82 +119,9 @@ export function Topbar({
           </div>
         </div>
 
-        {/* Centro: Busca Ampla Editorial + Único Botão Dourado (+ Criar) */}
+        {/* Centro: Busca Ampla Editorial */}
         <div className="flex flex-1 items-center justify-center px-4 max-w-lg gap-2.5">
-          {/* Botão + Criar: O ÚNICO BOTÃO DOURADO PRINCIPAL NO TOPO (Atalho 'C') */}
-          <DropdownMenu open={createMenuOpen} onOpenChange={setCreateMenuOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                size="sm"
-                className="jansol-gradient-btn flex items-center gap-1.5 h-8 rounded-md px-3 text-xs font-bold shrink-0 cursor-pointer"
-              >
-                <Plus className="h-3.5 w-3.5 stroke-[3]" />
-                <span className="hidden sm:inline uppercase tracking-wide">Criar</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-52 rounded-xl border border-[#E2DDD0] bg-white p-1 shadow-md">
-              <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-wider text-[#706D65] px-2.5 py-1.5">
-                Criação Rápida
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-[#E2DDD0]" />
 
-              <DropdownMenuItem
-                onClick={() => handleCreateOption("novo_cliente", "/dashboard/clientes")}
-                className="flex items-center gap-2.5 rounded-lg py-2 px-2.5 cursor-pointer font-medium text-xs text-[#24231F] hover:bg-[#FAF5E8]"
-              >
-                <UserPlus className="h-3.5 w-3.5 text-[#C8794A]" />
-                <span>Novo Cliente</span>
-              </DropdownMenuItem>
-
-              <DropdownMenuItem
-                onClick={() => handleCreateOption("nova_ordem", "/dashboard/ordens")}
-                className="flex items-center gap-2.5 rounded-lg py-2 px-2.5 cursor-pointer font-medium text-xs text-[#24231F] hover:bg-[#FAF5E8]"
-              >
-                <FileText className="h-3.5 w-3.5 text-[#1D1C19]" />
-                <span>Ordem de Serviço</span>
-              </DropdownMenuItem>
-
-              <DropdownMenuItem
-                onClick={() => handleCreateOption("agendar_visita", "/dashboard/agenda")}
-                className="flex items-center gap-2.5 rounded-lg py-2 px-2.5 cursor-pointer font-medium text-xs text-[#24231F] hover:bg-[#FAF5E8]"
-              >
-                <Calendar className="h-3.5 w-3.5 text-[#C8794A]" />
-                <span>Visita Técnica</span>
-              </DropdownMenuItem>
-
-              <DropdownMenuItem
-                onClick={() => handleCreateOption("nova_tarefa", "/dashboard/tarefas")}
-                className="flex items-center gap-2.5 rounded-lg py-2 px-2.5 cursor-pointer font-medium text-xs text-[#24231F] hover:bg-[#FAF5E8]"
-              >
-                <CheckSquare className="h-3.5 w-3.5 text-emerald-700" />
-                <span>Tarefa / Pendência</span>
-              </DropdownMenuItem>
-
-              <DropdownMenuItem
-                onClick={() => handleCreateOption("nova_manutencao", "/dashboard/manutencoes")}
-                className="flex items-center gap-2.5 rounded-lg py-2 px-2.5 cursor-pointer font-medium text-xs text-[#24231F] hover:bg-[#FAF5E8]"
-              >
-                <CalendarClock className="h-3.5 w-3.5 text-amber-700" />
-                <span>Manutenção</span>
-              </DropdownMenuItem>
-
-              <DropdownMenuItem
-                onClick={() => handleCreateOption("novo_gasto", "/dashboard/gastos")}
-                className="flex items-center gap-2.5 rounded-lg py-2 px-2.5 cursor-pointer font-medium text-xs text-[#24231F] hover:bg-[#FAF5E8]"
-              >
-                <DollarSign className="h-3.5 w-3.5 text-stone-700" />
-                <span>Gasto / Despesa</span>
-              </DropdownMenuItem>
-
-              <DropdownMenuItem
-                onClick={() => handleCreateOption("nova_interacao", "/dashboard/interacoes")}
-                className="flex items-center gap-2.5 rounded-lg py-2 px-2.5 cursor-pointer font-medium text-xs text-[#24231F] hover:bg-[#FAF5E8]"
-              >
-                <MessageSquare className="h-3.5 w-3.5 text-purple-700" />
-                <span>Interação</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
 
           {/* Acionador da Central de Comandos Editorial Search */}
           <button

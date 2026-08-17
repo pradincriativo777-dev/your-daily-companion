@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,11 +24,25 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  ChevronDown,
+  Plus,
+  LayoutGrid,
+  UserPlus,
+  HelpCircle,
+  MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { JansolLogo } from "./JansolLogo";
+import { TodosModulosSheet } from "./TodosModulosSheet";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const MAIN_SHORTCUTS = [
   { to: "/dashboard", label: "Visão geral", icon: LayoutDashboard, exact: true },
@@ -105,26 +119,15 @@ export function Sidebar({
   const navigate = useNavigate();
   const qc = useQueryClient();
 
-  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+  const [createMenuOpen, setCreateMenuOpen] = useState(false);
+  const [todosModulosOpen, setTodosModulosOpen] = useState(false);
 
-  // Auto-expand group based on active route
-  useEffect(() => {
-    let foundGroup = null;
-    for (const group of ACCORDION_GROUPS) {
-      const isActive = group.items.some((item: any) =>
-        item.exact ? pathname === item.to || pathname === `${item.to}/` : pathname.startsWith(item.to)
-      );
-      if (isActive) {
-        foundGroup = group.id;
-        break;
-      }
-    }
-    
-    // Only auto-expand if no user interaction overridden it (or always enforce it on route change)
-    if (foundGroup) {
-      setExpandedGroup(foundGroup);
-    }
-  }, [pathname]);
+  // Check if a secondary module is active (not one of the MAIN_SHORTCUTS)
+  const isSecondaryActive = ACCORDION_GROUPS.some(group => 
+    group.items.some((item: any) => 
+      item.exact ? pathname === item.to || pathname === `${item.to}/` : pathname.startsWith(item.to)
+    )
+  );
 
   const sair = async () => {
     await qc.cancelQueries();
@@ -133,7 +136,14 @@ export function Sidebar({
     navigate({ to: "/", replace: true });
   };
 
-  const renderLink = (item: any, isAccordionChild = false) => {
+  const handleCreateOption = (action: string, path: string) => {
+    setCreateMenuOpen(false);
+    navigate({ to: path });
+    // TODO: Disparar modal de criação de acordo com a action.
+    // Atualmente estamos apenas navegando para as listagens, igual ao antigo comportamento.
+  };
+
+  const renderMainLink = (item: any) => {
     const active = item.exact
       ? pathname === item.to || pathname === `${item.to}/`
       : pathname.startsWith(item.to);
@@ -182,7 +192,7 @@ export function Sidebar({
       <aside
         className={cn(
           "hidden md:flex h-screen shrink-0 flex-col border-r border-[#2B2924] bg-[#1D1C19] text-[#F8F6F1] transition-all duration-200 ease-in-out",
-          collapsed ? "w-[72px]" : "w-[260px]"
+          collapsed ? "w-[72px]" : "w-[240px]"
         )}
       >
         {/* Brand Header inside Sidebar */}
@@ -204,99 +214,168 @@ export function Sidebar({
           )}
         </div>
 
-        {/* Navigation Content */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-6 scrollbar-thin scrollbar-thumb-white/10">
-          
-          {/* 5 Atalhos Principais */}
-          <div className="space-y-0.5">
-            {MAIN_SHORTCUTS.map(item => renderLink(item))}
-          </div>
-
-          {/* Separator */}
-          <div className="h-px w-full bg-[#2B2924]" />
-
-          {/* Grupos Recolhíveis (Accordions) */}
-          <div className="space-y-1">
-            {ACCORDION_GROUPS.map((group) => {
-              const isExpanded = expandedGroup === group.id;
-              
-              if (collapsed) {
-                return (
-                  <div key={group.id} className="space-y-0.5 mb-4">
-                    {group.items.map(item => renderLink(item))}
-                  </div>
-                );
-              }
-
-              return (
-                <div key={group.id} className="flex flex-col">
-                  <button
-                    type="button"
-                    onClick={() => setExpandedGroup(isExpanded ? null : group.id)}
-                    aria-expanded={isExpanded}
-                    className="flex w-full items-center justify-between px-3 py-2 text-[11px] font-bold uppercase tracking-widest text-[#99958C] hover:text-white transition-colors rounded-md hover:bg-white/5 outline-none focus-visible:ring-2 focus-visible:ring-[#E3B94F]"
-                  >
-                    <div className="flex items-center gap-2">
-                      {/* Optional discrete icon for the group if needed, but the prompt says 'ícone discreto e seta' */}
-                      <group.icon className="h-3.5 w-3.5 opacity-70" />
-                      <span>{group.title}</span>
-                    </div>
-                    <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200 opacity-70", isExpanded && "rotate-180")} />
-                  </button>
-
-                  <div
+        {/* Create Button area */}
+        <div className="px-3 pt-2 pb-4">
+          <DropdownMenu open={createMenuOpen} onOpenChange={setCreateMenuOpen}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="sm"
                     className={cn(
-                      "overflow-hidden transition-all duration-200 ease-in-out pl-2 border-l border-[#2B2924] ml-4 mt-1 space-y-0.5",
-                      isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+                      "jansol-gradient-btn flex items-center justify-center h-9 w-full rounded-md font-bold shrink-0 cursor-pointer shadow-sm hover:shadow-md transition-all",
+                      collapsed ? "px-0" : "px-3 gap-2"
                     )}
                   >
-                    {group.items.map(item => renderLink(item, true))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                    <Plus className="h-4 w-4 stroke-[3]" />
+                    {!collapsed && <span className="uppercase tracking-wide text-xs">Criar</span>}
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              {collapsed && (
+                <TooltipContent side="right" className="bg-[#11110F] text-[#F8F6F1] border-[#38352F] text-xs font-semibold">
+                  Criar novo
+                </TooltipContent>
+              )}
+            </Tooltip>
+            <DropdownMenuContent align={collapsed ? "start" : "center"} side={collapsed ? "right" : "bottom"} className="w-52 rounded-xl border border-[#E2DDD0] bg-white p-1 shadow-lg ml-2 md:ml-0">
+              <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-wider text-[#706D65] px-2.5 py-1.5">
+                Criação Rápida
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-[#E2DDD0]" />
+              <DropdownMenuItem onClick={() => handleCreateOption("novo_cliente", "/dashboard/clientes")} className="flex items-center gap-2.5 rounded-lg py-2 px-2.5 cursor-pointer font-medium text-xs text-[#24231F] hover:bg-[#FAF5E8]">
+                <UserPlus className="h-3.5 w-3.5 text-[#C8794A]" /><span>Novo Cliente</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleCreateOption("nova_ordem", "/dashboard/ordens")} className="flex items-center gap-2.5 rounded-lg py-2 px-2.5 cursor-pointer font-medium text-xs text-[#24231F] hover:bg-[#FAF5E8]">
+                <FileText className="h-3.5 w-3.5 text-[#1D1C19]" /><span>Ordem de Serviço</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleCreateOption("agendar_visita", "/dashboard/agenda")} className="flex items-center gap-2.5 rounded-lg py-2 px-2.5 cursor-pointer font-medium text-xs text-[#24231F] hover:bg-[#FAF5E8]">
+                <Calendar className="h-3.5 w-3.5 text-[#C8794A]" /><span>Visita Técnica</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleCreateOption("nova_tarefa", "/dashboard/tarefas")} className="flex items-center gap-2.5 rounded-lg py-2 px-2.5 cursor-pointer font-medium text-xs text-[#24231F] hover:bg-[#FAF5E8]">
+                <CheckSquare className="h-3.5 w-3.5 text-emerald-700" /><span>Tarefa / Pendência</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleCreateOption("nova_interacao", "/dashboard/interacoes")} className="flex items-center gap-2.5 rounded-lg py-2 px-2.5 cursor-pointer font-medium text-xs text-[#24231F] hover:bg-[#FAF5E8]">
+                <MessageSquare className="h-3.5 w-3.5 text-purple-700" /><span>Interação</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleCreateOption("novo_gasto", "/dashboard/gastos")} className="flex items-center gap-2.5 rounded-lg py-2 px-2.5 cursor-pointer font-medium text-xs text-[#24231F] hover:bg-[#FAF5E8]">
+                <DollarSign className="h-3.5 w-3.5 text-stone-700" /><span>Gasto / Despesa</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
-        {/* Footer info - Compact */}
-        <div className="shrink-0 border-t border-[#2B2924] p-3">
-          {collapsed ? (
-            <div className="flex flex-col items-center justify-center gap-3">
+        {/* Nav Links */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-1 custom-scrollbar">
+          {MAIN_SHORTCUTS.map((item) => renderMainLink(item))}
+
+          <div className="pt-4 pb-2">
+            <div className="h-px bg-[#2B2924] w-full" />
+          </div>
+
+          {/* Botão Todos os Módulos */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setTodosModulosOpen(true)}
+                className={cn(
+                  "group flex w-full items-center gap-3 rounded-[6px] px-3 py-2 text-sm font-medium transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#E3B94F]",
+                  isSecondaryActive
+                    ? "bg-[#2A2825] text-white border-l-2 border-[#E3B94F]"
+                    : "text-[#A8A59E] hover:bg-[#2A2825]/50 hover:text-white"
+                )}
+              >
+                <LayoutGrid
+                  className={cn(
+                    "h-[18px] w-[18px] shrink-0 transition-colors",
+                    isSecondaryActive ? "text-[#E3B94F]" : "text-[#8E8C82] group-hover:text-white"
+                  )}
+                />
+                {!collapsed && (
+                  <span className="truncate flex-1 text-left font-medium">Todos os módulos</span>
+                )}
+                {!collapsed && (
+                  <ChevronRight className="h-4 w-4 text-[#8E8C82] group-hover:text-white transition-colors" />
+                )}
+              </button>
+            </TooltipTrigger>
+            {collapsed && (
+              <TooltipContent side="right" className="bg-[#11110F] text-[#F8F6F1] border-[#38352F] text-xs font-semibold">
+                Todos os módulos
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </div>
+
+        {/* Footer shortcuts */}
+        <div className="shrink-0 border-t border-[#2B2924] p-3 space-y-1">
+          {/* Auvo Chat */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button className="group flex w-full items-center gap-3 rounded-[6px] px-3 py-2 text-sm font-medium text-[#A8A59E] hover:bg-[#2A2825]/50 hover:text-white transition-all duration-200">
+                <MessageCircle className="h-[18px] w-[18px] shrink-0 text-[#8E8C82] group-hover:text-white" />
+                {!collapsed && <span className="truncate flex-1 text-left">Auvo Chat</span>}
+              </button>
+            </TooltipTrigger>
+            {collapsed && (
+              <TooltipContent side="right" className="bg-[#11110F] text-[#F8F6F1] border-[#38352F] text-xs font-semibold">
+                Auvo Chat
+              </TooltipContent>
+            )}
+          </Tooltip>
+
+          {/* Ajuda */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button className="group flex w-full items-center gap-3 rounded-[6px] px-3 py-2 text-sm font-medium text-[#A8A59E] hover:bg-[#2A2825]/50 hover:text-white transition-all duration-200">
+                <HelpCircle className="h-[18px] w-[18px] shrink-0 text-[#8E8C82] group-hover:text-white" />
+                {!collapsed && <span className="truncate flex-1 text-left">Ajuda</span>}
+              </button>
+            </TooltipTrigger>
+            {collapsed && (
+              <TooltipContent side="right" className="bg-[#11110F] text-[#F8F6F1] border-[#38352F] text-xs font-semibold">
+                Ajuda
+              </TooltipContent>
+            )}
+          </Tooltip>
+
+          <div className="pt-2">
+            <div className={cn("flex items-center", collapsed ? "justify-center" : "justify-between gap-2 px-1")}>
+              {!collapsed && (
+                <div className="flex flex-col overflow-hidden">
+                  <span className="truncate text-xs font-semibold text-[#E2DDD0]">
+                    {userEmail?.split('@')[0] || "Usuário"}
+                  </span>
+                  <span className="truncate text-[10px] text-[#8E8C82]">v1.0.8</span>
+                </div>
+              )}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
                     onClick={sair}
-                    className="flex h-8 w-8 items-center justify-center rounded-md bg-[#2B2924] text-[#E3B94F] hover:bg-[#C53030] hover:text-white transition-colors"
+                    aria-label="Sair do sistema"
+                    className="flex h-8 w-8 items-center justify-center rounded-md bg-[#2B2924]/50 text-[#8E8C82] hover:bg-[#C53030] hover:text-white transition-colors"
                   >
                     <LogOut className="h-4 w-4" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="bg-[#11110F] text-[#F8F6F1] border-[#38352F] text-xs">
-                  Sair do sistema
-                </TooltipContent>
+                {collapsed && (
+                  <TooltipContent side="right" className="bg-[#11110F] text-[#F8F6F1] border-[#38352F] text-xs font-semibold">
+                    Sair
+                  </TooltipContent>
+                )}
               </Tooltip>
             </div>
-          ) : (
-            <div className="flex items-center justify-between px-2">
-              <div className="flex flex-col">
-                <span className="text-[11px] font-medium text-[#F8F6F1] max-w-[140px] truncate">
-                  {userEmail || "Sistema"}
-                </span>
-                <span className="text-[10px] text-[#706D65]">
-                  v2.0
-                </span>
-              </div>
-              <button
-                onClick={sair}
-                aria-label="Sair do sistema"
-                className="flex h-7 w-7 items-center justify-center rounded-md bg-[#2B2924]/50 text-[#99958C] hover:bg-[#C53030] hover:text-white transition-colors"
-              >
-                <LogOut className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          )}
+          </div>
         </div>
       </aside>
+
+      <TodosModulosSheet
+        open={todosModulosOpen}
+        onOpenChange={setTodosModulosOpen}
+        onNavigate={onNavigate}
+        currentPath={pathname}
+      />
     </TooltipProvider>
   );
 }
