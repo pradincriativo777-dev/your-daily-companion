@@ -85,13 +85,13 @@ export function calcularMetricasOficiais({
     observacao: "Status 'Orçamento' do cadastro de clientes não representa orçamento financeiro pendente real.",
   };
 
-  // 3. TAXA DE CONVERSÃO DE CLIENTES
+  // 3. TAXA DE CONVERSÃO DE CLIENTES (Métrica Oficial Global do CRM)
   // Fórmula: (Clientes Aprovados + Instalados + Finalizados) / Total de Clientes Válidos * 100
-  const convertidos = clientesFiltrados.filter((c) =>
+  const convertidos = clientesValidos.filter((c) =>
     ["Aprovado", "Instalado", "Finalizado"].includes(c.status),
   ).length;
 
-  const totalBase = clientesFiltrados.length;
+  const totalBase = clientesValidos.length;
   const taxaConversaoPct = totalBase > 0 ? (convertidos / totalBase) * 100 : null;
 
   const taxaConversao: MetricaResultado<number | null> = {
@@ -99,7 +99,7 @@ export function calcularMetricasOficiais({
     formatado: taxaConversaoPct !== null ? `${taxaConversaoPct.toFixed(1)}%` : "Sem informação",
     disponivel: taxaConversaoPct !== null,
     fonte: "Tabela public.clientes (is_test = false)",
-    periodo: descricaoPeriodo,
+    periodo: "Todo o histórico cadastrado",
     observacao: `Fórmula: (${convertidos} convertidos / ${totalBase} clientes válidos) × 100`,
   };
 

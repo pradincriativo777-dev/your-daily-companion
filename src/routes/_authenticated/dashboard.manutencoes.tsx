@@ -74,7 +74,12 @@ function ManutencoesPage() {
 
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
-    return manutencoes.filter(
+    // Excluir registros de teste ou demonstrativos da listagem de produção
+    const reais = manutencoes.filter(
+      (m) => !(m as any).is_test && !m.auvo_task_id?.startsWith("AUVO-TASK-8812"),
+    );
+
+    return reais.filter(
       (m) =>
         (!q ||
           nomeCliente(m.cliente_id).toLowerCase().includes(q) ||
@@ -83,7 +88,6 @@ function ManutencoesPage() {
         (fStatus === "todos" || m.status === fStatus) &&
         (fTecnico === "todos" || m.tecnico_id === fTecnico),
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [manutencoes, clientes, tecnicos, busca, fTipo, fStatus, fTecnico]);
 
   const pageCount = Math.ceil(filtrados.length / PAGE_SIZE);
