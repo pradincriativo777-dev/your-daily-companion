@@ -101,20 +101,20 @@ export function Sidebar({
     <TooltipProvider delayDuration={100}>
       <aside
         className={cn(
-          "sticky top-15 hidden h-[calc(100vh-3.75rem)] shrink-0 flex-col border-r border-[#242426] bg-[#0B0B0C] text-[#E7E5DF] transition-all duration-200 ease-in-out md:flex",
+          "sticky top-16 hidden h-[calc(100vh-4rem)] shrink-0 flex-col border-r border-[#1F1B5C] bg-[#100D3F] text-[#E7E5EE] transition-all duration-200 ease-in-out md:flex",
           collapsed ? "w-18" : "w-68"
         )}
       >
         {/* Brand Header inside Sidebar */}
-        <div className="flex h-12 items-center justify-between px-4 border-b border-[#242426]/60">
+        <div className="flex h-12 items-center justify-between px-4 border-b border-[#1F1B5C]/60">
           {!collapsed ? (
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#D9A514]">
-                Navegação
+              <span className="text-xs font-bold uppercase tracking-wider text-[#55D6C2]">
+                Navegação Kommo
               </span>
             </div>
           ) : (
-            <div className="mx-auto flex h-6 w-6 items-center justify-center rounded bg-[#D9A514]/20 text-[#D9A514]">
+            <div className="mx-auto flex h-6 w-6 items-center justify-center rounded bg-[#55D6C2]/20 text-[#55D6C2]">
               <Sun className="h-3.5 w-3.5" />
             </div>
           )}
@@ -124,7 +124,7 @@ export function Sidebar({
               type="button"
               onClick={onToggleCollapse}
               aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
-              className="hidden md:flex h-6 w-6 items-center justify-center rounded-md text-[#8E8D88] hover:bg-white/10 hover:text-white transition-colors"
+              className="hidden md:flex h-6 w-6 items-center justify-center rounded-md text-white/60 hover:bg-white/10 hover:text-white transition-colors"
             >
               {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
             </button>
@@ -136,7 +136,7 @@ export function Sidebar({
           {NAV_GROUPS.map((group) => (
             <div key={group.title} className="space-y-1">
               {!collapsed && (
-                <h3 className="px-3 text-[10px] font-bold uppercase tracking-widest text-[#8E8D88]">
+                <h3 className="px-3 text-[10px] font-bold uppercase tracking-widest text-white/50">
                   {group.title}
                 </h3>
               )}
@@ -152,25 +152,25 @@ export function Sidebar({
                       to={item.to}
                       onClick={onNavigate}
                       className={cn(
-                        "group flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-medium transition-all duration-150 relative",
+                        "group flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-xs font-medium transition-all duration-150 relative",
                         active
-                          ? "bg-[#FAF3D6] text-[#0B0B0C] font-semibold shadow-xs"
-                          : "text-[#E7E5DF]/80 hover:bg-white/8 hover:text-white"
+                          ? "bg-white text-[#100D3F] font-bold shadow-md"
+                          : "text-white/80 hover:bg-white/10 hover:text-white"
                       )}
                     >
                       <item.icon
                         className={cn(
                           "h-4 w-4 shrink-0 transition-colors",
                           active
-                            ? "text-[#D9A514]"
-                            : "text-[#8E8D88] group-hover:text-white"
+                            ? "text-[#55D6C2]"
+                            : "text-white/60 group-hover:text-white"
                         )}
                       />
                       {!collapsed && (
                         <span className="truncate flex-1">{item.label}</span>
                       )}
                       {active && !collapsed && (
-                        <span className="h-1.5 w-1.5 rounded-full bg-[#D9A514]" />
+                        <span className="h-2 w-2 rounded-full bg-[#55D6C2]" />
                       )}
                     </Link>
                   );
@@ -179,7 +179,7 @@ export function Sidebar({
                     return (
                       <Tooltip key={item.to}>
                         <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                        <TooltipContent side="right" className="bg-[#171716] text-white border-[#242426] text-xs font-semibold">
+                        <TooltipContent side="right" className="bg-[#09072A] text-white border-[#1F1B5C] text-xs font-semibold">
                           {item.label}
                         </TooltipContent>
                       </Tooltip>
@@ -195,10 +195,10 @@ export function Sidebar({
 
         {/* Footer info */}
         {!collapsed && (
-          <div className="border-t border-[#242426]/60 p-3 text-[11px] text-[#8E8D88]">
+          <div className="border-t border-[#1F1B5C]/60 p-3 text-[11px] text-white/50">
             <div className="flex items-center justify-between">
               <span>JANSOL OS v2.0</span>
-              <span className="text-[#D9A514]">Solar Tech</span>
+              <span className="text-[#55D6C2] font-semibold">Kommo Experience</span>
             </div>
           </div>
         )}

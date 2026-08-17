@@ -28,8 +28,10 @@ import {
   ShieldCheck,
   Building2,
   Sparkles,
+  Plug,
+  Sun,
+  Activity,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -50,8 +52,6 @@ import { ClienteDialog } from "@/components/crm/ClienteDialog";
 import { OrdemServicoDialog } from "@/components/crm/OrdemServicoDialog";
 import { AgendarVisitaDialog } from "@/components/crm/AgendarVisitaDialog";
 import {
-  BLACK,
-  GOLD,
   STATUS_CLIENTE,
   daysSince,
   daysUntil,
@@ -71,7 +71,7 @@ import { calcularMetricasOficiais } from "@/lib/metricas";
 export const Route = createFileRoute("/_authenticated/dashboard/")({
   head: () => ({
     meta: [
-      { title: "Dashboard Executivo · JANSOL OS" },
+      { title: "Dashboard Executivo Bento · JANSOL OS" },
       { name: "description", content: "Central de inteligência operacional e financeira JANSOL OS." },
       { name: "robots", content: "noindex, nofollow" },
     ],
@@ -80,11 +80,11 @@ export const Route = createFileRoute("/_authenticated/dashboard/")({
 });
 
 const STATUS_COLORS: Record<string, string> = {
-  "Orçamento": "#F97316",
-  Aprovado: "#D9A514",
-  Instalado: "#2E7D32",
+  "Orçamento": "#FFD95A",
+  Aprovado: "#E2B321",
+  Instalado: "#55D6C2",
   "Em Manutenção": "#ED6C02",
-  Finalizado: "#0B0B0C",
+  Finalizado: "#100D3F",
 };
 
 function DashboardHome() {
@@ -98,7 +98,7 @@ function DashboardHome() {
   const [ordemModalOpen, setOrdemModalOpen] = useState(false);
   const [visitaModalOpen, setVisitaModalOpen] = useState(false);
 
-  if (loadingClientes || loadingManutencoes) return <Loading label="Carregando JANSOL OS..." />;
+  if (loadingClientes || loadingManutencoes) return <Loading label="Carregando JANSOL OS Bento..." />;
 
   const user = Route.useRouteContext().user;
   const userName = user?.email ? user.email.split("@")[0] : "Gestor";
@@ -176,84 +176,105 @@ function DashboardHome() {
   const ultimos = [...clientes].slice(0, 5);
 
   return (
-    <div className="space-y-8 animate-fadeIn">
-      {/* 1. Saudação e Contexto do Dia */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#E7E5DF] bg-white p-6 shadow-xs">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-bold tracking-tight text-[#0B0B0C]">
-              Olá, <span className="capitalize">{userName}</span>
+    <div className="space-y-6 animate-fadeIn">
+      {/* 1. Bento Grid Header: Card de Abertura Executivo Compacto Kommo-Style */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Card Principal Bento (Span-2 Desktop) */}
+        <div className="lg:col-span-2 rounded-3xl bg-gradient-to-br from-[#100D3F] to-[#09072A] p-6 text-white border border-[#1F1B5C] shadow-lg flex flex-col justify-between relative overflow-hidden">
+          <div className="absolute top-0 right-0 h-40 w-40 rounded-full bg-[#55D6C2]/10 blur-3xl pointer-events-none" />
+          <div className="space-y-2 relative z-10">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#55D6C2]/15 px-3 py-1 text-xs font-semibold text-[#55D6C2] border border-[#55D6C2]/30">
+                <Sun className="h-3.5 w-3.5 text-[#FFD95A]" /> JANSOL OS Bento
+              </span>
+              <span className="text-xs text-white/60 capitalize">{dataFormatadaHoje}</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+              Bom dia, <span className="capitalize text-[#FFD95A]">{userName}</span>
             </h1>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FAF3D6] px-3 py-1 text-xs font-semibold text-[#D9A514] border border-[#D9A514]/30">
-              <Sparkles className="h-3.5 w-3.5" /> JANSOL OS v2.0
-            </span>
+            <p className="text-xs sm:text-sm text-white/80 max-w-xl font-normal">
+              Operação 100% online com <strong className="text-white">{clientes.length} clientes ativos</strong> cadastrados na base oficial.
+            </p>
           </div>
-          <p className="text-sm font-normal text-[#6E6D68] capitalize">
-            {dataFormatadaHoje} · Central Executiva de Soluções Térmicas & Solares
-          </p>
+
+          <div className="mt-6 flex flex-wrap items-center gap-3 pt-4 border-t border-white/10 relative z-10">
+            <div className="flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white">
+              <Activity className="h-3.5 w-3.5 text-[#55D6C2]" />
+              <span>Próxima ação recomendada: Acompanhar {emRiscoClientes.length} cliente(s) em risco</span>
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 rounded-xl bg-[#F8F7F3] px-3.5 py-2 text-xs font-semibold text-[#0B0B0C] border border-[#E7E5DF]">
-            <Building2 className="h-4 w-4 text-[#D9A514]" />
-            <span>{clientes.length} Clientes Cadastrados</span>
+        {/* Card Bento Ações Rápidas (Chips / Pills Kommo) */}
+        <div className="jansol-bento-card p-6 flex flex-col justify-between space-y-4">
+          <div className="flex items-center justify-between border-b border-[#E7E5EE] pb-3">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-[#6F6C80]">
+              Ações Rápidas Kommo
+            </h2>
+            <Sparkles className="h-4 w-4 text-[#E2B321]" />
+          </div>
+          <div className="grid grid-cols-2 gap-2.5">
+            <button
+              type="button"
+              onClick={() => setOrdemModalOpen(true)}
+              className="jansol-gradient-btn flex items-center justify-center gap-1.5 p-3 text-xs font-bold shadow-xs hover:scale-[1.02] transition-transform"
+            >
+              <FileText className="h-4 w-4" />
+              <span>Nova OS</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setVisitaModalOpen(true)}
+              className="flex items-center justify-center gap-1.5 rounded-full border border-[#E7E5EE] bg-[#F7F7FA] p-3 text-xs font-bold text-[#100D3F] hover:bg-[#EBF8F5] hover:border-[#55D6C2] transition-all"
+            >
+              <Calendar className="h-4 w-4 text-sky-600" />
+              <span>Agendar</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setClienteModalOpen(true)}
+              className="flex items-center justify-center gap-1.5 rounded-full border border-[#E7E5EE] bg-[#F7F7FA] p-3 text-xs font-bold text-[#100D3F] hover:bg-[#FFF9E6] hover:border-[#E2B321] transition-all"
+            >
+              <UserPlus className="h-4 w-4 text-[#E2B321]" />
+              <span>Cliente</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/dashboard/tarefas" })}
+              className="flex items-center justify-center gap-1.5 rounded-full border border-[#E7E5EE] bg-[#F7F7FA] p-3 text-xs font-bold text-[#100D3F] hover:bg-emerald-50 hover:border-emerald-400 transition-all"
+            >
+              <CheckSquare className="h-4 w-4 text-emerald-600" />
+              <span>Tarefa</span>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* 2. Barra de Ações Rápidas */}
-      <section className="space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-[#6E6D68]">
-          Ações Rápidas
-        </h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <QuickAction
-            label="Nova Ordem de Serviço"
-            description="Emitir OS técnica"
-            icon={FileText}
-            variant="gold"
-            onClick={() => setOrdemModalOpen(true)}
-          />
-          <QuickAction
-            label="Agendar Visita"
-            description="Visita técnica ou orçamento"
-            icon={Calendar}
-            onClick={() => setVisitaModalOpen(true)}
-          />
-          <QuickAction
-            label="Novo Cliente"
-            description="Cadastrar novo lead"
-            icon={UserPlus}
-            onClick={() => setClienteModalOpen(true)}
-          />
-          <QuickAction
-            label="Nova Tarefa"
-            description="Registrar pendência"
-            icon={CheckSquare}
-            onClick={() => navigate({ to: "/dashboard/tarefas" })}
-          />
-        </div>
-      </section>
-
-      {/* 3. Indicadores Executivos (KPI Cards) */}
+      {/* 2. Bento Grid Métricas Variadas (Tamanhos Variados de Acordo com Importância) */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-[#6E6D68]">
-            Indicadores Executivos Oficializados
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#6F6C80]">
+            Indicadores Bento Executivos
           </h2>
-          <span className="text-xs text-[#8E8D88]">Fonte: Banco Supabase Real</span>
+          <span className="text-xs font-medium text-[#6F6C80]">Valores Oficiais Centralizados</span>
         </div>
+
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {/* Card Destaque: Faturamento Real */}
           <MetricCard
             label="Faturamento Real"
             value={faturamentoRealFormatado}
             icon={DollarSign}
             tone="success"
-            hint="Todo o histórico acumulado"
+            hint="Histórico acumulado de pagamentos"
             fonte="Tabela public.clientes (valor_pago)"
             onClick={() => navigate({ to: "/dashboard/relatorios" })}
             tooltip="Clique para abrir o relatório financeiro detalhado"
           />
+          {/* Taxa de Conversão */}
           <MetricCard
             label="Taxa de Conversão"
             value={taxaConversaoFormatada}
@@ -264,6 +285,7 @@ function DashboardHome() {
             onClick={() => navigate({ to: "/dashboard/clientes" })}
             tooltip="Clique para ver a listagem de clientes e funil de vendas"
           />
+          {/* Ticket Médio */}
           <MetricCard
             label="Ticket Médio"
             value={ticketMedioFormatado}
@@ -274,6 +296,7 @@ function DashboardHome() {
             onClick={() => navigate({ to: "/dashboard/relatorios" })}
             tooltip="Clique para ver o detalhamento do ticket médio por período"
           />
+          {/* Orçamentos Pendentes */}
           <MetricCard
             label="Orçamentos Pendentes"
             value={orcamentosPendentesTexto}
@@ -283,6 +306,7 @@ function DashboardHome() {
             fonte="Módulo Financeiro Oficial"
             tooltip="Métrica oficial aguardando integração com Conta Azul / Módulo de Orçamentos. Status 'Orçamento' do cadastro não representa pendência real."
           />
+          {/* Clientes em Risco */}
           <MetricCard
             label="Clientes em Risco"
             value={emRiscoCount}
@@ -293,6 +317,7 @@ function DashboardHome() {
             onClick={() => navigate({ to: "/dashboard/clientes" })}
             tooltip="Clique para abrir a lista de clientes sem contato recente"
           />
+          {/* Próximas Manutenções */}
           <MetricCard
             label="Próximas Manutenções"
             value={proximasManutencoes.length}
@@ -306,14 +331,19 @@ function DashboardHome() {
         </div>
       </section>
 
-      {/* 4. Alertas e Pendências */}
-      <section className="space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-[#6E6D68]">
-          Central de Alertas & Prioridades Operacionais
-        </h2>
-        <div className="jansol-card p-5 space-y-3 bg-white">
+      {/* 3. Bento Grid: Alertas & Situação das Integrações */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Alertas e Prioridades (Span-2) */}
+        <div className="lg:col-span-2 jansol-bento-card p-6 space-y-4 bg-white">
+          <div className="flex items-center justify-between border-b border-[#E7E5EE] pb-3">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-[#6F6C80]">
+              Central de Alertas & Prioridades Operacionais
+            </h2>
+            <span className="text-xs text-[#6F6C80] font-semibold">Semántica Kommo</span>
+          </div>
+
           {emRiscoClientes.length === 0 && proximasManutencoes.length === 0 && orcamentosParados.length === 0 ? (
-            <div className="py-6 text-center text-sm text-[#6E6D68]">
+            <div className="py-8 text-center text-sm text-[#6F6C80]">
               Nenhum alerta ou pendência crítica registrada no momento.
             </div>
           ) : (
@@ -353,52 +383,93 @@ function DashboardHome() {
                   onAction={() => navigate({ to: "/dashboard/clientes/$id", params: { id: c.id } })}
                 />
               ))}
-
-              {instalacoesSemana > 0 && (
-                <AlertItem
-                  type="success"
-                  title={`${instalacoesSemana} instalações agendadas para esta semana`}
-                  subtitle="Acompanhe o cronograma dos técnicos na agenda"
-                  badgeText="Instalações"
-                  actionText="Abrir Agenda"
-                  onAction={() => navigate({ to: "/dashboard/agenda" })}
-                />
-              )}
             </div>
           )}
         </div>
-      </section>
 
-      {/* 5. Visão Operacional: Gráficos e Últimos Cadastros */}
+        {/* Situação das Integrações Bento Card */}
+        <div className="jansol-bento-card p-6 space-y-4 bg-white flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between border-b border-[#E7E5EE] pb-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#6F6C80]">
+                Situação das Integrações
+              </h3>
+              <Plug className="h-4 w-4 text-[#55D6C2]" />
+            </div>
+
+            <div className="space-y-3">
+              <div className="rounded-2xl border border-[#E7E5EE] bg-[#F7F7FA] p-3.5 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#100D3F] text-white">
+                    <Plug className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <span className="block text-xs font-bold text-[#17152B]">Integração AUVO</span>
+                    <span className="block text-[11px] text-[#6F6C80]">Agenda Externa</span>
+                  </div>
+                </div>
+                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold text-amber-800 border border-amber-300">
+                  Bloqueado/Offline
+                </span>
+              </div>
+
+              <div className="rounded-2xl border border-[#E7E5EE] bg-[#F7F7FA] p-3.5 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
+                    <Building2 className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <span className="block text-xs font-bold text-[#17152B]">Conta Azul</span>
+                    <span className="block text-[11px] text-[#6F6C80]">Orçamentos Financeiros</span>
+                  </div>
+                </div>
+                <span className="rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-bold text-blue-800 border border-blue-300">
+                  Planejada
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <Link
+            to="/dashboard/integracoes"
+            className="flex items-center justify-center gap-1.5 w-full rounded-full border border-[#E7E5EE] bg-[#F7F7FA] py-2.5 text-xs font-bold text-[#100D3F] hover:bg-[#EBF8F5] transition-colors"
+          >
+            <span>Gerenciar Integrações</span>
+            <ArrowRight className="h-3.5 w-3.5 text-[#55D6C2]" />
+          </Link>
+        </div>
+      </div>
+
+      {/* 4. Bento Grid: Gráficos de Faturamento & Funil */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Gráfico 1: Faturamento Mensal */}
-        <div className="jansol-card p-5 bg-white space-y-4">
-          <div className="flex items-center justify-between border-b border-[#E7E5DF]/60 pb-3">
-            <h3 className="text-sm font-bold text-[#0B0B0C]">
+        {/* Gráfico Faturamento Mensal */}
+        <div className="jansol-bento-card p-6 bg-white space-y-4">
+          <div className="flex items-center justify-between border-b border-[#E7E5EE] pb-3">
+            <h3 className="text-sm font-bold text-[#17152B]">
               Faturamento Mensal (Últimos 6 meses)
             </h3>
-            <span className="text-xs text-[#6E6D68]">Receita instalada</span>
+            <span className="text-xs text-[#6F6C80]">Receita instalada</span>
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={meses}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F0EEE9" />
-                <XAxis dataKey="mes" fontSize={12} stroke="#6E6D68" />
-                <YAxis fontSize={12} stroke="#6E6D68" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#F0EFF5" />
+                <XAxis dataKey="mes" fontSize={12} stroke="#6F6C80" />
+                <YAxis fontSize={12} stroke="#6F6C80" />
                 <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                <Bar dataKey="receita" fill="#D9A514" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="receita" fill="#E2B321" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Gráfico 2: Distribuição por Status */}
-        <div className="jansol-card p-5 bg-white space-y-4">
-          <div className="flex items-center justify-between border-b border-[#E7E5DF]/60 pb-3">
-            <h3 className="text-sm font-bold text-[#0B0B0C]">
-              Distribuição da Base por Status
+        {/* Gráfico Funil por Status */}
+        <div className="jansol-bento-card p-6 bg-white space-y-4">
+          <div className="flex items-center justify-between border-b border-[#E7E5EE] pb-3">
+            <h3 className="text-sm font-bold text-[#17152B]">
+              Distribuição do Funil por Status
             </h3>
-            <span className="text-xs text-[#6E6D68]">Funil de Vendas</span>
+            <span className="text-xs text-[#6F6C80]">Base Ativa</span>
           </div>
           <div className="h-64">
             {porStatus.length === 0 ? (
@@ -417,7 +488,7 @@ function DashboardHome() {
                     {porStatus.map((s) => (
                       <Cell
                         key={s.name}
-                        fill={STATUS_COLORS[s.name] ?? BLACK}
+                        fill={STATUS_COLORS[s.name] ?? "#100D3F"}
                       />
                     ))}
                   </Pie>
@@ -430,21 +501,21 @@ function DashboardHome() {
         </div>
       </div>
 
-      {/* 6. Últimos Clientes Cadastrados */}
+      {/* 5. Bento Grid: Tabela de Últimos Clientes */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-[#6E6D68]">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#6F6C80]">
             Últimos Clientes Cadastrados
           </h2>
           <Link
             to="/dashboard/clientes"
-            className="flex items-center gap-1 text-xs font-semibold text-[#D9A514] hover:underline"
+            className="flex items-center gap-1 text-xs font-bold text-[#55D6C2] hover:underline"
           >
             Ver todos os {clientes.length} clientes <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
 
-        <div className="jansol-card overflow-hidden bg-white">
+        <div className="jansol-bento-card overflow-hidden bg-white">
           {ultimos.length === 0 ? (
             <EmptyState
               title="Nenhum cliente cadastrado"
@@ -453,39 +524,39 @@ function DashboardHome() {
           ) : (
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="bg-[#F8F7F3]">
-                  <TableRow>
-                    <TableHead className="font-bold text-[#0B0B0C]">Nome do Cliente</TableHead>
-                    <TableHead className="font-bold text-[#0B0B0C]">Cidade</TableHead>
-                    <TableHead className="font-bold text-[#0B0B0C]">Sistema</TableHead>
-                    <TableHead className="font-bold text-[#0B0B0C]">Status</TableHead>
-                    <TableHead className="font-bold text-[#0B0B0C]">Data de Cadastro</TableHead>
-                    <TableHead className="text-right font-bold text-[#0B0B0C]">Ações</TableHead>
+                <TableHeader className="bg-[#F7F7FA] sticky top-0 z-10">
+                  <TableRow className="border-b border-[#E7E5EE]">
+                    <TableHead className="font-bold text-[#17152B]">Nome do Cliente</TableHead>
+                    <TableHead className="font-bold text-[#17152B]">Cidade</TableHead>
+                    <TableHead className="font-bold text-[#17152B]">Sistema</TableHead>
+                    <TableHead className="font-bold text-[#17152B]">Status</TableHead>
+                    <TableHead className="font-bold text-[#17152B]">Data de Cadastro</TableHead>
+                    <TableHead className="text-right font-bold text-[#17152B]">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {ultimos.map((c) => (
-                    <TableRow key={c.id} className="hover:bg-[#FAF3D6]/30 transition-colors">
+                    <TableRow key={c.id} className="hover:bg-[#EBF8F5]/50 transition-colors border-b border-[#E7E5EE]">
                       <TableCell>
                         <Link
                           to="/dashboard/clientes/$id"
                           params={{ id: c.id }}
-                          className="font-semibold text-[#0B0B0C] hover:text-[#D9A514]"
+                          className="font-bold text-[#17152B] hover:text-[#55D6C2]"
                         >
                           {c.nome}
                         </Link>
                       </TableCell>
-                      <TableCell className="text-[#6E6D68]">{c.cidade ?? "—"}</TableCell>
-                      <TableCell className="text-[#6E6D68]">{c.tipo_sistema}</TableCell>
+                      <TableCell className="text-[#6F6C80]">{c.cidade ?? "—"}</TableCell>
+                      <TableCell className="text-[#6F6F80]">{c.tipo_sistema}</TableCell>
                       <TableCell>
                         <StatusBadge status={c.status} />
                       </TableCell>
-                      <TableCell className="text-[#6E6D68]">{formatDate(c.created_at)}</TableCell>
+                      <TableCell className="text-[#6F6C80]">{formatDate(c.created_at)}</TableCell>
                       <TableCell className="text-right">
                         <Link
                           to="/dashboard/clientes/$id"
                           params={{ id: c.id }}
-                          className="inline-flex items-center gap-1 rounded-lg border border-[#E7E5DF] bg-white px-2.5 py-1 text-xs font-semibold text-[#0B0B0C] hover:bg-[#FAF3D6]"
+                          className="inline-flex items-center gap-1 rounded-full border border-[#E7E5EE] bg-[#F7F7FA] px-3 py-1 text-xs font-bold text-[#100D3F] hover:bg-[#EBF8F5] transition-colors"
                         >
                           Ficha 360°
                         </Link>
