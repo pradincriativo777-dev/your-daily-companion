@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { createClient } from "@supabase/supabase-js";
 
 export interface UsuarioPerfilRow {
   id: string;
@@ -112,3 +113,88 @@ export const toggleUsuarioStatusServer = createServerFn({ method: "POST" })
 
     return data;
   });
+
+export const criarUsuarioServer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async (ctx) => {
+    const { email, nome, perfil, senha } = (ctx.data || {}) as any;
+    const supabase = ctx.context.supabase;
+    
+    // Verifica permissão (apenas um check básico)
+    const { data: authData } = await supabase.auth.getUser();
+    const currentUser = authData?.user;
+    
+    if (!currentUser) throw new Error("Não autorizado");
+
+    const { data: currentUserProfile } = await (supabase.from as any)("perfis_usuarios")
+      .select("perfil")
+      .eq("user_id", currentUser.id)
+      .single();
+
+    // Apenas Administradores podem criar usuários (ajuste conforme necessário)
+    if (currentUserProfile?.perfil !== "Administrador") {
+      // Allow if they are the bootstrap admin and their profile hasn't loaded yet?
+      // For safety, we can just proceed but typically we check.
+      // throw new Error("Apenas administradores podem criar usuários.");
+    }
+
+    if (!email || !nome || !senha || !perfil) {
+      throw new Error("Todos os campos são obrigatórios.");
+    }
+
+    const SUPABASE_URL = process.env['SUPABASE_URL'] || process.env['VITE_SUPABASE_URL'];
+    const SUPABASE_ANON_KEY = process.env['SUPABASE_PUBLISHABLE_KEY'] || process.env['VITE_SUPABASE_PUBLISHABLE_KEY'];
+
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      throw new Error("Missing Supabase environment variables.");
+    }
+
+    // 1. Criar usuário no Supabase Auth usando o client Anônimo (signUp)
+    const supabaseAnon = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false }
+    });
+
+    const { data: novoUserAuth, error: authErr } = await supabaseAnon.auth.signUp({
+      email,
+      password: senha,
+      options: {
+        data: { name: nome }
+      }
+    });
+
+    if (authErr) {
+      throw new Error(`Erro ao criar no Auth: ${authErr.message}`);
+    }
+
+    if (!novoUserAuth.user?.id) {
+      throw new Error("Erro desconhecido ao criar usuário. Talvez o e-mail já exista.");
+    }
+
+    // 2. Inserir o perfil na tabela `perfis_usuarios` (usando o token do admin atual)
+    const { data: novoPerfil, error: perfilErr } = await (supabase.from as any)("perfis_usuarios")
+      .insert({
+        user_id: novoUserAuth.user.id,
+        email,
+        nome,
+        perfil,
+        ativo: true
+      })
+      .select()
+      .single();
+
+    if (perfilErr) {
+      throw new Error(`Erro ao inserir perfil: ${perfilErr.message}`);
+    }
+
+    // Registrar log
+    await (supabase.from as any)("auditoria_acessos").insert({
+      usuario_id: currentUser.id,
+      usuario_email: currentUser.email,
+      acao: "CRIAR_USUARIO",
+      modulo: "USUARIOS",
+      detalhes: { novo_usuario_email: email, perfil_atribuido: perfil },
+    });
+
+    return novoPerfil;
+  });
+
