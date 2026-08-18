@@ -46,6 +46,7 @@ import {
 
 export const MAIN_SHORTCUTS = [
   { to: "/dashboard", label: "Visão geral", icon: LayoutDashboard, exact: true },
+  { to: "/dashboard/financeiro", label: "Financeiro", icon: DollarSign },
   { to: "/dashboard/clientes", label: "Clientes", icon: Users },
   { to: "/dashboard/ordens", label: "Ordens de Serviço", icon: FileText },
   { to: "/dashboard/agenda", label: "Agenda", icon: Calendar },

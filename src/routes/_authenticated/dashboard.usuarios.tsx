@@ -30,6 +30,7 @@ function UsuariosPage() {
   const [processando, setProcessando] = useState<string | null>(null);
   const [openModal, setOpenModal] = useState(false);
   const [criando, setCriando] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [form, setForm] = useState({ nome: "", email: "", senha: "", perfil: "Gestor" });
 
   const carregarUsuarios = async () => {
@@ -62,8 +63,9 @@ function UsuariosPage() {
   };
 
   const handleCriarUsuario = async () => {
+    setFormError(null);
     if (!form.nome || !form.email || !form.senha || !form.perfil) {
-      toast.error("Preencha todos os campos.");
+      setFormError("Preencha todos os campos.");
       return;
     }
     setCriando(true);
@@ -74,7 +76,7 @@ function UsuariosPage() {
       setForm({ nome: "", email: "", senha: "", perfil: "Gestor" });
       carregarUsuarios();
     } catch (err: any) {
-      toast.error(err.message || "Erro ao criar usuário.");
+      setFormError(err.message || "Erro ao criar usuário.");
     } finally {
       setCriando(false);
     }
@@ -128,6 +130,11 @@ function UsuariosPage() {
                   </SelectContent>
                 </Select>
               </div>
+              {formError && (
+                <div className="rounded-md bg-red-50 p-3 text-sm text-red-600 border border-red-200">
+                  {formError}
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpenModal(false)}>Cancelar</Button>
