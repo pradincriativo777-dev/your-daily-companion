@@ -182,6 +182,26 @@ function KanbanPage() {
         </Select>
       </div>
 
+      {Object.values(colunasState).reduce((acc, col) => acc + (col.cards?.length || 0), 0) === 0 && !loadingKanban && (
+        <div className="mb-4 rounded-xl border border-[#E3B94F]/40 bg-[#E3B94F]/10 p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-[#F8F6F1] shadow-md">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#E3B94F]/20 text-[#E3B94F] border border-[#E3B94F]/30 shrink-0">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-[#E3B94F]">O Funil de Vendas está vazio no momento</p>
+              <p className="text-xs text-[#DDD8CE]">Deseja popular o pipeline com 19 clientes de demonstração para testar as etapas comerciais e o arrastar de cards?</p>
+            </div>
+          </div>
+          <Button
+            onClick={() => setDemoModal(true)}
+            className="jansol-gradient-btn text-xs font-bold text-[#1D1C19] shadow-md shrink-0 px-4 h-9"
+          >
+            <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Gerar 19 Clientes Demo
+          </Button>
+        </div>
+      )}
+
       <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-5">
         {STATUS_CLIENTE.map((status) => {
           const colData = colunasState[status] || { cards: [], total: 0, page: 1, hasMore: false };

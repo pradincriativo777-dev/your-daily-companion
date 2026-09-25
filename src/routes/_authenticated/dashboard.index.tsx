@@ -30,6 +30,7 @@ import {
   Plug,
   Activity,
   MoreHorizontal,
+  Sparkles,
 } from "lucide-react";
 import {
   Table,
@@ -46,6 +47,7 @@ import {
   Loading,
   StatusBadge,
 } from "@/components/crm/ui";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,6 +55,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ClienteDialog } from "@/components/crm/ClienteDialog";
+import { DemoFunnelModal } from "@/components/crm/DemoFunnelModal";
 import { OrdemServicoDialog } from "@/components/crm/OrdemServicoDialog";
 import { AgendarVisitaDialog } from "@/components/crm/AgendarVisitaDialog";
 import {
@@ -102,6 +105,7 @@ function DashboardHome() {
   const { data: tecnicos = [] } = useTecnicos();
 
   const [clienteModalOpen, setClienteModalOpen] = useState(false);
+  const [demoModalOpen, setDemoModalOpen] = useState(false);
   const [ordemModalOpen, setOrdemModalOpen] = useState(false);
   const [visitaModalOpen, setVisitaModalOpen] = useState(false);
 
@@ -205,6 +209,26 @@ function DashboardHome() {
           </div>
         </div>
       </div>
+
+      {clientes.length === 0 && (
+        <div className="rounded-2xl border border-[#E3B94F]/40 bg-[#E3B94F]/10 p-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-[#F8F6F1] shadow-lg">
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#E3B94F]/20 text-[#E3B94F] border border-[#E3B94F]/30 shrink-0">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-[#E3B94F]">Base de Clientes Vazia para Teste</p>
+              <p className="text-xs text-[#DDD8CE]">Deseja popular o sistema com 19 clientes de teste completos para simular o funil de vendas, relatórios e ordens de serviço?</p>
+            </div>
+          </div>
+          <Button
+            onClick={() => setDemoModalOpen(true)}
+            className="jansol-gradient-btn text-xs font-bold text-[#1D1C19] shadow-md shrink-0 px-4 h-10"
+          >
+            <Sparkles className="mr-1.5 h-4 w-4" /> Gerar 19 Clientes de Teste
+          </Button>
+        </div>
+      )}
 
       {/* 2. HIERARQUIA PASSO 2: Principais 4 Indicadores na Primeira Linha */}
       <section className="space-y-3">
@@ -487,6 +511,10 @@ function DashboardHome() {
       <ClienteDialog
         open={clienteModalOpen}
         onOpenChange={setClienteModalOpen}
+      />
+      <DemoFunnelModal
+        open={demoModalOpen}
+        onOpenChange={setDemoModalOpen}
       />
       <OrdemServicoDialog
         open={ordemModalOpen}
