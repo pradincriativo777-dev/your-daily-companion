@@ -1,0 +1,5 @@
+# CRM JANSOL — sistema interno, acesso restrito
+# Bloquear todos os crawlers e rastreadores
+
+User-agent: *
+Disallow: /

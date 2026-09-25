@@ -1,0 +1,391 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+
+export type Cliente = {
+  id: string;
+  created_at: string;
+  nome: string;
+  tipo: string;
+  cpf_cnpj: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  endereco: string | null;
+  cidade: string | null;
+  tipo_telhado: string | null;
+  tipo_sistema: string;
+  qtd_pessoas: number | null;
+  tamanho_piscina_m2: number | null;
+  qtd_banheiros: number | null;
+  marca_equipamento: string | null;
+  qtd_coletores: number | null;
+  modelo_reservatorio: string | null;
+  data_instalacao: string | null;
+  tecnico_id: string | null;
+  valor_orcamento: number | null;
+  valor_pago: number | null;
+  status: string;
+  origem_lead: string | null;
+  ultimo_contato: string | null;
+  observacoes: string | null;
+};
+
+export type Tecnico = {
+  id: string;
+  created_at: string;
+  nome: string;
+  telefone: string | null;
+  especialidade: string;
+  status: string;
+  custo_mensal: number | null;
+};
+
+export type Manutencao = {
+  id: string;
+  created_at: string;
+  cliente_id: string;
+  data_manutencao: string;
+  tipo: string;
+  descricao: string | null;
+  tecnico_id: string | null;
+  status: string;
+  proxima_manutencao: string | null;
+  custo: number | null;
+  observacoes: string | null;
+  horario_inicio?: string | null;
+  duracao_estimada_min?: number | null;
+  prioridade?: string | null;
+  endereco_visita?: string | null;
+  observacoes_internas?: string | null;
+  ordem_servico_id?: string | null;
+  auvo_task_id?: string | null;
+  sync_status?: "sincronizado" | "pendente" | "erro_sincronizacao" | string;
+  sync_error?: string | null;
+  idempotency_key?: string;
+  synced_at?: string | null;
+};
+
+export type Gasto = {
+  id: string;
+  created_at: string;
+  cliente_id: string | null;
+  tecnico_id: string | null;
+  ordem_servico_id?: string | null;
+  categoria: string;
+  descricao: string;
+  valor: number | null;
+  data: string;
+  tipo: string;
+  observacoes: string | null;
+};
+
+export type Interacao = {
+  id: string;
+  created_at: string;
+  cliente_id: string;
+  ordem_servico_id?: string | null;
+  data_interacao: string;
+  tipo: string;
+  descricao: string;
+  proximo_passo: string | null;
+  data_proximo_contato: string | null;
+  usuario: string | null;
+};
+
+export type OrdemServico = {
+  id: string;
+  codigo: string;
+  cliente_id: string;
+  tecnico_id: string | null;
+  tipo_atendimento: string;
+  prioridade: string;
+  descricao_problema: string;
+  servico_solicitado: string | null;
+  endereco_visita: string;
+  data_prevista: string;
+  horario_inicio: string | null;
+  duracao_estimada_min: number | null;
+  origem_solicitacao: string | null;
+  observacoes_internas: string | null;
+  status: string;
+  motivo_cancelamento: string | null;
+  auvo_task_id: string | null;
+  sync_status: string;
+  idempotency_key: string;
+  version: number;
+  valor_orcado: number;
+  valor_aprovado: number;
+  valor_recebido: number;
+  situacao_pagamento: string;
+  created_at: string;
+  updated_at: string;
+  usuario_criacao_id: string | null;
+};
+
+export type OrdemServicoAuditoria = {
+  id: string;
+  ordem_id: string;
+  usuario_id: string | null;
+  acao: string;
+  status_anterior: string | null;
+  status_novo: string | null;
+  motivo_cancelamento: string | null;
+  detalhes: Record<string, any> | null;
+  created_at: string;
+};
+
+export type Equipamento = {
+  id: string;
+  cliente_id: string;
+  categoria: string;
+  marca: string;
+  modelo: string;
+  numero_serie: string | null;
+  quantidade: number;
+  data_instalacao: string | null;
+  empresa_responsavel_instalacao: string | null;
+  local_instalacao: string | null;
+  ordem_servico_origem_id: string | null;
+  estado: string;
+  equipamento_substituido_id: string | null;
+  observacoes_tecnicas: string | null;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  usuario_criacao_id: string | null;
+};
+
+export type EquipamentoGarantia = {
+  id: string;
+  equipamento_id: string;
+  tipo: string;
+  data_inicio: string | null;
+  data_termino: string | null;
+  responsavel: string | null;
+  descricao_cobertura: string | null;
+  observacoes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EquipamentoPlanoPreventivo = {
+  id: string;
+  equipamento_id: string;
+  tipo_manutencao: string;
+  periodicidade_meses: number;
+  data_ultima_manutencao: string | null;
+  proxima_manutencao: string | null;
+  responsavel: string | null;
+  instrucoes: string | null;
+  status: string;
+  motivo_pausa_arquivamento: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EquipamentoAnexo = {
+  id: string;
+  equipamento_id: string;
+  garantia_id: string | null;
+  tipo: string;
+  nome_arquivo: string;
+  file_path: string;
+  file_size_bytes: number;
+  mime_type: string;
+  usuario_id: string | null;
+  created_at: string;
+};
+
+export type EstoqueItem = {
+  id: string;
+  sku: string;
+  nome: string;
+  categoria: string;
+  marca: string;
+  modelo: string;
+  descricao: string | null;
+  unidade_medida: string;
+  localizacao_fisica: string | null;
+  fornecedor_principal: string | null;
+  custo_medio: number;
+  preco_referencia: number;
+  estoque_minimo: number;
+  estado: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EstoqueMovimentacao = {
+  id: string;
+  item_id: string;
+  codigo_operacao: string;
+  tipo: string;
+  quantidade: number;
+  custo_unitario: number;
+  ordem_servico_id: string | null;
+  equipamento_id: string | null;
+  movimentacao_origem_id: string | null;
+  motivo: string | null;
+  documento_comprovante_url: string | null;
+  idempotency_key: string | null;
+  usuario_id: string | null;
+  created_at: string;
+};
+
+export type EstoqueInventario = {
+  id: string;
+  codigo: string;
+  status: string;
+  observacoes: string | null;
+  usuario_criacao_id: string | null;
+  usuario_conclusao_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EstoqueInventarioItem = {
+  id: string;
+  inventario_id: string;
+  item_id: string;
+  quantidade_esperada: number;
+  quantidade_contada: number;
+  divergencia: number;
+  observacoes: string | null;
+  created_at: string;
+};
+
+type TableName =
+  | "clientes"
+  | "tecnicos"
+  | "manutencoes"
+  | "gastos"
+  | "interacoes"
+  | "ordens_servico"
+  | "equipamentos"
+  | "equipamentos_garantias"
+  | "equipamentos_planos_preventivos"
+  | "equipamentos_anexos"
+  | "estoque_itens"
+  | "estoque_movimentacoes"
+  | "estoque_inventarios"
+  | "estoque_inventario_itens";
+
+function useList<T>(table: TableName, order: string, ascending = false) {
+  return useQuery({
+    queryKey: [table],
+    queryFn: async () => {
+      const { data, error } = await (supabase.from as any)(table)
+        .select("*")
+        .order(order, { ascending });
+      if (error) throw error;
+      return (data ?? []) as unknown as T[];
+    },
+  });
+}
+
+export const useClientes = () => useList<Cliente>("clientes", "created_at");
+export const useTecnicos = () => useList<Tecnico>("tecnicos", "nome", true);
+export const useManutencoes = () =>
+  useList<Manutencao>("manutencoes", "data_manutencao");
+export const useGastos = () => useList<Gasto>("gastos", "data");
+export const useInteracoes = () =>
+  useList<Interacao>("interacoes", "data_interacao");
+export const useOrdensServico = () =>
+  useList<OrdemServico>("ordens_servico", "created_at");
+export const useEquipamentos = () =>
+  useList<Equipamento>("equipamentos", "created_at");
+export const useEquipamentoGarantias = () =>
+  useList<EquipamentoGarantia>("equipamentos_garantias", "created_at");
+export const useEquipamentoPlanosPreventivos = () =>
+  useList<EquipamentoPlanoPreventivo>("equipamentos_planos_preventivos", "created_at");
+export const useEquipamentoAnexos = () =>
+  useList<EquipamentoAnexo>("equipamentos_anexos", "created_at");
+
+export const useEstoqueItens = () =>
+  useList<EstoqueItem>("estoque_itens", "created_at");
+export const useEstoqueMovimentacoes = () =>
+  useList<EstoqueMovimentacao>("estoque_movimentacoes", "created_at");
+export const useEstoqueInventarios = () =>
+  useList<EstoqueInventario>("estoque_inventarios", "created_at");
+export const useEstoqueInventarioItens = () =>
+  useList<EstoqueInventarioItem>("estoque_inventario_itens", "created_at");
+
+const labels: Record<TableName, string> = {
+  clientes: "Cliente",
+  tecnicos: "Técnico",
+  manutencoes: "Manutenção",
+  gastos: "Gasto",
+  interacoes: "Interação",
+  ordens_servico: "Ordem de Serviço",
+  equipamentos: "Equipamento",
+  equipamentos_garantias: "Garantia do Equipamento",
+  equipamentos_planos_preventivos: "Plano Preventivo",
+  equipamentos_anexos: "Anexo do Equipamento",
+  estoque_itens: "Item de Estoque",
+  estoque_movimentacoes: "Movimentação de Estoque",
+  estoque_inventarios: "Inventário de Estoque",
+  estoque_inventario_itens: "Item do Inventário",
+};
+
+export function useUpsert(table: TableName) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (values: Record<string, unknown>) => {
+      const { id, ...rest } = values as { id?: string };
+      if (id) {
+        const { error } = await (supabase.from as any)(table)
+          .update(rest as never)
+          .eq("id", id);
+        if (error) throw error;
+        return { id };
+      }
+      const { data, error } = await (supabase.from as any)(table)
+        .insert(rest as never)
+        .select("id")
+        .single();
+      if (error) throw error;
+      return data as { id: string };
+    },
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries();
+      toast.success(
+        `${labels[table]} ${(vars as { id?: string }).id ? "atualizado(a)" : "cadastrado(a)"} com sucesso`,
+      );
+    },
+    onError: (e: Error) => toast.error(`Erro ao salvar: ${e.message}`),
+  });
+}
+
+export function useRemove(table: TableName) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase.from as any)(table).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries();
+      toast.success(`${labels[table]} excluído(a) com sucesso`);
+    },
+    onError: (e: Error) => toast.error(`Erro ao excluir: ${e.message}`),
+  });
+}
+
+export function useUpdateStatusCliente() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase
+        .from("clientes")
+        .update({ status } as never)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["clientes"] });
+      toast.success("Status atualizado");
+    },
+    onError: (e: Error) => toast.error(`Erro: ${e.message}`),
+  });
+}
