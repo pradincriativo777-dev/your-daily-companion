@@ -27,10 +27,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { CLIENTES_TESTE_FUNIL } from "@/lib/funil-test-data";
 import { STATUS_CLIENTE, formatCurrency } from "@/lib/crm";
-import {
-  serverSeedFunnelClients,
-  serverClearFunnelTestClients,
-} from "@/lib/funil.server";
 
 interface DemoFunnelModalProps {
   open: boolean;
@@ -65,31 +61,41 @@ export function DemoFunnelModal({
   const handleGerarClientes = async () => {
     setLoading(true);
     try {
-      // 1. Tentar via Server Function com autenticação
-      let insertedCount = 19;
-      try {
-        const res = await (serverSeedFunnelClients as any)();
-        if (res?.success) {
-          insertedCount = res.count || 19;
-        } else {
-          throw new Error(res?.error || "Tentando fallback direto...");
+      // 1. Obter ou criar técnicos de referência
+      const { data: tecs } = await (supabase.from as any)("tecnicos").select("id");
+      let tecIds = (tecs || []).map((t: any) => t.id);
+
+      if (tecIds.length === 0) {
+        const { data: novosTecs } = await (supabase.from as any)("tecnicos")
+          .insert([
+            { nome: "Carlos Silva (Instalação)", especialidade: "Instalação", status: "Ativo", telefone: "(24) 99888-1111" },
+            { nome: "Marcos Oliveira (Manutenção)", especialidade: "Manutenção", status: "Ativo", telefone: "(24) 99777-2222" },
+            { nome: "Rafael Souza (Geral)", especialidade: "Ambos", status: "Ativo", telefone: "(24) 99666-3333" },
+          ])
+          .select("id");
+        if (novosTecs) {
+          tecIds = novosTecs.map((t: any) => t.id);
         }
-      } catch (serverErr) {
-        console.warn("Tentando inserção direta pelo cliente:", serverErr);
-        // Fallback direto pelo cliente Supabase
-        const { data: tecs } = await supabase.from("tecnicos").select("id");
-        const tecIds = (tecs || []).map((t: any) => t.id);
-        const payload = CLIENTES_TESTE_FUNIL.map((c, idx) => ({
-          ...c,
-          tecnico_id: tecIds.length > 0 ? tecIds[idx % tecIds.length] : null,
-          arquivado: false,
-        }));
-        const { error: clientErr } = await supabase.from("clientes").insert(payload as any);
-        if (clientErr) throw clientErr;
+      }
+
+      // 2. Montar dados
+      const payload = CLIENTES_TESTE_FUNIL.map((c, idx) => ({
+        ...c,
+        tecnico_id: tecIds.length > 0 ? tecIds[idx % tecIds.length] : null,
+        arquivado: false,
+      }));
+
+      // 3. Inserir clientes de teste
+      const { data, error } = await (supabase.from as any)("clientes")
+        .insert(payload)
+        .select("id");
+
+      if (error) {
+        throw new Error(error.message);
       }
 
       toast.success(
-        `🎉 ${insertedCount} clientes de teste gerados com sucesso no funil!`,
+        `🎉 ${data?.length || payload.length} clientes de teste gerados com sucesso no funil!`,
       );
 
       await qc.invalidateQueries({ queryKey: ["clientes"] });
@@ -106,15 +112,12 @@ export function DemoFunnelModal({
   const handleLimparClientesTeste = async () => {
     setCleaning(true);
     try {
-      try {
-        const res = await (serverClearFunnelTestClients as any)();
-        if (!res?.success) throw new Error(res?.error);
-      } catch {
-        const { error: clientErr } = await supabase
-          .from("clientes")
-          .delete()
-          .eq("origem_importacao", "SEED_TESTE_FUNIL");
-        if (clientErr) throw clientErr;
+      const { error } = await (supabase.from as any)("clientes")
+        .delete()
+        .eq("origem_importacao", "SEED_TESTE_FUNIL");
+
+      if (error) {
+        throw new Error(error.message);
       }
 
       toast.success("Clientes de teste removidos da base com sucesso!");
