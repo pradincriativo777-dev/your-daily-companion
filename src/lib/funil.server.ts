@@ -1,12 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { CLIENTES_TESTE_FUNIL } from "./funil-test-data";
 
 export const serverSeedFunnelClients = createServerFn({ method: "POST" })
-  .handler(async () => {
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase } = context;
+
     try {
       // 1. Buscar ou criar técnicos de referência
-      let { data: tecnicos, error: tecReadErr } = await (supabaseAdmin as any)
+      let { data: tecnicos, error: tecReadErr } = await (supabase as any)
         .from("tecnicos")
         .select("id, nome");
 
@@ -17,7 +20,7 @@ export const serverSeedFunnelClients = createServerFn({ method: "POST" })
       let tecIds = (tecnicos || []).map((t: any) => t.id);
 
       if (tecIds.length === 0) {
-        const { data: novosTecs, error: tecInsertErr } = await (supabaseAdmin as any)
+        const { data: novosTecs, error: tecInsertErr } = await (supabase as any)
           .from("tecnicos")
           .insert([
             { nome: "Carlos Silva (Instalação)", especialidade: "Instalação", status: "Ativo", telefone: "(24) 99888-1111" },
@@ -40,8 +43,8 @@ export const serverSeedFunnelClients = createServerFn({ method: "POST" })
         arquivado: false,
       }));
 
-      // 3. Inserir clientes via service role (bypassa RLS de forma segura)
-      const { data, error } = await (supabaseAdmin as any)
+      // 3. Inserir clientes
+      const { data, error } = await (supabase as any)
         .from("clientes")
         .insert(payload)
         .select("id, nome, status, valor_orcamento");
@@ -63,9 +66,12 @@ export const serverSeedFunnelClients = createServerFn({ method: "POST" })
   });
 
 export const serverClearFunnelTestClients = createServerFn({ method: "POST" })
-  .handler(async () => {
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase } = context;
+
     try {
-      const { error } = await (supabaseAdmin as any)
+      const { error } = await (supabase as any)
         .from("clientes")
         .delete()
         .eq("origem_importacao", "SEED_TESTE_FUNIL");
