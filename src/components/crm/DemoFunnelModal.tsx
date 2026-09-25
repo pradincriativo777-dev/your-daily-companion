@@ -24,9 +24,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { CLIENTES_TESTE_FUNIL } from "@/lib/funil-test-data";
 import { STATUS_CLIENTE, formatCurrency } from "@/lib/crm";
+import {
+  serverSeedFunnelClients,
+  serverClearFunnelTestClients,
+} from "@/lib/funil.server";
 
 interface DemoFunnelModalProps {
   open: boolean;
@@ -61,40 +64,14 @@ export function DemoFunnelModal({
   const handleGerarClientes = async () => {
     setLoading(true);
     try {
-      // 1. Verificar técnicos para relacionar
-      const { data: tecnicos } = await supabase.from("tecnicos").select("id, nome");
-      let tecIds = (tecnicos || []).map((t: any) => t.id);
+      const res = await (serverSeedFunnelClients as any)();
 
-      if (tecIds.length === 0) {
-        // Criar técnicos padrão se não existirem
-        const { data: novosTecs } = await supabase
-          .from("tecnicos")
-          .insert([
-            { nome: "Carlos Silva", especialidade: "Instalação", status: "Ativo" },
-            { nome: "Marcos Oliveira", especialidade: "Manutenção", status: "Ativo" },
-            { nome: "Rafael Souza", especialidade: "Ambos", status: "Ativo" },
-          ])
-          .select("id");
-        if (novosTecs) {
-          tecIds = novosTecs.map((t: any) => t.id);
-        }
-      }
-
-      // 2. Montar dados
-      const payload = CLIENTES_TESTE_FUNIL.map((c, idx) => ({
-        ...c,
-        tecnico_id: tecIds.length > 0 ? tecIds[idx % tecIds.length] : null,
-      }));
-
-      // 3. Inserir clientes de teste
-      const { data, error } = await supabase.from("clientes").insert(payload as any).select("id");
-
-      if (error) {
-        throw new Error(error.message);
+      if (!res.success) {
+        throw new Error(res.error || "Erro ao gerar clientes no servidor.");
       }
 
       toast.success(
-        `🎉 ${data?.length || payload.length} clientes de teste gerados com sucesso no funil!`,
+        `🎉 ${res.count || 19} clientes de teste gerados com sucesso no funil!`,
       );
 
       await qc.invalidateQueries({ queryKey: ["clientes"] });
@@ -111,13 +88,10 @@ export function DemoFunnelModal({
   const handleLimparClientesTeste = async () => {
     setCleaning(true);
     try {
-      const { error } = await supabase
-        .from("clientes")
-        .delete()
-        .eq("origem_importacao", "SEED_TESTE_FUNIL");
+      const res = await (serverClearFunnelTestClients as any)();
 
-      if (error) {
-        throw new Error(error.message);
+      if (!res.success) {
+        throw new Error(res.error || "Erro ao remover clientes de teste.");
       }
 
       toast.success("Clientes de teste removidos da base com sucesso!");
