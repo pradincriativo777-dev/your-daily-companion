@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { fetchWithRetry, maskSecret } from "./security";
+import { requireCrmAdmin } from "../authorization.server";
 
 // Ephemeral in-memory logs for this prototyping phase
 interface LogEntry {
@@ -214,20 +215,10 @@ function mockAuvoResponse(endpoint: string, options: RequestInit = {}) {
   return new Response(JSON.stringify({ result: [] }), { status: 200, headers: { "Content-Type": "application/json" } });
 }
 
-async function checkAdmin(supabase: any) {
-  try {
-    const { data: isAdmin } = await supabase.rpc('is_admin');
-    return isAdmin !== false;
-  } catch {
-    return true;
-  }
-}
 
 export const testAuvoConnection = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireCrmAdmin])
   .handler(async ({ context }) => {
-    const isAdmin = await checkAdmin(context.supabase);
-    if (!isAdmin) throw new Error("Apenas administradores podem testar integrações.");
 
     const start = Date.now();
     try {
@@ -279,10 +270,8 @@ export const testAuvoConnection = createServerFn({ method: "POST" })
   });
 
 export const simulateAuvoSync = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireCrmAdmin])
   .handler(async ({ context }) => {
-    const isAdmin = await checkAdmin(context.supabase);
-    if (!isAdmin) throw new Error("Acesso negado.");
 
     const start = Date.now();
     try {
@@ -343,10 +332,8 @@ export const simulateAuvoSync = createServerFn({ method: "POST" })
   });
 
 export const executeAuvoSync = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireCrmAdmin])
   .handler(async ({ context }) => {
-    const isAdmin = await checkAdmin(context.supabase);
-    if (!isAdmin) throw new Error("Acesso negado.");
 
     const start = Date.now();
     try {
@@ -419,10 +406,8 @@ export const executeAuvoSync = createServerFn({ method: "POST" })
   });
 
 export const getAuvoLogs = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireCrmAdmin])
   .handler(async ({ context }) => {
-    const isAdmin = await checkAdmin(context.supabase);
-    if (!isAdmin) throw new Error("Acesso negado.");
     
     // Retorna cópia dos logs sem expor credenciais (o log em si já não tem credenciais)
     return auvoLogs;
@@ -700,10 +685,8 @@ export const retryAuvoTaskSync = createServerFn({ method: "POST" })
   });
 
 export const importAuvoSchedule = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireCrmAdmin])
   .handler(async ({ context }) => {
-    const isAdmin = await checkAdmin(context.supabase);
-    if (!isAdmin) throw new Error("Acesso negado.");
 
     const start = Date.now();
     try {

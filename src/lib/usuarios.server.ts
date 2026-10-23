@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createClient } from "@supabase/supabase-js";
+import { z } from "zod";
+import { requireCrmAdmin } from "./authorization.server";
+import { PERFIS_SISTEMA } from "./rbac";
 
 export interface UsuarioPerfilRow {
   id: string;
@@ -17,58 +20,20 @@ export const fetchUsuariosServer = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async (ctx) => {
     const supabase = ctx.context.supabase;
-    const { data: authData } = await supabase.auth.getUser();
-    const user = authData?.user;
-
     // 1. Buscar perfis existentes no banco
     const { data: perfis, error } = await (supabase.from as any)("perfis_usuarios")
       .select("*")
       .order("created_at", { ascending: true });
 
-    if (error) {
-      console.error("[fetchUsuariosServer Error]:", error.message);
-    }
-
-    let list: UsuarioPerfilRow[] = perfis || [];
-
-    // 2. Bootstrap Seguro via Variável de Ambiente CRM_BOOTSTRAP_ADMIN_USER_ID ou CRM_BOOTSTRAP_ADMIN_EMAIL
-    const bootstrapAdminId = process.env["CRM_BOOTSTRAP_ADMIN_USER_ID"] || process.env["VITE_CRM_BOOTSTRAP_ADMIN_USER_ID"];
-    const bootstrapAdminEmail = process.env["CRM_BOOTSTRAP_ADMIN_EMAIL"] || process.env["VITE_CRM_BOOTSTRAP_ADMIN_EMAIL"] || "admin@jansol.com.br";
-
-    const userEmail = user?.email;
-    const userId = user?.id;
-
-    if (user && userEmail) {
-      const eBootstrapAuthorized = (bootstrapAdminId && userId === bootstrapAdminId) ||
-        (bootstrapAdminEmail && userEmail.toLowerCase() === bootstrapAdminEmail.toLowerCase());
-
-      const existeUsuarioAtual = list.some((u) => u.email.toLowerCase() === userEmail.toLowerCase() || u.user_id === userId);
-
-      if (!existeUsuarioAtual && eBootstrapAuthorized) {
-        const { data: novousuario, error: insertErr } = await (supabase.from as any)("perfis_usuarios")
-          .upsert({
-            user_id: userId,
-            email: userEmail,
-            nome: userEmail.split("@")[0] || "Administrador",
-            perfil: "Administrador",
-            ativo: true,
-          })
-          .select()
-          .single();
-
-        if (!insertErr && novousuario) {
-          list = [novousuario, ...list];
-        }
-      }
-    }
-
-    return list;
+    if (error) throw new Error("Não foi possível carregar os usuários.");
+    return (perfis || []) as UsuarioPerfilRow[];
   });
 
 export const toggleUsuarioStatusServer = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireCrmAdmin])
+  .validator((data: unknown) => z.object({ usuarioId: z.string().uuid(), novoStatus: z.boolean() }).parse(data))
   .handler(async (ctx) => {
-    const { usuarioId, novoStatus } = (ctx.data || {}) as { usuarioId: string; novoStatus: boolean };
+    const { usuarioId, novoStatus } = ctx.data;
     const supabase = ctx.context.supabase;
     const { data: authData } = await supabase.auth.getUser();
     const currentUser = authData?.user;
@@ -115,9 +80,15 @@ export const toggleUsuarioStatusServer = createServerFn({ method: "POST" })
   });
 
 export const criarUsuarioServer = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireCrmAdmin])
+  .validator((data: unknown) => z.object({
+    email: z.string().trim().email().max(254),
+    nome: z.string().trim().min(1).max(200),
+    perfil: z.string().refine((value) => PERFIS_SISTEMA.includes(value as typeof PERFIS_SISTEMA[number]), "Perfil inválido."),
+    senha: z.string().min(8).max(128),
+  }).parse(data))
   .handler(async (ctx) => {
-    const { email, nome, perfil, senha } = (ctx.data || {}) as any;
+    const { email, nome, perfil, senha } = ctx.data;
     const supabase = ctx.context.supabase;
     
     // Verifica permissão (apenas um check básico)
@@ -125,22 +96,6 @@ export const criarUsuarioServer = createServerFn({ method: "POST" })
     const currentUser = authData?.user;
     
     if (!currentUser) throw new Error("Não autorizado");
-
-    const { data: currentUserProfile } = await (supabase.from as any)("perfis_usuarios")
-      .select("perfil")
-      .eq("user_id", currentUser.id)
-      .single();
-
-    // Apenas Administradores podem criar usuários (ajuste conforme necessário)
-    if (currentUserProfile?.perfil !== "Administrador") {
-      // Allow if they are the bootstrap admin and their profile hasn't loaded yet?
-      // For safety, we can just proceed but typically we check.
-      // throw new Error("Apenas administradores podem criar usuários.");
-    }
-
-    if (!email || !nome || !senha || !perfil) {
-      throw new Error("Todos os campos são obrigatórios.");
-    }
 
     const SUPABASE_URL = process.env['SUPABASE_URL'] || process.env['VITE_SUPABASE_URL'];
     const SUPABASE_ANON_KEY = process.env['SUPABASE_PUBLISHABLE_KEY'] || process.env['VITE_SUPABASE_PUBLISHABLE_KEY'];

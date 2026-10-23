@@ -67,6 +67,7 @@ function ImportAssistant() {
 
   const onFile = async (file: File) => {
     try {
+      if (file.size > 10 * 1024 * 1024) throw new Error("O arquivo deve ter até 10 MB.");
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf, { type: "array", raw: false });
       const sheetName = wb.SheetNames[0];
@@ -75,6 +76,7 @@ function ImportAssistant() {
       
       const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
       
+      if (rawRows.length > 1000) throw new Error("Importe no máximo 1.000 registros por lote.");
       setFileName(file.name);
       classifyRows(rawRows);
       
@@ -205,7 +207,6 @@ function ImportAssistant() {
     setImporting(true);
     setProgress(20);
 
-    const operationId = crypto.randomUUID();
     const novosClientes = rows.filter(r => r.selected && r.classification === "Novo").map(r => r.mappedData);
     const atualizacoes = rows.filter(r => r.selected && r.classification === "AtualizacaoSegura").map(r => ({
       id: r.matchedId,
@@ -223,8 +224,7 @@ function ImportAssistant() {
 
     const res = await serverExecuteBatchImport({
       data: {
-        operationId,
-        novosClientes,
+        insercoes: novosClientes,
         atualizacoes
       }
     });

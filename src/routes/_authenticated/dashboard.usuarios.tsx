@@ -112,7 +112,7 @@ function UsuariosPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="senha">Senha Temporária</Label>
-                <Input id="senha" type="password" value={form.senha} onChange={(e) => setForm({ ...form, senha: e.target.value })} />
+                <Input id="senha" type="password" minLength={8} maxLength={128} value={form.senha} onChange={(e) => setForm({ ...form, senha: e.target.value })} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="perfil">Perfil de Acesso</Label>
