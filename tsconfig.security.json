@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/lib/authorization.ts",
+    "src/lib/authorization.server.ts",
+    "src/lib/import-validation.ts",
+    "src/lib/batch.server.ts",
+    "src/lib/usuarios.server.ts",
+    "src/lib/integrations/auvo.server.ts"
+  ]
+}

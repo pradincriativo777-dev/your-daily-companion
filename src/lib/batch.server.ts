@@ -1,12 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireCrmAdmin } from "./authorization.server";
+import { auditIdSchema, batchImportSchema } from "./import-validation";
 
 export const serverExecuteBatchImport = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .validator((data: unknown): {
-    insercoes: any[];
-    atualizacoes: any[];
-  } => data as any)
+  .middleware([requireCrmAdmin])
+  .validator((data: unknown) => batchImportSchema.parse(data))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
@@ -30,8 +28,8 @@ export const serverExecuteBatchImport = createServerFn({ method: "POST" })
   });
 
 export const serverUndoBatchImport = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .validator((data: unknown): { auditId: string } => data as any)
+  .middleware([requireCrmAdmin])
+  .validator((data: unknown) => auditIdSchema.parse(data))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
